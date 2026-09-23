@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+.git/
+.env
+.env.*
+!.env.example
+*.log
+*.db
+*.sqlite
+*.sqlite3
+SISTER Web Service PT.pdf
+cookbook/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

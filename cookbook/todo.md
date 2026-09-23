@@ -858,6 +858,23 @@ menyatakan data bersumber PDDIKTI/read-only dan menyediakan beberapa PUT.
 - [ ] Dokumentasikan perbedaan source test, UAT, browser QA, dan production
       evidence.
 
+## Deployment VPS checkpoint
+
+- [x] Dockerfile multi-stage berbasis Bun dan Next standalone tersedia.
+- [x] Compose PostgreSQL 17 dengan healthcheck dan volume persisten tersedia.
+- [x] Web container bind ke localhost dan dapat memakai `WEB_HOST_PORT` untuk
+      menghindari konflik port host.
+- [x] Web menjalankan `prisma migrate deploy` sebelum server production.
+- [x] `.dockerignore` mencegah `.env`, PDF, dependency lokal, dan output build
+      masuk ke build context.
+- [x] Runbook `/opt/apps/sisterbridge` tersedia di
+      `cookbook/deployment_vps.md`.
+- [ ] Docker image build dan `docker compose config` diverifikasi pada VPS/CI
+      yang memiliki Docker.
+- [ ] Nginx HTTPS, DNS, dan certificate production dikonfigurasi.
+- [ ] `.env` VPS diisi dengan credential SISTER UAT/live yang valid.
+- [ ] Auth/session provider production diaktifkan sebelum data PII dibuka.
+
 ## 11. Definition of done
 
 Satu fitur SISTER dianggap selesai apabila:
