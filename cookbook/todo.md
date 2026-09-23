@@ -37,6 +37,88 @@ turunan dari [schema.md](./schema.md), [architecture.md](./architecture.md),
 - Security contract: `security.md`, dengan `security_audit_event` terpisah dari
   `sister_operation`.
 
+## SISTER module catalog dan coverage
+
+Indeks PDF memang berisi **39 modul**, bukan hanya modul yang sudah dipilih
+untuk MVP. Breakdown lengkapnya dipisah agar setiap modul dapat dibaca tanpa
+menelusuri 307 halaman PDF sekaligus:
+
+| Bagian | Modul | File |
+|---:|---|---|
+| 01 | Akses, Anggota Profesi, BKD, Bahan Ajar, Beasiswa | [sister_01_akses_anggota_bkd_bahan_ajar_beasiswa.md](./sister_01_akses_anggota_bkd_bahan_ajar_beasiswa.md) |
+| 02 | Bimbingan Dosen, Bimbingan Mahasiswa, Data Pokok, Detasering, Diklat | [sister_02_bimbingan_data_pokok_detasering_diklat.md](./sister_02_bimbingan_data_pokok_detasering_diklat.md) |
+| 03 | Dokumen, Inpassing, Jabatan Fungsional, Jabatan Struktural, Kekayaan Intelektual | [sister_03_dokumen_inpassing_jabatan_kekayaan.md](./sister_03_dokumen_inpassing_jabatan_kekayaan.md) |
+| 04 | Kelas Kuliah, Kepangkatan, Kesejahteraan, Kolaborator Eksternal | [sister_04_kelas_kuliah_kepangkatan_kesejahteraan_kolaborator.md](./sister_04_kelas_kuliah_kepangkatan_kesejahteraan_kolaborator.md) |
+| 05 | Orasi Ilmiah, Pembicara, Pendidikan Formal, Penelitian | [sister_05_orasi_pembicara_pendidikan_penelitian.md](./sister_05_orasi_pembicara_pendidikan_penelitian.md) |
+| 06 | Pengabdian, Pengajaran, Pengelola Jurnal, Penghargaan | [sister_06_pengabdian_pengajaran_jurnal_penghargaan.md](./sister_06_pengabdian_pengajaran_jurnal_penghargaan.md) |
+| 07 | Pengujian Mahasiswa, Penugasan, Penunjang Lain, Publikasi | [sister_07_penguji_penugasan_penunjang_publikasi.md](./sister_07_penguji_penugasan_penunjang_publikasi.md) |
+| 08 | Referensi, Riwayat Pekerjaan, Sertifikasi Dosen, Sertifikasi Profesi | [sister_08_referensi_riwayat_sertifikasi.md](./sister_08_referensi_riwayat_sertifikasi.md) |
+| 09 | Tes, Tugas Tambahan, Tunjangan, Visiting Scientist | [sister_09_tes_tugas_tambahan_tunjangan_visiting_scientist.md](./sister_09_tes_tugas_tambahan_tunjangan_visiting_scientist.md) |
+
+Katalog tersebut adalah inventory dan peta kontrak, bukan klaim bahwa semua
+modul sudah diimplementasikan. Coverage repository saat checkpoint ini:
+
+- **Implemented read-only:** BKD, Pendidikan Formal, Penugasan, dan Riwayat
+  Pekerjaan.
+- **Partial read-only:** Data Pokok (profil dan kepegawaian) serta Referensi
+  (SDM, semester, dan profil PT).
+- **Foundation only:** Akses melalui boundary auth/transport, tetapi
+  `POST /authorize` live belum diuji dengan credential UAT.
+- **Belum diimplementasikan:** 32 modul lain, termasuk seluruh workflow write,
+  upload/download dokumen, dan ajuan yang belum masuk scope MVP.
+
+Dengan demikian, TODO sebelumnya **belum mencakup seluruh 39 modul pada level
+endpoint**. Sembilan dokumen di atas menjadi source map untuk menurunkan item
+schema, adapter, permission, UI, test, dan UAT per modul. Checklist di bawah
+tetap harus dicentang per evidence; keberadaan file breakdown tidak dihitung
+sebagai implementasi.
+
+### Master checklist 39 modul
+
+Setiap modul tetap memiliki task sendiri. Status `[x]` hanya dipakai untuk
+coverage read-only yang sudah memiliki evidence source/test pada repository;
+read-only tidak mencakup mutation atau ajuan.
+
+- [ ] 01 Akses — live `POST /authorize` dan credential UAT.
+- [ ] 02 Anggota Profesi — schema, adapter, permission, CRUD, dan dokumen.
+- [x] 03 BKD — enam endpoint GET dan UI read-only.
+- [ ] 04 Bahan Ajar — CRUD dan dependency dokumen/referensi.
+- [ ] 05 Beasiswa — CRUD dan dependency dokumen/referensi.
+- [ ] 06 Bimbingan Dosen — list/detail read-only.
+- [ ] 07 Bimbingan Mahasiswa — list/detail dan keputusan nested `bidang_ilmu`.
+- [ ] 08 Data Pokok — endpoint di luar profil/kepegawaian dan PII review.
+- [ ] 09 Detasering — CRUD.
+- [ ] 10 Diklat — CRUD dan dokumen.
+- [ ] 11 Dokumen — multipart upload, metadata, delete, dan binary download.
+- [ ] 12 Inpassing — CRUD.
+- [ ] 13 Jabatan Fungsional — CRUD dan readback ajuan.
+- [ ] 14 Jabatan Struktural — CRUD.
+- [ ] 15 Kekayaan Intelektual — CRUD dan nested `bidang_ilmu`.
+- [ ] 16 Kelas Kuliah — relasi dokumen pada `id_kls`.
+- [ ] 17 Kepangkatan — list/detail read-only.
+- [ ] 18 Kesejahteraan — CRUD dan PII/benefit review.
+- [ ] 19 Kolaborator Eksternal — CRUD.
+- [ ] 20 Orasi Ilmiah — CRUD.
+- [ ] 21 Pembicara — CRUD.
+- [x] 22 Pendidikan Formal — list/detail read-only.
+- [ ] 23 Penelitian — CRUD dan nested `bidang_ilmu`.
+- [ ] 24 Pengabdian — CRUD dan nested `bidang_ilmu`.
+- [ ] 25 Pengajaran — read-only utama dan keputusan nested `bidang_ilmu`.
+- [ ] 26 Pengelola Jurnal — CRUD.
+- [ ] 27 Penghargaan — CRUD dan referensi jenis/tingkat.
+- [ ] 28 Pengujian Mahasiswa — read-only utama dan nested `bidang_ilmu`.
+- [x] 29 Penugasan — list/detail read-only.
+- [ ] 30 Penunjang Lain — CRUD.
+- [ ] 31 Publikasi — CRUD dan nested `bidang_ilmu`.
+- [ ] 32 Referensi — 38 endpoint selector yang belum dibuka; tiga sudah ada.
+- [x] 33 Riwayat Pekerjaan — list/detail read-only.
+- [ ] 34 Sertifikasi Dosen — master/detail dan ajuan read-only.
+- [ ] 35 Sertifikasi Profesi — CRUD.
+- [ ] 36 Tes — nilai read-only dan workflow ajuan.
+- [ ] 37 Tugas Tambahan — CRUD.
+- [ ] 38 Tunjangan — CRUD dengan review data benefit/finansial.
+- [ ] 39 Visiting Scientist — CRUD.
+
 Checkbox tidak boleh dicentang hanya karena kode terlihat selesai. Setiap item
 harus memiliki bukti yang sesuai: source check, unit test, contract test,
 UAT, atau browser QA.
