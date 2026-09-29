@@ -8,6 +8,9 @@ import {
   BriefcaseBusiness,
   ClipboardCheck,
   ClipboardList,
+  Compass,
+  Database,
+  RefreshCw,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -25,9 +28,10 @@ import { ThemeToggle } from "./theme_toggle";
 
 type NavigationItem = {
   label: string;
-  href: "/" | "/pegawai" | "/referensi" | "/bkd" | "/penugasan" | "/pendidikan_formal" | "/riwayat_pekerjaan" | "/audit" | "#pengajuan" | "#dokumen";
+  href: "/" | "/pegawai" | "/referensi" | "/bkd" | "/penugasan" | "/pendidikan_formal" | "/riwayat_pekerjaan" | "/replika" | "/replika/status" | "/jelajah" | "/audit" | "#pengajuan" | "#dokumen";
   icon: LucideIcon;
   requiresAdmin?: boolean;
+  requiresOperator?: boolean;
 };
 
 const navigationItems: NavigationItem[] = [
@@ -38,6 +42,9 @@ const navigationItems: NavigationItem[] = [
   { label: "Penugasan", href: "/penugasan", icon: ClipboardList },
   { label: "Pendidikan Formal", href: "/pendidikan_formal", icon: GraduationCap },
   { label: "Riwayat Pekerjaan", href: "/riwayat_pekerjaan", icon: BriefcaseBusiness },
+  { label: "Data Replika", href: "/replika", icon: Database },
+  { label: "Jelajah Data", href: "/jelajah", icon: Compass, requiresOperator: true },
+  { label: "Status Sinkronisasi", href: "/replika/status", icon: RefreshCw, requiresOperator: true },
   { label: "Pengajuan", href: "#pengajuan", icon: FileText },
   { label: "Audit security", href: "/audit", icon: ShieldCheck, requiresAdmin: true },
 ];
@@ -46,8 +53,12 @@ export function Sidebar({ activeLabel = "Ikhtisar" }: { activeLabel?: string }) 
   const [mobileOpen, setMobileOpen] = useState(false);
   const trpc = useTRPC();
   const sessionQuery = useQuery(trpc.overview.session.queryOptions());
-  const isAdmin = sessionQuery.data?.role === "ADMIN";
-  const items = navigationItems.filter((item) => !item.requiresAdmin || isAdmin);
+  const role = sessionQuery.data?.role;
+  const isAdmin = role === "ADMIN";
+  const isOperator = isAdmin || role === "OPERATOR";
+  const items = navigationItems.filter(
+    (item) => (!item.requiresAdmin || isAdmin) && (!item.requiresOperator || isOperator),
+  );
 
   return (
     <>

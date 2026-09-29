@@ -25,6 +25,15 @@ enum SisterOperationStatus {
   @@map("sister_operation_status")
 }
 
+enum SisterSyncStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+
+  @@map("sister_sync_status")
+}
+
 enum SecuritySeverity {
   INFO
   LOW
@@ -51,13 +60,69 @@ model AppUser {
   name            String               @db.VarChar(160)
   role            AppRole              @default(VIEWER)
   isActive        Boolean              @default(true) @map("is_active")
+  // Required by better-auth; users are created by an admin, never self-signup.
+  emailVerified   Boolean              @default(false) @map("email_verified")
+  image           String?              @db.VarChar(2048)
   createdAt       DateTime             @default(now()) @map("created_at")
   updatedAt       DateTime             @updatedAt @map("updated_at")
+  authSessions    AuthSession[]
+  authAccounts    AuthAccount[]
   operations      SisterOperation[]    @relation("sister_operation_actor")
   securityEvents  SecurityAuditEvent[] @relation("security_audit_actor")
   securityReviews SecurityAuditEvent[] @relation("security_audit_reviewer")
 
   @@map("app_user")
+}
+
+// better-auth tables (src/server/auth/auth.ts). The session token is an
+// opaque random value; credential passwords are hashed by better-auth.
+model AuthSession {
+  id        String   @id @db.Uuid
+  token     String   @unique @db.VarChar(255)
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address") @db.VarChar(64)
+  userAgent String?  @map("user_agent") @db.VarChar(512)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_session")
+}
+
+model AuthAccount {
+  id                    String    @id @db.Uuid
+  accountId             String    @map("account_id") @db.VarChar(255)
+  providerId            String    @map("provider_id") @db.VarChar(64)
+  userId                String    @map("user_id") @db.Uuid
+  accessToken           String?   @map("access_token") @db.Text
+  refreshToken          String?   @map("refresh_token") @db.Text
+  idToken               String?   @map("id_token") @db.Text
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?   @db.VarChar(1024)
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  user                  AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("auth_account")
+}
+
+model AuthVerification {
+  id         String   @id @db.Uuid
+  identifier String   @db.VarChar(255)
+  value      String   @db.Text
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("auth_verification")
 }
 
 model SisterIntegration {
@@ -75,6 +140,9 @@ model SisterIntegration {
   sdmIndexCaches    SisterSdmIndexCache[]
   operations        SisterOperation[]
   securityEvents    SecurityAuditEvent[]
+  syncRuns          SisterSyncRun[]
+  replicaRecords    SisterReplicaRecord[]
+  replicaScopes     SisterReplicaScope[]
 
   @@index([isEnabled])
   @@map("sister_integration")
@@ -114,6 +182,76 @@ model SisterSdmIndexCache {
   @@index([integrationId, nidn])
   @@index([integrationId, nip])
   @@map("sister_sdm_index_cache")
+}
+
+// One execution of the read-only replica sync (`bun run sister:sync`).
+// stats_json holds per-endpoint counters and redacted error codes only, never
+// payloads, tokens, or credentials.
+model SisterSyncRun {
+  id            String            @id @default(uuid()) @db.Uuid
+  integrationId String            @map("integration_id") @db.Uuid
+  baseUrl       String            @map("base_url") @db.VarChar(2048)
+  scope         String            @db.VarChar(64)
+  status        SisterSyncStatus  @default(RUNNING)
+  requestCount  Int               @default(0) @map("request_count")
+  recordCount   Int               @default(0) @map("record_count")
+  changedCount  Int               @default(0) @map("changed_count")
+  deletedCount  Int               @default(0) @map("deleted_count")
+  errorCount    Int               @default(0) @map("error_count")
+  statsJson     Json?             @map("stats_json")
+  startedAt     DateTime          @default(now()) @map("started_at")
+  finishedAt    DateTime?         @map("finished_at")
+  integration   SisterIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, startedAt])
+  @@map("sister_sync_run")
+}
+
+// Local read-only copy of SISTER GET responses. One row per list item or per
+// object response, keyed by endpoint template + request scope + item key.
+// Rows missing from a later complete fetch of the same scope get deleted_at
+// instead of being removed, so history stays auditable.
+model SisterReplicaRecord {
+  integrationId String            @map("integration_id") @db.Uuid
+  endpoint      String            @db.VarChar(255)
+  scopeKey      String            @map("scope_key") @db.VarChar(512)
+  itemKey       String            @map("item_key") @db.VarChar(255)
+  idSdm         String?           @map("id_sdm") @db.VarChar(64)
+  parentId      String?           @map("parent_id") @db.VarChar(128)
+  payloadJson   Json              @map("payload_json")
+  payloadHash   String            @map("payload_hash") @db.VarChar(64)
+  firstSeenAt   DateTime          @default(now()) @map("first_seen_at")
+  changedAt     DateTime          @default(now()) @map("changed_at")
+  fetchedAt     DateTime          @default(now()) @map("fetched_at")
+  deletedAt     DateTime?         @map("deleted_at")
+  lastSyncRunId String?           @map("last_sync_run_id") @db.Uuid
+  integration   SisterIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@id([integrationId, endpoint, scopeKey, itemKey])
+  @@index([integrationId, idSdm, endpoint])
+  @@index([integrationId, endpoint, deletedAt])
+  @@map("sister_replica_record")
+}
+
+// Fetch state per endpoint scope (for example `/penelitian` + `id_sdm=...`).
+// Lets the sync skip child requests whose parent row did not change and shows
+// which scopes SISTER failed to answer.
+model SisterReplicaScope {
+  integrationId String            @map("integration_id") @db.Uuid
+  endpoint      String            @db.VarChar(255)
+  scopeKey      String            @map("scope_key") @db.VarChar(512)
+  idSdm         String?           @map("id_sdm") @db.VarChar(64)
+  itemCount     Int               @default(0) @map("item_count")
+  lastStatus    Int               @map("last_status")
+  lastErrorCode String?           @map("last_error_code") @db.VarChar(64)
+  lastFetchedAt DateTime          @default(now()) @map("last_fetched_at")
+  lastSuccessAt DateTime?         @map("last_success_at")
+  lastSyncRunId String?           @map("last_sync_run_id") @db.Uuid
+  integration   SisterIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@id([integrationId, endpoint, scopeKey])
+  @@index([integrationId, lastStatus])
+  @@map("sister_replica_scope")
 }
 
 model SisterOperation {

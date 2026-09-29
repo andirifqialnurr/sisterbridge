@@ -1,5 +1,7 @@
 import { Search } from "lucide-react";
 
+import { SessionMenu } from "@/component/widget/session_menu";
+
 type AppHeaderProps = {
   maxWidth: string;
 };
@@ -27,9 +29,7 @@ export function AppHeader({ maxWidth }: AppHeaderProps) {
             type="search"
           />
         </form>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--color-primary-soft))] text-xs font-bold text-[hsl(var(--color-primary-strong))]">
-          AD
-        </div>
+        <SessionMenu />
       </div>
     </header>
   );

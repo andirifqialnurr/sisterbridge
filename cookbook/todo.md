@@ -79,7 +79,8 @@ Setiap modul tetap memiliki task sendiri. Status `[x]` hanya dipakai untuk
 coverage read-only yang sudah memiliki evidence source/test pada repository;
 read-only tidak mencakup mutation atau ajuan.
 
-- [ ] 01 Akses — live `POST /authorize` dan credential UAT.
+- [x] 01 Akses — live `POST /authorize` terverifikasi 2026-09-29
+      (sandbox + production, role `Sister-WS Basic`).
 - [ ] 02 Anggota Profesi — schema, adapter, permission, CRUD, dan dokumen.
 - [x] 03 BKD — enam endpoint GET dan UI read-only.
 - [ ] 04 Bahan Ajar — CRUD dan dependency dokumen/referensi.
@@ -559,6 +560,46 @@ masing-masing dengan commit terpisah.
       memverifikasi auth context (unauthenticated -> UNAUTHORIZED) dan
       bentuk DTO output lewat caller sungguhan, bukan hanya lewat service
       layer secara terpisah.
+
+## Live SISTER, replika, dan login checkpoint: 2026-09-29
+
+- [x] `POST /authorize` live berhasil di sandbox dan production dengan role
+      `Sister-WS Basic`; base URL `sister-api.kemdiktisaintek.go.id`.
+      Non-production otomatis memakai `SISTER_BASE_URL_DEV` (sandbox).
+- [x] Schema `types.ts` divalidasi terhadap payload live 10 SDM dan
+      disesuaikan (null, string numerik, `profil_pt` objek, `{}` pada
+      `perguruan_tinggi`); daftar penyimpangan di
+      [sister_replica.md](./sister_replica.md).
+- [x] Replika read-only: `bun run sister:sync` untuk 135 dari 140 endpoint
+      GET, tabel `sister_sync_run`, `sister_replica_record`,
+      `sister_replica_scope`, inkremental per child, soft delete, dry-run.
+      Unit test orkestrator dan fetcher (retry 5xx, reauthorize 401).
+- [x] BKD: semester diambil dari `laporan_akhir_bkd` karena
+      `/referensi/semester` selalu 500; 404 aktivitas = daftar kosong.
+- [x] Login lokal better-auth (email + password, tanpa sign-up, sesi 8 jam,
+      rate limit sign-in, akun nonaktif ditolak, event login/logout ke
+      `security_audit_event`), halaman `/login`, logout, middleware redirect,
+      CLI `bun run auth:create-user`.
+- [x] Migration `20260929120000_sister_replica` dan
+      `20260929130000_app_auth` diterapkan ke database lokal (role
+      `sister_app`, bukan superuser); sync 2 SDM ke database: 1.417 request
+      pertama, 154 request pada run inkremental berikutnya.
+- [x] `next build` production lulus (termasuk `/login`, `/api/auth`,
+      middleware).
+- [x] Pacing `RateGate` (default 4 req/detik, jeda bersama saat 429):
+      12 SDM = 3.478 request dalam 875 detik tanpa satu pun 429, setelah run
+      tanpa pacing sebelumnya diblokir SISTER.
+- [x] Jelajah data live `/jelajah` untuk semua modul GET (katalog server-side,
+      role ADMIN/OPERATOR, panel struktur data + usulan tipe PostgreSQL),
+      diuji ke sandbox untuk seluruh modul per SDM dan referensi.
+- [x] Lapisan typed schema `replica`: 171 view (36 view anak) dihasilkan
+      `bun run replica:views` dari payload asli; cast aman `replica.try_*`,
+      kolom kode tetap text, 540 kolom typed tanpa cast yang hilang, replay
+      migration dari nol lulus. Dokumen: `replica_schema.md`.
+- [x] Halaman `/replika` (Data Replika, dari view `replica`) dan
+      `/replika/status` (riwayat sync + scope gagal, ADMIN/OPERATOR).
+- [ ] Full sync 97 SDM pertama (beberapa jam; jalankan di VPS malam hari).
+- [ ] UI/tRPC membaca dari replika dan halaman status sinkronisasi admin.
 
 ## 0. Gate kontrak eksternal
 

@@ -7,6 +7,8 @@ import { referensiRouter } from "@/modules/referensi/api/referensi_router";
 import { riwayatPekerjaanRouter } from "@/modules/riwayat_pekerjaan/api/riwayat_pekerjaan_router";
 import { securityRouter } from "@/modules/security/api/security_router";
 import { bkdRouter } from "@/modules/bkd/api/bkd_router";
+import { jelajahRouter } from "@/modules/jelajah/api/jelajah_router";
+import { replikaRouter } from "@/modules/replika/api/replika_router";
 
 export const appRouter = createTRPCRouter({
   overview: overviewRouter,
@@ -16,6 +18,8 @@ export const appRouter = createTRPCRouter({
   referensi: referensiRouter,
   riwayat_pekerjaan: riwayatPekerjaanRouter,
   bkd: bkdRouter,
+  jelajah: jelajahRouter,
+  replika: replikaRouter,
   security: securityRouter,
 });
 

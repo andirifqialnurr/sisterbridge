@@ -15,6 +15,6 @@ export async function createTRPCContext({
   return {
     requestId: getSafeRequestId(req),
     request: req,
-    user: getCurrentUser(),
+    user: await getCurrentUser(req.headers),
   };
 }

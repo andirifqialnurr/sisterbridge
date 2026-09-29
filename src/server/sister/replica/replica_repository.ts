@@ -1,0 +1,308 @@
+import type { Prisma, PrismaClient, SisterSyncStatus } from "@prisma/client";
+
+export type ReplicaScope = {
+  endpoint: string;
+  scopeKey: string;
+  idSdm: string | null;
+  parentId: string | null;
+};
+
+export type ReplicaItem = {
+  itemKey: string;
+  payload: unknown;
+  hash: string;
+};
+
+export type ReplicaSaveResult = {
+  created: number;
+  changed: number;
+  unchanged: number;
+  deleted: number;
+  // Item keys that are new or whose payload changed in this save.
+  changedKeys: string[];
+};
+
+export type ReplicaRunSummary = {
+  status: SisterSyncStatus;
+  requestCount: number;
+  recordCount: number;
+  changedCount: number;
+  deletedCount: number;
+  errorCount: number;
+  stats: unknown;
+};
+
+export type ReplicaStore = {
+  ensureIntegration(input: {
+    integrationId: string;
+    baseUrl: string;
+    credentialRef: string;
+    expectedRole: string | null;
+  }): Promise<void>;
+  startRun(input: { integrationId: string; baseUrl: string; scope: string }): Promise<string>;
+  finishRun(runId: string, summary: ReplicaRunSummary): Promise<void>;
+  // Upserts the complete result of one scope. Rows no longer returned by
+  // SISTER are soft-deleted together with the child rows that hang off them,
+  // and the scope is marked as successfully fetched.
+  saveScope(
+    runId: string,
+    integrationId: string,
+    scope: ReplicaScope,
+    items: ReplicaItem[],
+  ): Promise<ReplicaSaveResult>;
+  // Records a failed fetch without touching the rows already replicated.
+  recordScopeFailure(
+    runId: string,
+    integrationId: string,
+    scope: ReplicaScope,
+    failure: { status: number; code: string },
+  ): Promise<void>;
+  // Returns the scope keys of `endpoint` that were fetched successfully at
+  // least once.
+  fetchedScopeKeys(integrationId: string, endpoint: string, scopeKeys: string[]): Promise<Set<string>>;
+};
+
+// Postgres allows 65535 bind parameters per statement; large reference scopes
+// (e.g. /referensi/dudi, tens of thousands of rows) are written in batches.
+const writeBatchSize = 2_000;
+
+function chunk<T>(items: T[], size = writeBatchSize) {
+  const batches: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    batches.push(items.slice(index, index + size));
+  }
+  return batches;
+}
+
+type ReplicaClient = Pick<
+  PrismaClient,
+  "sisterIntegration" | "sisterSyncRun" | "sisterReplicaRecord" | "sisterReplicaScope" | "$transaction"
+>;
+
+export class PrismaReplicaStore implements ReplicaStore {
+  constructor(private readonly client: ReplicaClient) {}
+
+  async ensureIntegration(input: {
+    integrationId: string;
+    baseUrl: string;
+    credentialRef: string;
+    expectedRole: string | null;
+  }) {
+    await this.client.sisterIntegration.upsert({
+      where: { id: input.integrationId },
+      create: {
+        id: input.integrationId,
+        baseUrl: input.baseUrl,
+        credentialRef: input.credentialRef,
+        expectedRole: input.expectedRole,
+        isEnabled: true,
+        lastHealthAt: new Date(),
+      },
+      update: {
+        baseUrl: input.baseUrl,
+        credentialRef: input.credentialRef,
+        expectedRole: input.expectedRole,
+        lastHealthAt: new Date(),
+      },
+    });
+  }
+
+  async startRun(input: { integrationId: string; baseUrl: string; scope: string }) {
+    const run = await this.client.sisterSyncRun.create({
+      data: {
+        integrationId: input.integrationId,
+        baseUrl: input.baseUrl,
+        scope: input.scope,
+      },
+      select: { id: true },
+    });
+    return run.id;
+  }
+
+  async finishRun(runId: string, summary: ReplicaRunSummary) {
+    await this.client.sisterSyncRun.update({
+      where: { id: runId },
+      data: {
+        status: summary.status,
+        requestCount: summary.requestCount,
+        recordCount: summary.recordCount,
+        changedCount: summary.changedCount,
+        deletedCount: summary.deletedCount,
+        errorCount: summary.errorCount,
+        statsJson: summary.stats as Prisma.InputJsonValue,
+        finishedAt: new Date(),
+      },
+    });
+  }
+
+  async saveScope(
+    runId: string,
+    integrationId: string,
+    scope: ReplicaScope,
+    items: ReplicaItem[],
+  ): Promise<ReplicaSaveResult> {
+    const scopeWhere = {
+      integrationId,
+      endpoint: scope.endpoint,
+      scopeKey: scope.scopeKey,
+    };
+
+    return this.client.$transaction(async (tx) => {
+      const existing = await tx.sisterReplicaRecord.findMany({
+        where: scopeWhere,
+        select: { itemKey: true, payloadHash: true, deletedAt: true },
+      });
+      const existingByKey = new Map(existing.map((row) => [row.itemKey, row]));
+      const now = new Date();
+
+      const created: ReplicaItem[] = [];
+      const changed: ReplicaItem[] = [];
+      const unchangedKeys: string[] = [];
+      for (const item of items) {
+        const row = existingByKey.get(item.itemKey);
+        if (!row) {
+          created.push(item);
+        } else if (row.payloadHash !== item.hash || row.deletedAt) {
+          changed.push(item);
+        } else {
+          unchangedKeys.push(item.itemKey);
+        }
+      }
+
+      for (const batch of chunk(created)) {
+        await tx.sisterReplicaRecord.createMany({
+          data: batch.map((item) => ({
+            ...scopeWhere,
+            itemKey: item.itemKey,
+            idSdm: scope.idSdm,
+            parentId: scope.parentId,
+            payloadJson: item.payload as Prisma.InputJsonValue,
+            payloadHash: item.hash,
+            firstSeenAt: now,
+            changedAt: now,
+            fetchedAt: now,
+            lastSyncRunId: runId,
+          })),
+        });
+      }
+
+      for (const item of changed) {
+        await tx.sisterReplicaRecord.update({
+          where: {
+            integrationId_endpoint_scopeKey_itemKey: { ...scopeWhere, itemKey: item.itemKey },
+          },
+          data: {
+            idSdm: scope.idSdm,
+            parentId: scope.parentId,
+            payloadJson: item.payload as Prisma.InputJsonValue,
+            payloadHash: item.hash,
+            changedAt: now,
+            fetchedAt: now,
+            deletedAt: null,
+            lastSyncRunId: runId,
+          },
+        });
+      }
+
+      for (const batch of chunk(unchangedKeys)) {
+        await tx.sisterReplicaRecord.updateMany({
+          where: { ...scopeWhere, itemKey: { in: batch } },
+          data: { fetchedAt: now, lastSyncRunId: runId },
+        });
+      }
+
+      const seenKeys = new Set(items.map((item) => item.itemKey));
+      const removedKeys = existing
+        .filter((row) => !row.deletedAt && !seenKeys.has(row.itemKey))
+        .map((row) => row.itemKey);
+
+      let deleted = 0;
+      for (const batch of chunk(removedKeys)) {
+        const removed = await tx.sisterReplicaRecord.updateMany({
+          where: { ...scopeWhere, itemKey: { in: batch }, deletedAt: null },
+          data: { deletedAt: now, lastSyncRunId: runId },
+        });
+        const orphaned = await tx.sisterReplicaRecord.updateMany({
+          where: { integrationId, parentId: { in: batch }, deletedAt: null },
+          data: { deletedAt: now, lastSyncRunId: runId },
+        });
+        deleted += removed.count + orphaned.count;
+      }
+
+      await tx.sisterReplicaScope.upsert({
+        where: { integrationId_endpoint_scopeKey: scopeWhere },
+        create: {
+          ...scopeWhere,
+          idSdm: scope.idSdm,
+          itemCount: items.length,
+          lastStatus: 200,
+          lastFetchedAt: now,
+          lastSuccessAt: now,
+          lastSyncRunId: runId,
+        },
+        update: {
+          idSdm: scope.idSdm,
+          itemCount: items.length,
+          lastStatus: 200,
+          lastErrorCode: null,
+          lastFetchedAt: now,
+          lastSuccessAt: now,
+          lastSyncRunId: runId,
+        },
+      });
+
+      return {
+        created: created.length,
+        changed: changed.length,
+        unchanged: unchangedKeys.length,
+        deleted,
+        changedKeys: [...created, ...changed].map((item) => item.itemKey),
+      };
+    }, { timeout: 60_000, maxWait: 30_000 });
+  }
+
+  async recordScopeFailure(
+    runId: string,
+    integrationId: string,
+    scope: ReplicaScope,
+    failure: { status: number; code: string },
+  ) {
+    const now = new Date();
+    await this.client.sisterReplicaScope.upsert({
+      where: {
+        integrationId_endpoint_scopeKey: {
+          integrationId,
+          endpoint: scope.endpoint,
+          scopeKey: scope.scopeKey,
+        },
+      },
+      create: {
+        integrationId,
+        endpoint: scope.endpoint,
+        scopeKey: scope.scopeKey,
+        idSdm: scope.idSdm,
+        lastStatus: failure.status,
+        lastErrorCode: failure.code.slice(0, 64),
+        lastFetchedAt: now,
+        lastSyncRunId: runId,
+      },
+      update: {
+        lastStatus: failure.status,
+        lastErrorCode: failure.code.slice(0, 64),
+        lastFetchedAt: now,
+        lastSyncRunId: runId,
+      },
+    });
+  }
+
+  async fetchedScopeKeys(integrationId: string, endpoint: string, scopeKeys: string[]) {
+    if (scopeKeys.length === 0) {
+      return new Set<string>();
+    }
+    const rows = await this.client.sisterReplicaScope.findMany({
+      where: { integrationId, endpoint, scopeKey: { in: scopeKeys }, lastSuccessAt: { not: null } },
+      select: { scopeKey: true },
+    });
+    return new Set(rows.map((row) => row.scopeKey));
+  }
+}

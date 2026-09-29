@@ -8,7 +8,10 @@ type BkdActivityTableProps = {
   items: BkdActivityResponse["items"];
 };
 
-function formatNumber(value: number) {
+function formatNumber(value: number | null) {
+  if (value === null) {
+    return "-";
+  }
   return value.toLocaleString("id-ID", { maximumFractionDigits: 2 });
 }
 

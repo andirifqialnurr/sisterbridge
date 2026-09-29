@@ -17,7 +17,7 @@ import { SisterApiError, SisterContractError } from "./errors";
 
 const liveConfig = {
   fixture_mode: false,
-  base_url: "https://sister.example.test",
+  base_url: "https://sister.example.test/ws-sandbox.php/1.0",
   id_pengguna: "user-1",
   integration_id: null,
   username: "user",
@@ -109,12 +109,30 @@ describe("sisterGet", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [requestUrl, requestInit] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(requestUrl.toString()).toBe(
-      "https://sister.example.test/referensi/wilayah?id_level_wilayah=0",
+      "https://sister.example.test/ws-sandbox.php/1.0/referensi/wilayah?id_level_wilayah=0",
     );
     expect(requestInit.redirect).toBe("error");
     expect((requestInit.headers as Record<string, string>).Authorization).toBe(
       "Bearer secret-token",
     );
+  });
+
+  it("keeps the HTTP status when the gateway answers an error as text/plain", async () => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok", role: "WS-BASIC", expires_at: 0 });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("upstream connect error", {
+          status: 503,
+          headers: { "content-type": "text/plain" },
+        }),
+      ),
+    );
+
+    await expect(
+      sisterGet({ path: "/referensi/semester", schema: itemSchema }),
+    ).rejects.toMatchObject({ name: "SisterApiError", status: 503, safeCode: "SISTER_HTTP_503" });
   });
 
   it("throws a contract error on 204, non-JSON, or unparseable bodies", async () => {

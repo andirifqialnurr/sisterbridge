@@ -1,6 +1,7 @@
 import { getSisterConfig } from "./config";
 import { SisterApiError, SisterContractError } from "./errors";
 import { authorizeResponseSchema } from "./types";
+import { buildSisterUrl } from "./url";
 
 type SisterToken = {
   token: string;
@@ -15,11 +16,7 @@ const tokenLifetimeMs = 60 * 60 * 1000;
 const refreshSafetyWindowMs = 60 * 1000;
 
 function buildAuthorizeUrl(baseUrl: string) {
-  const url = new URL("/authorize", baseUrl);
-  if (url.protocol !== "https:") {
-    throw new Error("SISTER authorize URL must use HTTPS");
-  }
-  return url;
+  return buildSisterUrl(baseUrl, "/authorize");
 }
 
 async function authorize(): Promise<SisterToken> {

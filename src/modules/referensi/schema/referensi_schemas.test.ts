@@ -41,9 +41,15 @@ describe("SISTER referensi schemas", () => {
     expect(referensiProfilPtItemSchema.parse(profilPt)).toEqual(profilPt);
   });
 
-  it("rejects wrong PT numeric types and extra DTO fields", () => {
+  it("normalizes the live PT response and rejects non-numeric RT and extra DTO fields", () => {
+    // Live SISTER returns one object keyed by id_perguruan_tinggi, with nulls.
+    const { id, ...rest } = profilPt;
     expect(
-      profilPtListSchema.safeParse([{ ...profilPt, rt: "1" }]).success,
+      profilPtListSchema.parse({ ...rest, id_perguruan_tinggi: id, rt: "1", jalan: null })[0],
+    ).toMatchObject({ id, rt: 1, jalan: "" });
+    expect(profilPtListSchema.parse({})).toEqual([]);
+    expect(
+      profilPtListSchema.safeParse([{ ...profilPt, rt: "satu" }]).success,
     ).toBe(false);
     expect(
       referensiProfilPtItemSchema.safeParse({ ...profilPt, undocumented: "x" }).success,

@@ -2,6 +2,40 @@ import { z } from "zod";
 
 const nullableText = z.string().nullable().optional().transform((value) => value ?? null);
 
+// Live SISTER responses deviate from the PDF contract: many documented
+// strings arrive as null, and many documented numbers arrive as numeric
+// strings ("9.5000"). These helpers accept the observed shapes and normalize
+// them; they are idempotent so DTO schemas can re-parse the output.
+// `text` maps null/missing to "" so the UI shows its "tidak tersedia" state.
+const text = z.string().nullable().optional().transform((value) => value ?? "");
+const numericString = z
+  .string()
+  .trim()
+  .regex(/^-?\d+(\.\d+)?$/)
+  .transform(Number);
+const numeric = z.union([z.number(), numericString]);
+const nullableNumeric = z
+  .union([z.number(), numericString, z.literal("")])
+  .nullable()
+  .optional()
+  .transform((value) => (value === "" || value === undefined ? null : value));
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// Some list endpoints answer with a bare object (`/referensi/profil_pt`) or
+// `{}` when empty (`/referensi/perguruan_tinggi`) instead of an array.
+function asArray(value: unknown) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (isPlainObject(value)) {
+    return Object.keys(value).length === 0 ? [] : [value];
+  }
+  return value;
+}
+
 export const authorizeResponseSchema = z
   .object({
     token: z.string().min(1),
@@ -49,24 +83,38 @@ export const sdmEmploymentSchema = z
 
 export const profilPtSchema = z
   .object({
-    id: z.string(),
-    kode_perguruan_tinggi: z.string(),
-    nama_perguruan_tinggi: z.string(),
-    telepon: z.string(),
-    faximile: z.string(),
-    email: z.string(),
-    website: z.string(),
-    jalan: z.string(),
-    dusun: z.string(),
-    rt: z.number().int(),
-    rw: z.number().int(),
-    kelurahan: z.string(),
-    kode_pos: z.string(),
-    id_wilayah: z.string(),
+    id: z.string().min(1),
+    kode_perguruan_tinggi: text,
+    nama_perguruan_tinggi: text,
+    telepon: text,
+    faximile: text,
+    email: text,
+    website: text,
+    jalan: text,
+    dusun: text,
+    rt: nullableNumeric,
+    rw: nullableNumeric,
+    kelurahan: text,
+    kode_pos: text,
+    id_wilayah: text,
   })
   .passthrough();
 
-export const profilPtListSchema = z.array(profilPtSchema);
+// Live SISTER returns one object keyed by `id_perguruan_tinggi`; the PDF
+// documents an array keyed by `id`. Accept both.
+export const profilPtListSchema = z.preprocess(
+  (value) => {
+    const items = asArray(value);
+    return Array.isArray(items)
+      ? items.map((item) =>
+          isPlainObject(item) && item.id === undefined
+            ? { ...item, id: item.id_perguruan_tinggi }
+            : item,
+        )
+      : items;
+  },
+  z.array(profilPtSchema),
+);
 
 export const semesterSchema = z
   .object({
@@ -84,7 +132,7 @@ export const perguruanTinggiSchema = z
   })
   .passthrough();
 
-export const perguruanTinggiListSchema = z.array(perguruanTinggiSchema);
+export const perguruanTinggiListSchema = z.preprocess(asArray, z.array(perguruanTinggiSchema));
 
 export const unitKerjaSchema = z
   .object({
@@ -103,13 +151,21 @@ export const unitKerjaSchema = z
   })
   .passthrough();
 
-export const unitKerjaListSchema = z.array(unitKerjaSchema);
+// Without a valid parent SISTER returns placeholder rows with null id/nama;
+// those carry no selectable unit and are dropped.
+export const unitKerjaListSchema = z.preprocess(
+  (value) =>
+    Array.isArray(value)
+      ? value.filter((item) => isPlainObject(item) && typeof item.id === "string")
+      : asArray(value),
+  z.array(unitKerjaSchema),
+);
 
 export const wilayahSchema = z
   .object({
     id: z.string(),
     nama: z.string(),
-    id_induk_wilayah: z.string(),
+    id_induk_wilayah: text,
   })
   .passthrough();
 
@@ -119,23 +175,23 @@ export const bkdLaporanAkhirSchema = z
   .object({
     id_reg_ptk: z.string().uuid(),
     id_smt: z.string(),
-    sks_kinerja_ajar: z.number(),
-    sks_lebih_ajar: z.number(),
-    sks_kinerja_didik: z.number(),
-    sks_lebih_didik: z.number(),
-    sks_kinerja_lit: z.number(),
-    sks_lebih_lit: z.number(),
-    sks_kinerja_pengmas: z.number(),
-    sks_lebih_pengmas: z.number(),
-    sks_kinerja_penunjang: z.number(),
-    sks_lebih_tunjang: z.number(),
-    sks_kinerja: z.number(),
-    sks_lebih: z.number(),
-    stat_kewajiban: z.number(),
-    stat_tugas: z.string(),
-    stat_belajar: z.string(),
-    id_jabfung: z.number(),
-    simpulan_asesor: z.string(),
+    sks_kinerja_ajar: numeric,
+    sks_lebih_ajar: numeric,
+    sks_kinerja_didik: numeric,
+    sks_lebih_didik: numeric,
+    sks_kinerja_lit: numeric,
+    sks_lebih_lit: numeric,
+    sks_kinerja_pengmas: numeric,
+    sks_lebih_pengmas: numeric,
+    sks_kinerja_penunjang: numeric,
+    sks_lebih_tunjang: numeric,
+    sks_kinerja: numeric,
+    sks_lebih: numeric,
+    stat_kewajiban: nullableNumeric,
+    stat_tugas: text,
+    stat_belajar: text,
+    id_jabfung: nullableNumeric,
+    simpulan_asesor: text,
   })
   .passthrough();
 
@@ -143,15 +199,15 @@ export const bkdLaporanAkhirListSchema = z.array(bkdLaporanAkhirSchema);
 
 export const bkdActivitySchema = z
   .object({
-    nm_sdm: z.string(),
-    nidn: z.string(),
+    nm_sdm: text,
+    nidn: text,
     id_smt: z.string(),
-    unsur: z.string(),
-    judul_keg: z.string(),
-    id_katgiat: z.number().int(),
-    nm_kat: z.string(),
-    beban_sks: z.number(),
-    nilai: z.number(),
+    unsur: text,
+    judul_keg: text,
+    id_katgiat: numeric,
+    nm_kat: text,
+    beban_sks: numeric,
+    nilai: nullableNumeric,
   })
   .passthrough();
 
@@ -160,13 +216,13 @@ export const bkdActivityListSchema = z.array(bkdActivitySchema);
 export const penugasanSummarySchema = z
   .object({
     id: z.string().min(1),
-    status_kepegawaian: z.string(),
-    ikatan_kerja: z.string(),
-    unit_kerja: z.string(),
-    jenjang_pendidikan: z.string(),
-    perguruan_tinggi: z.string(),
-    tanggal_mulai: z.string(),
-    tanggal_keluar: z.string(),
+    status_kepegawaian: text,
+    ikatan_kerja: text,
+    unit_kerja: text,
+    jenjang_pendidikan: text,
+    perguruan_tinggi: text,
+    tanggal_mulai: text,
+    tanggal_keluar: text,
   })
   .passthrough();
 
@@ -175,25 +231,25 @@ export const penugasanSummaryListSchema = z.array(penugasanSummarySchema);
 export const penugasanDetailSchema = penugasanSummarySchema
   .extend({
     id_sdm: z.string(),
-    surat_tugas: z.string(),
-    tanggal_surat_tugas: z.string(),
-    jenis_keluar: z.string(),
-    id_jenis_keluar: z.string(),
-    id_status_kepegawaian: z.number().int(),
-    id_ikatan_kerja: z.string(),
-    id_perguruan_tinggi: z.string(),
-    id_unit_kerja: z.string(),
+    surat_tugas: text,
+    tanggal_surat_tugas: text,
+    jenis_keluar: text,
+    id_jenis_keluar: text,
+    id_status_kepegawaian: nullableNumeric,
+    id_ikatan_kerja: text,
+    id_perguruan_tinggi: text,
+    id_unit_kerja: text,
   })
   .passthrough();
 
 export const pendidikanFormalDocumentSchema = z
   .object({
     id: z.string().min(1),
-    nama: z.string(),
-    jenis_dokumen: z.string(),
-    nama_file: z.string(),
-    jenis_file: z.string(),
-    tanggal_upload: z.string(),
+    nama: text,
+    jenis_dokumen: text,
+    nama_file: text,
+    jenis_file: text,
+    tanggal_upload: text,
     tautan: nullableText,
     keterangan: nullableText,
   })
@@ -201,16 +257,27 @@ export const pendidikanFormalDocumentSchema = z
 
 const pendidikanFormalBaseSchema = z.object({
   id: z.string().min(1),
-  jenjang_pendidikan: z.string(),
-  gelar_akademik: z.string(),
-  bidang_studi: z.string(),
-  nama_perguruan_tinggi: z.string(),
-  tahun_lulus: z.number().int(),
+  jenjang_pendidikan: text,
+  gelar_akademik: text,
+  bidang_studi: text,
+  nama_perguruan_tinggi: text,
+  tahun_lulus: nullableNumeric,
 });
+
+// `jenis_ajuan` is documented as an integer on the list and a string on the
+// detail; live SISTER sends a string or null on both.
+const jenisAjuan = z
+  .union([z.string(), z.number()])
+  .nullable()
+  .optional()
+  .transform((value) => (value === null || value === undefined ? "" : String(value)));
+
+const documentList = <T extends z.ZodTypeAny>(schema: T) =>
+  z.array(schema).nullable().optional().transform((value) => value ?? []);
 
 export const pendidikanFormalSummarySchema = pendidikanFormalBaseSchema
   .extend({
-    jenis_ajuan: z.number().int(),
+    jenis_ajuan: jenisAjuan,
   })
   .passthrough();
 
@@ -218,36 +285,36 @@ export const pendidikanFormalSummaryListSchema = z.array(pendidikanFormalSummary
 
 export const pendidikanFormalDetailSchema = pendidikanFormalBaseSchema
   .extend({
-    jenis_ajuan: z.string(),
-    kategori_kegiatan: z.string(),
+    jenis_ajuan: jenisAjuan,
+    kategori_kegiatan: text,
     id_sdm: z.string(),
-    id_program_studi: z.string(),
-    nama_program_studi: z.string(),
-    id_jenjang_pendidikan: z.number().int(),
-    id_gelar_akademik: z.number().int(),
-    id_bidang_studi: z.number().int(),
-    tahun_masuk: z.number().int(),
-    tanggal_lulus: z.string(),
-    nomor_induk: z.string(),
-    jumlah_semester: z.number().int(),
-    jumlah_sks: z.number().int(),
-    ipk: z.number(),
-    sk_penyetaraan: z.string(),
-    tanggal_sk_penyetaraan: z.string(),
-    nomor_ijazah: z.string(),
-    judul_tugas_akhir: z.string(),
-    dokumen: z.array(pendidikanFormalDocumentSchema),
+    id_program_studi: text,
+    nama_program_studi: text,
+    id_jenjang_pendidikan: nullableNumeric,
+    id_gelar_akademik: nullableNumeric,
+    id_bidang_studi: nullableNumeric,
+    tahun_masuk: nullableNumeric,
+    tanggal_lulus: text,
+    nomor_induk: text,
+    jumlah_semester: nullableNumeric,
+    jumlah_sks: nullableNumeric,
+    ipk: nullableNumeric,
+    sk_penyetaraan: text,
+    tanggal_sk_penyetaraan: text,
+    nomor_ijazah: text,
+    judul_tugas_akhir: text,
+    dokumen: documentList(pendidikanFormalDocumentSchema),
   })
   .passthrough();
 
 export const riwayatPekerjaanDocumentSchema = z
   .object({
     id: z.string().min(1),
-    nama: z.string(),
-    jenis_dokumen: z.string(),
-    nama_file: z.string(),
-    jenis_file: z.string(),
-    tanggal_upload: z.string(),
+    nama: text,
+    jenis_dokumen: text,
+    nama_file: text,
+    jenis_file: text,
+    tanggal_upload: text,
     tautan: nullableText,
     keterangan: nullableText,
   })
@@ -255,14 +322,14 @@ export const riwayatPekerjaanDocumentSchema = z
 
 const riwayatPekerjaanBaseSchema = z.object({
   id: z.string().min(1),
-  jenis_pekerjaan: z.string(),
-  nama_jabatan: z.string(),
-  instansi: z.string(),
-  divisi: z.string(),
-  mulai_bekerja: z.string(),
-  selesai_bekerja: z.string(),
-  luar_negeri: z.boolean(),
-  bidang_usaha: z.string(),
+  jenis_pekerjaan: text,
+  nama_jabatan: text,
+  instansi: text,
+  divisi: text,
+  mulai_bekerja: text,
+  selesai_bekerja: text,
+  luar_negeri: z.boolean().nullable().optional().transform((value) => value ?? false),
+  bidang_usaha: text,
 });
 
 export const riwayatPekerjaanSummarySchema = riwayatPekerjaanBaseSchema.passthrough();
@@ -272,10 +339,10 @@ export const riwayatPekerjaanSummaryListSchema = z.array(riwayatPekerjaanSummary
 export const riwayatPekerjaanDetailSchema = riwayatPekerjaanBaseSchema
   .extend({
     id_sdm: z.string(),
-    id_bidang_usaha: z.number().int(),
-    id_jenis_pekerjaan: z.number().int(),
-    deskripsi_kerja: z.string(),
-    dokumen: z.array(riwayatPekerjaanDocumentSchema),
+    id_bidang_usaha: nullableNumeric,
+    id_jenis_pekerjaan: nullableNumeric,
+    deskripsi_kerja: text,
+    dokumen: documentList(riwayatPekerjaanDocumentSchema),
   })
   .passthrough();
 

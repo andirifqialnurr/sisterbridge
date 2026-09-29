@@ -54,16 +54,21 @@ DATABASE_URL_DOCKER=postgresql://sister_app:<password-yang-di-url-encode>@postgr
 APP_URL=https://sisterbridge.example.com
 APP_ALLOWED_ORIGINS=https://sisterbridge.example.com
 TRUST_PROXY=true
-SESSION_SECRET=<random-secret-minimal-32-byte>
+SESSION_SECRET=<hasil-openssl-rand-hex-32>
 
-SISTER_BASE_URL=https://<instance-sister-resmi>/
-SISTER_ID_PENGGUNA=<id-pengguna-uat>
-SISTER_INTEGRATION_ID=<uuid-integrasi-lokal>
-SISTER_USERNAME=<username-uat>
-SISTER_PASSWORD=<password-uat>
-SISTER_CREDENTIAL_REF=<referensi-secret>
+# Container web berjalan dengan NODE_ENV=production sehingga selalu memakai
+# SISTER_BASE_URL. SISTER_BASE_URL_DEV (sandbox) hanya dipakai di laptop.
+SISTER_BASE_URL=https://sister-api.kemdiktisaintek.go.id/ws.php/1.0/
+SISTER_ID_PENGGUNA=<id-pengguna>
+SISTER_INTEGRATION_ID=<uuid-sama-dengan-yang-dipakai-di-lokal>
+SISTER_USERNAME=<username-ws>
+SISTER_PASSWORD=<password-ws>
+SISTER_CREDENTIAL_REF=environment
 SISTER_FIXTURE_MODE=false
 ```
+
+`SISTER_INTEGRATION_ID` cukup dibuat sekali (`uuidgen`) dan jangan diganti:
+seluruh baris replika dan cache terikat ke ID ini.
 
 Jika password PostgreSQL memiliki karakter khusus, gunakan nilai yang sudah
 di-URL-encode pada `DATABASE_URL_DOCKER`, atau gunakan password alfanumerik
@@ -103,6 +108,62 @@ docker compose exec web bun run prisma:migrate:status
 Jangan menjalankan `docker compose down -v` kecuali memang ingin menghapus
 volume PostgreSQL dan seluruh data lokal.
 
+## Akun login pertama
+
+Aplikasi memakai login lokal (better-auth, email + password); akun SISTER
+tidak dipakai untuk login dan tidak ada pendaftaran mandiri. Buat admin
+pertama setelah container web berjalan:
+
+```bash
+docker compose --env-file .env run --rm web bun run auth:create-user \
+  --email admin@pt.ac.id --name "Admin PT" --role ADMIN
+```
+
+Password diketik tersembunyi (minimal 12 karakter). Perintah yang sama untuk
+email yang sudah ada akan me-reset password dan mengakhiri semua sesinya.
+Menonaktifkan akun: tambahkan `--deactivate`. Role: `ADMIN`, `OPERATOR`,
+`REVIEWER`, `VIEWER`.
+
+## Replika data SISTER (read-only)
+
+`bun run sister:sync` menyalin seluruh data GET SISTER ke tabel
+`sister_replica_record` (lihat [sister_replica.md](./sister_replica.md)).
+Sinkronisasi pertama untuk ~100 SDM mengirim puluhan ribu GET dan, dengan
+pacing default 4 request/detik, berjalan beberapa jam; sinkronisasi
+berikutnya inkremental dan jauh lebih cepat. Jangan menaikkan `--rps`
+sembarangan: SISTER memblokir kredensial (429, termasuk login WS) bila
+request terlalu rapat, dan blokir itu juga menghentikan aplikasi web.
+
+```bash
+# Sinkronisasi pertama (jalankan di tmux/screen)
+docker compose --env-file .env run --rm web bun run sister:sync
+
+# Cek hasil run terakhir
+docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "select scope, status, request_count, record_count, error_count, started_at, finished_at
+     from sister_sync_run order by started_at desc limit 5;"
+```
+
+Jadwal yang disarankan (crontab user deploy di host):
+
+```cron
+# Inkremental setiap malam, full refresh detail setiap Minggu
+30 1 * * 1-6 cd /opt/apps/sisterbridge && docker compose --env-file .env run --rm web bun run sister:sync >> /var/log/sisterbridge-sync.log 2>&1
+30 1 * * 0   cd /opt/apps/sisterbridge && docker compose --env-file .env run --rm web bun run sister:sync --refresh-children >> /var/log/sisterbridge-sync.log 2>&1
+```
+
+View typed di schema `replica` ikut terpasang lewat migration. Untuk
+memperbarui struktur dari data production (mis. modul yang kosong di sandbox),
+jalankan generator di host dengan folder migration ter-mount, lalu commit
+hasilnya dan deploy ulang:
+
+```bash
+docker compose --env-file .env run --rm   -v "$PWD/prisma/migrations:/app/prisma/migrations"   -v "$PWD/cookbook:/app/cookbook"   web bun run replica:views
+```
+
+Status `PARTIAL` adalah normal saat ini: beberapa endpoint referensi SISTER
+selalu menjawab 500 (lihat daftar di `sister_replica.md`).
+
 ## Update release
 
 ```bash
@@ -138,10 +199,11 @@ browser.
 
 ## Batasan deployment saat ini
 
-- Auth/session production belum memiliki provider login nyata; fixture user
-  sengaja dinonaktifkan di production.
-- Credential SISTER UAT/live, base URL, dan YAML resmi masih menjadi gate
-  kontrak eksternal.
+- Login lokal belum memiliki MFA dan reset password mandiri; reset dilakukan
+  admin lewat `auth:create-user`.
+- Credential SISTER (role `Sister-WS Basic`) dan base URL sudah terverifikasi
+  pada sandbox dan production 2026-09-29; YAML resmi masih menjadi gate
+  kontrak eksternal untuk workflow write.
 - Build Docker belum dapat dijalankan pada workstation ini karena Docker CLI
   tidak terpasang; validasi final `docker compose config` dan image build harus
   dilakukan di VPS atau CI yang memiliki Docker.

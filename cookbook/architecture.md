@@ -52,6 +52,13 @@ database SISTER.
     menyalin route atau domain dari project reference.
 13. Audit operasi bisnis dan audit security disimpan sebagai event terpisah
     dengan redaction dan akses terbatas.
+14. Tahap 1 (2026-09-29): seluruh data GET SISTER direplikasi read-only ke
+    PostgreSQL lokal oleh job `sister:sync`; SISTER tetap source of truth dan
+    replika tidak pernah menulis balik. Detail di
+    [sister_replica.md](./sister_replica.md).
+15. User aplikasi login dengan akun lokal (better-auth, email + password,
+    dibuat admin); credential SISTER hanya dipakai server untuk
+    `POST /authorize`.
 
 ## 2. Stack yang direkomendasikan
 

@@ -3,11 +3,15 @@ import { z, type ZodType } from "zod";
 import { getSisterConfig } from "./config";
 import { SisterApiError, SisterContractError } from "./errors";
 import { getSisterToken } from "./token_provider";
+import { buildSisterUrl } from "./url";
 
 type RequestOptions<T> = {
   path: string;
   query?: Record<string, string | number | undefined>;
   schema: ZodType<T>;
+  // Defaults to 15s. Large reference lists (e.g. `/referensi/dudi`, ~3.5 MB)
+  // need longer when fetched in bulk by the replica sync.
+  timeoutMs?: number;
 };
 
 const maxFetchAttempts = 3;
@@ -37,27 +41,12 @@ async function fetchWithBoundedRetry(url: URL, init: RequestInit): Promise<Respo
   throw lastError;
 }
 
-function buildSisterUrl(baseUrl: string, path: string, query?: RequestOptions<unknown>["query"]) {
-  if (!path.startsWith("/")) {
-    throw new Error("SISTER adapter paths must be absolute API paths");
-  }
-
-  const base = new URL(baseUrl);
-  const url = new URL(path, base);
-  if (url.origin !== base.origin || url.protocol !== "https:") {
-    throw new Error("SISTER adapter rejected an unsafe URL");
-  }
-
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (value !== undefined && value !== "") {
-      url.searchParams.set(key, String(value));
-    }
-  }
-
-  return url;
-}
-
-export async function sisterGet<T>({ path, query, schema }: RequestOptions<T>): Promise<T> {
+export async function sisterGet<T>({
+  path,
+  query,
+  schema,
+  timeoutMs = 15_000,
+}: RequestOptions<T>): Promise<T> {
   const config = getSisterConfig();
   if (config.fixture_mode || !config.base_url) {
     throw new Error("SISTER live HTTP is not enabled");
@@ -71,7 +60,7 @@ export async function sisterGet<T>({ path, query, schema }: RequestOptions<T>): 
       Authorization: `Bearer ${token.token}`,
     },
     redirect: "error",
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(timeoutMs),
     cache: "no-store",
   });
 
@@ -81,6 +70,11 @@ export async function sisterGet<T>({ path, query, schema }: RequestOptions<T>): 
 
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().includes("application/json")) {
+    // SISTER's gateway reports 502/503/504 as text/plain; keep the HTTP status
+    // so callers can tell an outage from a contract break.
+    if (!response.ok) {
+      throw new SisterApiError(response.status, `SISTER_HTTP_${response.status}`);
+    }
     throw new SisterContractError("SISTER read response is not JSON");
   }
 

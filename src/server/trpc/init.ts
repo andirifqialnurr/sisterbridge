@@ -61,3 +61,30 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next, path })
 
   return next();
 });
+
+// Raw SISTER data (e.g. the live explorer) is limited to roles that operate
+// the integration.
+export const operatorProcedure = protectedProcedure.use(async ({ ctx, next, path }) => {
+  if (ctx.user.role !== "ADMIN" && ctx.user.role !== "OPERATOR") {
+    void recordSecurityAuditEvent({
+      event_type: "authorization_denied",
+      severity: "MEDIUM",
+      outcome: "DENIED",
+      actor_user_id: ctx.user.id,
+      request_id: ctx.requestId,
+      route_or_procedure: path,
+      metadata: {
+        reason: "role_not_allowed",
+        required_role: "OPERATOR",
+        actual_role: ctx.user.role,
+      },
+    });
+
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Jelajah data SISTER membutuhkan role ADMIN atau OPERATOR",
+    });
+  }
+
+  return next();
+});

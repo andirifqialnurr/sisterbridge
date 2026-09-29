@@ -1,4 +1,4 @@
-import { SisterNotFoundError } from "@/server/sister/errors";
+import { SisterApiError, SisterNotFoundError } from "@/server/sister/errors";
 import { sisterGet } from "@/server/sister/http_client";
 import {
   bkdActivityListSchema,
@@ -171,9 +171,26 @@ export class FixtureBkdAdapter implements BkdDataSource {
   }
 }
 
+// SISTER answers 404 (not an empty array) when a SDM has no BKD rows for the
+// requested semester; the UI treats that as an empty list.
+async function sisterGetBkdList<T>(options: Parameters<typeof sisterGet<T[]>>[0]) {
+  try {
+    return await sisterGet(options);
+  } catch (error) {
+    if (error instanceof SisterApiError && error.status === 404) {
+      return [];
+    }
+    throw error;
+  }
+}
+
+function activityQuery(input: BkdSemesterInput) {
+  return { id_sdm: input.id_sdm, id_smt: input.id_smt };
+}
+
 export class SisterBkdAdapter implements BkdDataSource {
   async getLaporanAkhir(input: BkdSdmInput) {
-    return sisterGet({
+    return sisterGetBkdList({
       path: "/bkd/laporan_akhir_bkd",
       query: { id_sdm: input.id_sdm },
       schema: bkdLaporanAkhirListSchema,
@@ -181,41 +198,41 @@ export class SisterBkdAdapter implements BkdDataSource {
   }
 
   async getPendidikan(input: BkdSemesterInput) {
-    return sisterGet({
+    return sisterGetBkdList({
       path: "/bkd/pendidikan",
-      query: { id_sdm: input.id_sdm, id_smt: input.id_smt },
+      query: activityQuery(input),
       schema: bkdActivityListSchema,
     });
   }
 
   async getAjar(input: BkdSemesterInput) {
-    return sisterGet({
+    return sisterGetBkdList({
       path: "/bkd/ajar",
-      query: { id_sdm: input.id_sdm, id_smt: input.id_smt },
+      query: activityQuery(input),
       schema: bkdActivityListSchema,
     });
   }
 
   async getTunjang(input: BkdSemesterInput) {
-    return sisterGet({
+    return sisterGetBkdList({
       path: "/bkd/tunjang",
-      query: { id_sdm: input.id_sdm, id_smt: input.id_smt },
+      query: activityQuery(input),
       schema: bkdActivityListSchema,
     });
   }
 
   async getPengmas(input: BkdSemesterInput) {
-    return sisterGet({
+    return sisterGetBkdList({
       path: "/bkd/pengmas",
-      query: { id_sdm: input.id_sdm, id_smt: input.id_smt },
+      query: activityQuery(input),
       schema: bkdActivityListSchema,
     });
   }
 
   async getPenelitian(input: BkdSemesterInput) {
-    return sisterGet({
+    return sisterGetBkdList({
       path: "/bkd/penelitian",
-      query: { id_sdm: input.id_sdm, id_smt: input.id_smt },
+      query: activityQuery(input),
       schema: bkdActivityListSchema,
     });
   }

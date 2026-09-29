@@ -27,7 +27,7 @@ describe("FixturePendidikanFormalAdapter", () => {
       id: idPendidikanFormal,
       jenjang_pendidikan: "S2",
       tahun_lulus: 2012,
-      jenis_ajuan: 0,
+      jenis_ajuan: "",
     });
     expect(detail).toMatchObject({
       id: idPendidikanFormal,

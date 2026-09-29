@@ -16,8 +16,14 @@ export function BkdPage() {
     <PageShell
       actions={
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          <BkdSdmPicker onChange={setSdmId} value={sdmId} />
-          <BkdSemesterPicker onChange={setSemesterId} value={semesterId} />
+          <BkdSdmPicker
+            onChange={(nextSdmId) => {
+              setSdmId(nextSdmId);
+              setSemesterId("");
+            }}
+            value={sdmId}
+          />
+          <BkdSemesterPicker onChange={setSemesterId} sdmId={sdmId} value={semesterId} />
         </div>
       }
       activeLabel="BKD"

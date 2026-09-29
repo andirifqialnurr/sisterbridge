@@ -22,9 +22,15 @@ const documentColumns: DataTableColumn<RiwayatPekerjaanDocument>[] = [
   { key: "keterangan", header: "Keterangan", render: (document) => document.keterangan || "-" },
 ];
 
-function DetailField({ label, value }: { label: string; value: string | number | boolean }) {
+function DetailField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | boolean | null;
+}) {
   const displayValue =
-    typeof value === "boolean" ? (value ? "Ya" : "Tidak") : value || "-";
+    typeof value === "boolean" ? (value ? "Ya" : "Tidak") : (value ?? "") || "-";
 
   return (
     <div className="border-b border-[hsl(var(--color-border))] py-3 last:border-b-0">

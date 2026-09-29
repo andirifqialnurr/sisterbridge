@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getSisterConfig, getSisterConfigurationStatus } from "./config";
 
 const environmentKeys = [
   "SISTER_FIXTURE_MODE",
   "SISTER_BASE_URL",
+  "SISTER_BASE_URL_DEV",
   "SISTER_ID_PENGGUNA",
   "SISTER_USERNAME",
   "SISTER_PASSWORD",
@@ -69,6 +70,7 @@ describe("getSisterConfig", () => {
   function setLiveEnv(overrides: Record<string, string | undefined> = {}) {
     process.env.SISTER_FIXTURE_MODE = "false";
     process.env.SISTER_BASE_URL = "https://sister.example.test/";
+    delete process.env.SISTER_BASE_URL_DEV;
     process.env.SISTER_ID_PENGGUNA = "pt-user-uat";
     process.env.SISTER_USERNAME = "uat-user";
     process.env.SISTER_PASSWORD = "uat-password";
@@ -111,6 +113,29 @@ describe("getSisterConfig", () => {
     expect(config.fixture_mode).toBe(false);
     expect(config.base_url).toBe("https://sister.example.test/");
     expect(config.integration_id).toBe("11111111-1111-4111-8111-111111111111");
+  });
+
+  it("prefers the sandbox base URL outside production", () => {
+    setLiveEnv({
+      SISTER_BASE_URL: "https://sister.example.test/ws.php/1.0/",
+      SISTER_BASE_URL_DEV: "https://sister.example.test/ws-sandbox.php/1.0/",
+    });
+
+    expect(getSisterConfig().base_url).toBe("https://sister.example.test/ws-sandbox.php/1.0/");
+  });
+
+  it("ignores the sandbox base URL in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      setLiveEnv({
+        SISTER_BASE_URL: "https://sister.example.test/ws.php/1.0/",
+        SISTER_BASE_URL_DEV: "https://sister.example.test/ws-sandbox.php/1.0/",
+      });
+
+      expect(getSisterConfig().base_url).toBe("https://sister.example.test/ws.php/1.0/");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("clamps sdm_cache_ttl_ms to the documented default when the env value is out of bounds", () => {

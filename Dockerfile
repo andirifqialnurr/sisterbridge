@@ -31,6 +31,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
+# Operational CLIs (`bun run sister:sync`, `bun run auth:create-user`) run
+# from TypeScript source with Bun, so they need the sources and path aliases.
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/src ./src
 
 EXPOSE 3000
 

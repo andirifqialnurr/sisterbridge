@@ -116,14 +116,14 @@ export function PendidikanFormalDetailWidget({ item }: PendidikanFormalDetailWid
   );
 }
 
-function DetailField({ label, value }: { label: string; value: number | string }) {
+function DetailField({ label, value }: { label: string; value: number | string | null }) {
   return (
     <div className="min-w-0">
       <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--color-muted))]">
         {label}
       </dt>
       <dd className="mt-1 break-words text-sm text-[hsl(var(--color-text))]">
-        {value === "" ? "Tidak tersedia" : String(value)}
+        {value === "" || value === null ? "Tidak tersedia" : String(value)}
       </dd>
     </div>
   );

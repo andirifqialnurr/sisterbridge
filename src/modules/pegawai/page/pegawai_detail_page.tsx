@@ -166,7 +166,11 @@ export function PegawaiDetailPage({ idSdm }: PegawaiDetailPageProps) {
                   {activeTab === "bkd" && (
                     <div className="space-y-4">
                       <div className="flex justify-end">
-                        <BkdSemesterPicker onChange={setBkdSemesterId} value={bkdSemesterId} />
+                        <BkdSemesterPicker
+                          onChange={setBkdSemesterId}
+                          sdmId={idSdm}
+                          value={bkdSemesterId}
+                        />
                       </div>
                       <BkdWorkspaceWidget semesterId={bkdSemesterId} sdmId={idSdm} />
                     </div>

@@ -1,3 +1,4 @@
+import { getFixtureUser } from "@/server/auth/session";
 import { getSisterConfigurationStatus } from "@/server/sister/config";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/trpc/init";
 
@@ -20,10 +21,7 @@ export const overviewRouter = createTRPCRouter({
       request_id: ctx.requestId,
       checked_at: new Date().toISOString(),
       environment: process.env.NODE_ENV === "production" ? "production" : "development",
-      auth_mode:
-        process.env.NODE_ENV === "production"
-          ? "provider_required"
-          : "development_fixture",
+      auth_mode: getFixtureUser() ? "development_fixture" : "local_login",
       session_state: ctx.user ? "present" : "missing",
       database_state: process.env.DATABASE_URL?.trim()
         ? "configured"

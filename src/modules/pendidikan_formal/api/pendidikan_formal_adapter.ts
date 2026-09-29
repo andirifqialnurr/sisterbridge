@@ -32,7 +32,7 @@ const fixtureSummaries: Record<string, PendidikanFormalSummary[]> = {
       bidang_studi: "Ilmu Komputer",
       nama_perguruan_tinggi: "Perguruan Tinggi Fixture",
       tahun_lulus: 2012,
-      jenis_ajuan: 0,
+      jenis_ajuan: "",
     },
   ],
   "4d1f0f7f-8f4f-4b12-9f40-73cc3ca6ed3b": [
@@ -43,7 +43,7 @@ const fixtureSummaries: Record<string, PendidikanFormalSummary[]> = {
       bidang_studi: "Manajemen",
       nama_perguruan_tinggi: "Perguruan Tinggi Fixture",
       tahun_lulus: 2010,
-      jenis_ajuan: 0,
+      jenis_ajuan: "",
     },
   ],
   "d2f2e4c7-0d62-4ef0-8e88-f0af9e6247c5": [],

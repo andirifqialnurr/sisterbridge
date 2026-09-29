@@ -35,7 +35,7 @@ describe("Pendidikan formal service", () => {
       bidang_studi: "Ilmu Komputer",
       nama_perguruan_tinggi: "Perguruan Tinggi Fixture",
       tahun_lulus: 2012,
-      jenis_ajuan: 0,
+      jenis_ajuan: "",
     });
   });
 

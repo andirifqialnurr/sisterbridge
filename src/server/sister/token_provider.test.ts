@@ -11,7 +11,7 @@ import { SisterApiError, SisterContractError } from "./errors";
 
 const liveConfig = {
   fixture_mode: false,
-  base_url: "https://sister.example.test",
+  base_url: "https://sister.example.test/ws-sandbox.php/1.0",
   id_pengguna: "user-1",
   integration_id: null,
   username: "user",
@@ -55,7 +55,9 @@ describe("getSisterToken", () => {
     expect(token.expires_at).toBeLessThanOrEqual(after + 60 * 60 * 1000);
 
     const [requestUrl, requestInit] = fetchMock.mock.calls[0] as [URL, RequestInit];
-    expect(requestUrl.toString()).toBe("https://sister.example.test/authorize");
+    expect(requestUrl.toString()).toBe(
+      "https://sister.example.test/ws-sandbox.php/1.0/authorize",
+    );
     expect(requestInit.method).toBe("POST");
     expect(requestInit.redirect).toBe("error");
     expect(JSON.parse(requestInit.body as string)).toEqual({

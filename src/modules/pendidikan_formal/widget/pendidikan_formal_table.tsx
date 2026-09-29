@@ -44,7 +44,7 @@ export function PendidikanFormalTable({ items }: PendidikanFormalTableProps) {
     {
       key: "graduation-year",
       header: "Tahun lulus",
-      render: (item) => item.tahun_lulus,
+      render: (item) => item.tahun_lulus ?? "-",
     },
     {
       key: "submission-type",

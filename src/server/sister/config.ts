@@ -4,6 +4,7 @@ const optionalText = z.string().trim().min(1).optional();
 
 const sisterEnvironmentSchema = z.object({
   SISTER_BASE_URL: optionalText,
+  SISTER_BASE_URL_DEV: optionalText,
   SISTER_ID_PENGGUNA: optionalText,
   SISTER_INTEGRATION_ID: optionalText,
   SISTER_USERNAME: optionalText,
@@ -38,6 +39,17 @@ function getSdmCacheTtlMs() {
   return defaultSdmCacheTtlMs;
 }
 
+// Production always talks to SISTER_BASE_URL. Outside production the sandbox
+// (SISTER_BASE_URL_DEV) wins when it is configured, so a laptop or CI run never
+// reaches the production web service by accident.
+function resolveBaseUrl(environment: z.infer<typeof sisterEnvironmentSchema>) {
+  if (process.env.NODE_ENV !== "production" && environment.SISTER_BASE_URL_DEV) {
+    return environment.SISTER_BASE_URL_DEV;
+  }
+
+  return environment.SISTER_BASE_URL;
+}
+
 export function getSisterConfig(): SisterConfig {
   const environment = sisterEnvironmentSchema.parse(process.env);
   const fixtureMode =
@@ -47,7 +59,7 @@ export function getSisterConfig(): SisterConfig {
   if (fixtureMode) {
     return {
       fixture_mode: true,
-      base_url: environment.SISTER_BASE_URL ?? null,
+      base_url: resolveBaseUrl(environment) ?? null,
       id_pengguna: environment.SISTER_ID_PENGGUNA ?? null,
       integration_id: environment.SISTER_INTEGRATION_ID ?? null,
       username: null,
@@ -57,7 +69,7 @@ export function getSisterConfig(): SisterConfig {
     };
   }
 
-  const baseUrl = environment.SISTER_BASE_URL;
+  const baseUrl = resolveBaseUrl(environment);
   if (!baseUrl) {
     throw new Error("SISTER configuration is incomplete: base URL is required");
   }
