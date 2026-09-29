@@ -89,6 +89,12 @@ export function listJelajahModules() {
     kind: definition.kind,
     endpoint: definition.path,
     has_detail: Boolean(definition.detailPath),
+    search_fields: (definition.searchFields ?? []).map((field) => ({
+      name: field.name,
+      label: field.label,
+      input: field.input,
+      required: Boolean(field.required),
+    })),
     children: (definition.children ?? []).map((child) => ({
       key: child.key,
       label: child.label,
@@ -107,7 +113,7 @@ export async function getJelajahList(
   requireLiveMode();
   const definition = requireModule(input.module);
 
-  if (definition.kind !== "referensi" && !input.id_sdm) {
+  if ((definition.kind === "sdm_list" || definition.kind === "sdm_object") && !input.id_sdm) {
     throw new JelajahUnavailableError("Pilih SDM terlebih dahulu");
   }
 
@@ -119,6 +125,22 @@ export async function getJelajahList(
   const query: Record<string, string> = { ...definition.query };
   if (definition.kind === "sdm_list") {
     query.id_sdm = input.id_sdm!;
+  }
+  if (definition.kind === "search") {
+    // Only the module's declared fields are forwarded to SISTER.
+    for (const field of definition.searchFields ?? []) {
+      const value = input.search?.[field.name];
+      if (value) {
+        query[field.name] = value;
+      } else if (field.required) {
+        throw new JelajahUnavailableError(`Isi ${field.label} terlebih dahulu`);
+      }
+    }
+    if (definition.searchAnyOf && !definition.searchAnyOf.some((name) => query[name])) {
+      throw new JelajahUnavailableError(
+        `Isi salah satu: ${definition.searchAnyOf.join(" atau ")}`,
+      );
+    }
   }
   if (definition.ownPtQuery) {
     query[definition.ownPtQuery] = await getOwnPtId(fetcher);

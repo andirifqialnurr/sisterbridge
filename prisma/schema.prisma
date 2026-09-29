@@ -201,9 +201,13 @@ model SisterSyncRun {
   statsJson     Json?             @map("stats_json")
   startedAt     DateTime          @default(now()) @map("started_at")
   finishedAt    DateTime?         @map("finished_at")
+  // Refreshed with the counters every 30s while RUNNING; a stale heartbeat
+  // means the process died and the run may be marked FAILED.
+  heartbeatAt   DateTime?         @map("heartbeat_at")
   integration   SisterIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
   @@index([integrationId, startedAt])
+  @@index([status])
   @@map("sister_sync_run")
 }
 

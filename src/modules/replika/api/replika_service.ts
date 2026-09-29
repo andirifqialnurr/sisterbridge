@@ -116,13 +116,18 @@ export async function listReplikaModules(
 ) {
   const counts = input.id_sdm ? await repository.countByEndpointForSdm(input.id_sdm) : [];
   const countByEndpoint = new Map(counts.map((row) => [row.endpoint, row.count]));
-  return jelajahModules.map((definition) => ({
+  // Search modules are live-only (keyword driven); they have no replica view.
+  return jelajahModules.filter((definition) => definition.kind !== "search").map((definition) => ({
     key: definition.key,
     label: definition.label,
     group: definition.group,
     kind: definition.kind,
     view: `replica.${viewFor(definition.path)}`,
-    count: definition.kind === "referensi" ? null : (countByEndpoint.get(definition.path) ?? 0),
+    // Counts only mean something for a chosen SDM.
+    count:
+      definition.kind === "referensi" || !input.id_sdm
+        ? null
+        : (countByEndpoint.get(definition.path) ?? 0),
     has_item: Boolean(definition.detailPath || definition.children?.length),
   }));
 }
@@ -203,6 +208,7 @@ export async function getReplikaSyncStatus(repository: ReplikaRepository = new P
       error_count: run.errorCount,
       started_at: run.startedAt.toISOString(),
       finished_at: run.finishedAt?.toISOString() ?? null,
+      heartbeat_at: run.heartbeatAt?.toISOString() ?? null,
     })),
     failing_scopes: failing.map((row) => ({
       endpoint: row.endpoint,

@@ -57,6 +57,8 @@ describe("replika service", () => {
       has_item: true,
     });
     expect(modules.find((module) => module.key === "ref_agama")?.count).toBeNull();
+    const withoutSdm = await listReplikaModules({}, fakeRepository());
+    expect(withoutSdm.find((module) => module.key === "penelitian")?.count).toBeNull();
   });
 
   it("reads SDM rows, puts data columns first, hides raw payload, and makes values JSON-safe", async () => {
@@ -113,11 +115,16 @@ describe("replika service", () => {
             errorCount: 1,
             startedAt: new Date("2026-09-29T04:00:00Z"),
             finishedAt: null,
+            heartbeatAt: new Date("2026-09-29T04:10:00Z"),
           },
         ]),
       }),
     );
-    expect(status.runs[0]).toMatchObject({ target: "sandbox", finished_at: null });
+    expect(status.runs[0]).toMatchObject({
+      target: "sandbox",
+      finished_at: null,
+      heartbeat_at: "2026-09-29T04:10:00.000Z",
+    });
   });
 
   it("converts driver values", () => {

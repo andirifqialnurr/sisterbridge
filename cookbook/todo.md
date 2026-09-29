@@ -598,6 +598,15 @@ masing-masing dengan commit terpisah.
       migration dari nol lulus. Dokumen: `replica_schema.md`.
 - [x] Halaman `/replika` (Data Replika, dari view `replica`) dan
       `/replika/status` (riwayat sync + scope gagal, ADMIN/OPERATOR).
+- [x] Ikhtisar dari replika: KPI + grafik luaran, status SDM, BKD per
+      semester (palet tervalidasi terang/gelap, tampilan tabel), dirender dan
+      diperiksa lewat Chrome headless.
+- [x] Semua 140 endpoint GET PDF punya jalur baca: 135 replika + Jelajah,
+      2 route file (foto, unduh dokumen), 3 pencarian live (kolaborator,
+      mahasiswa PDDIKTI); dijaga test cakupan terhadap daftar PDF.
+- [x] Sync tunggal: advisory lock + heartbeat 30 detik, run kedua exit 3,
+      run crash ditandai FAILED; progres tampil di `/replika/status`.
+- [ ] Cek `/referensi/mahasiswa_pddikti` di production (sandbox selalu `{}`).
 - [ ] Full sync 97 SDM pertama (beberapa jam; jalankan di VPS malam hari).
 - [ ] UI/tRPC membaca dari replika dan halaman status sinkronisasi admin.
 

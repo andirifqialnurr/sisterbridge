@@ -47,6 +47,7 @@ export type ReplicaSyncDeps = {
   authorize: () => Promise<{ role: string }>;
   // Injectable for tests; defaults to a gate at options.requestsPerSecond.
   rateGate?: RateGate;
+  heartbeatMs?: number;
 };
 
 type EndpointStats = {
@@ -529,6 +530,21 @@ export async function runReplicaSync(
     ]);
   }
 
+  // Counters and heartbeat_at are persisted periodically so the status page
+  // shows progress and a crashed process can be told apart from a live one.
+  const heartbeat = setInterval(() => {
+    void deps.store
+      .heartbeat(runId, {
+        requestCount: totals.requests,
+        recordCount: totals.records,
+        changedCount: totals.changed,
+        deletedCount: totals.deleted,
+        errorCount: totals.errors,
+      })
+      .catch(() => {});
+  }, deps.heartbeatMs ?? 30_000);
+  heartbeat.unref?.();
+
   try {
     await syncProfilPt();
     if (options.scope === "full" || options.scope === "referensi") {
@@ -572,6 +588,7 @@ export async function runReplicaSync(
       }
     }
   } catch (error) {
+    clearInterval(heartbeat);
     totals.errors += 1;
     errors.push({
       endpoint: "-",
@@ -593,6 +610,7 @@ export async function runReplicaSync(
     return aborted;
   }
 
+  clearInterval(heartbeat);
   const status: SisterSyncStatus = totals.errors > 0 ? "PARTIAL" : "SUCCEEDED";
   await deps.store.finishRun(runId, {
     status,

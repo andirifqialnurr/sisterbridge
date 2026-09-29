@@ -40,7 +40,7 @@ afterEach(() => {
 });
 
 describe("jelajah catalog", () => {
-  it("has unique keys and never exposes binary or keyword-search endpoints", () => {
+  it("has unique keys and never exposes binary endpoints", () => {
     const keys = jelajahModules.map((module) => module.key);
     expect(new Set(keys).size).toBe(keys.length);
 
@@ -49,12 +49,8 @@ describe("jelajah catalog", () => {
       module.detailPath ?? "",
       ...(module.children ?? []).map((child) => child.path),
     ]);
-    const excludedPaths = [
-      "/data_pribadi/foto/{id_sdm}",
-      "/dokumen/{id}/download",
-      "/referensi/mahasiswa_pddikti",
-      "/kolaborator_eksternal",
-    ];
+    // Binary endpoints go through /api/sister/file/*, never through JSON.
+    const excludedPaths = ["/data_pribadi/foto/{id_sdm}", "/dokumen/{id}/download"];
     for (const excluded of excludedPaths) {
       expect(paths).not.toContain(excluded);
     }
@@ -141,5 +137,31 @@ describe("jelajah service", () => {
       getJelajahChild({ module: "penugasan", child: "bidang_ilmu", id: "a-1" }, fetcher),
     ).rejects.toBeInstanceOf(JelajahUnavailableError);
     expect(calls).toContain("/referensi/detail_unit_kerja?id_unit_kerja=u-1");
+  });
+
+  it("forwards only declared search fields and enforces required inputs", async () => {
+    const { fetcher, calls } = recordingFetcher({
+      "/kolaborator_eksternal?nama=Budi": [{ id: "k-1", nama: "Budi" }],
+      "/referensi/profil_pt": { id_perguruan_tinggi: idPt },
+    });
+
+    const kolaborator = await getJelajahList({ module: "kolaborator_eksternal", search: { nama: "Budi" } }, fetcher);
+    expect(kolaborator.item_count).toBe(1);
+
+    await expect(getJelajahList({ module: "kolaborator_eksternal", search: {} }, fetcher)).rejects.toThrow(
+      "nama atau nik",
+    );
+    await expect(
+      getJelajahList({ module: "mahasiswa_pddikti", search: { keyword: "andi" } }, fetcher),
+    ).rejects.toThrow("Program studi");
+
+    const prodi = "33333333-3333-4333-8333-333333333333";
+    await getJelajahList(
+      { module: "mahasiswa_pddikti", search: { keyword: "andi", id_program_studi: prodi, nama: "ignored" } },
+      fetcher,
+    );
+    expect(calls).toContain(
+      `/referensi/mahasiswa_pddikti?id_program_studi=${prodi}&keyword=andi&id_perguruan_tinggi=${idPt}`,
+    );
   });
 });

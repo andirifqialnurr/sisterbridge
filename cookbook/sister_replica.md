@@ -83,6 +83,12 @@ muncul setelah 6 jeda beruntun (±17 menit) run dihentikan dengan status
 `FAILED` agar blokir tidak diperpanjang. Data lama tidak pernah dihapus oleh
 scope yang gagal.
 
+Satu sync pada satu waktu: `startRun` memegang advisory lock transaksi,
+menolak (exit code 3) bila ada run RUNNING dengan heartbeat < 5 menit, dan
+menandai run RUNNING yang heartbeat-nya basi sebagai `FAILED`
+(`stats_json.abandoned = true`). Selama berjalan, penghitung dan
+`heartbeat_at` disimpan setiap 30 detik.
+
 Opsi CLI:
 
 ```bash
@@ -97,17 +103,32 @@ bun run sister:sync --dry-run --dump out.json   # tanpa menulis database
 Di laptop (NODE_ENV bukan production) sync memakai sandbox
 `SISTER_BASE_URL_DEV`; di container production memakai `SISTER_BASE_URL`.
 
-## Cakupan
+## Cakupan: 140 endpoint GET
 
-Dari 140 endpoint GET di PDF, 135 direplikasi. Dikecualikan:
+Semua 140 endpoint GET unik di PDF punya jalur baca di aplikasi; daftar
+lengkapnya ada di `src/server/sister/sister_get_endpoints.ts` dan dijaga oleh
+`sister_get_endpoints.test.ts` (setiap endpoint harus tercakup, tidak ada path
+di luar PDF).
 
-- `/data_pribadi/foto/{id_sdm}` dan `/dokumen/{id}/download` — binary, bukan
-  JSON. Metadata dokumen tetap direplikasi lewat `/dokumen` dan
-  `/dokumen/{id}`.
-- `/referensi/mahasiswa_pddikti` — pencarian yang mewajibkan program studi
-  dan keyword.
-- `/kolaborator_eksternal` (+ detail) — pencarian `nama`/`nik`; tanpa keyword
-  SISTER menjawab 400.
+| Jalur | Endpoint | Keterangan |
+|---|---:|---|
+| Replika (`sister:sync`) + Jelajah live | 135 | semua endpoint JSON yang bisa dienumerasi |
+| Route file `/api/sister/file/*` | 2 | `/data_pribadi/foto/{id_sdm}` (inline, semua role) dan `/dokumen/{id}/download` (attachment, ADMIN/OPERATOR, diaudit `sister_document_download`) |
+| Pencarian live di Jelajah | 3 | `/kolaborator_eksternal` (nama/NIK) + detail, `/referensi/mahasiswa_pddikti` (prodi PT sendiri + keyword) |
+
+File tidak disalin ke database (±1.400 dokumen × ±0,5 MB untuk 12 SDM);
+diambil saat dibuka. Route file: sesi wajib, ID harus UUID, tipe konten
+allowlist (gambar, PDF, dokumen Office), maks. 25 MB, `private, no-store`,
+`nosniff`, CSP `sandbox`, 60 file/menit per pengguna. Pencarian hanya
+meneruskan field yang dideklarasikan katalog dan diulang sekali bila gateway
+menjawab 502/503/504.
+
+Verifikasi sandbox 2026-09-29: foto `image/jpeg` ±490 KB dan dokumen
+`application/pdf` ±530 KB terkirim lewat route; pengguna anonim 401; ID
+`../../authorize` 400; kolaborator `nama=Universitas` 59 hasil
+(`id, kode_negara, nama, jenis_kelamin`). `mahasiswa_pddikti` menjawab 200
+tetapi selalu `{}` di sandbox untuk 13 prodi `unit_kerja`, 4 `id_unit`
+pengajaran, dan NIM asli dari data bimbingan; perlu dicek di production.
 
 Volume terukur (sandbox, 10 SDM pertama): ±6.700 request dan ±8.600 record,
 didominasi detail pengajaran dan bimbingan mahasiswa. Full run pertama untuk
@@ -204,6 +225,15 @@ replica CASCADE` lalu membuat ulang. Jangan membuat objek manual di dalamnya.
 - Nama view hanya diambil dari katalog database (`pg_class` schema
   `replica`) dan katalog modul server; input browser hanya kunci modul dan ID
   tervalidasi. Maksimal 5.000 baris per tabel (`/referensi/dudi` terpotong).
+
+- `/` **Ikhtisar** kini dari replika (tidak lagi memanggil `/referensi/sdm`
+  live saat dibuka): KPI SDM, dosen aktif, cakupan replika (SDM tersinkron /
+  total), sinkronisasi terakhir; grafik luaran tridharma 10 tahun (judul unik,
+  tahun berjalan ditandai `*`), status keaktifan SDM, dan kesimpulan BKD per
+  semester. Setiap grafik punya tampilan Tabel. Warna chart
+  (`theme.chartPalette`) divalidasi dengan pemeriksa palet dataviz untuk
+  mode terang dan gelap; hijau brand hanya untuk grafik satu seri karena
+  hijau/oranye dan hijau/merah gagal uji buta warna.
 
 Halaman lama (Pegawai, BKD, Penugasan, Pendidikan Formal, Riwayat Pekerjaan)
 dan Jelajah Data tetap membaca SISTER live.

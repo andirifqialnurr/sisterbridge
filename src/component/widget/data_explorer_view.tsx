@@ -48,8 +48,30 @@ function formatCell(value: unknown) {
   if (typeof value === "boolean") {
     return value ? "Ya" : "Tidak";
   }
-  return String(value);
+  const text = String(value);
+  // UUIDs are shortened (full value on hover); ISO timestamps are shown in
+  // local time. The JSON tab keeps the raw values.
+  if (uuidPattern.test(text)) {
+    return (
+      <span className="font-mono text-xs text-[hsl(var(--color-muted))]" title={text}>
+        {text.slice(0, 8)}…
+      </span>
+    );
+  }
+  if (isoTimestampPattern.test(text)) {
+    const date = new Date(text);
+    if (!Number.isNaN(date.getTime())) {
+      return <span title={text}>{date.toLocaleString("id-ID")}</span>;
+    }
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return <span className="whitespace-nowrap">{text}</span>;
+  }
+  return text;
 }
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isoTimestampPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
 function isScalar(value: unknown) {
   return value === null || ["string", "number", "boolean"].includes(typeof value);

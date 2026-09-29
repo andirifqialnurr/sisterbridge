@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 
 import { State } from "@/component/ui/state";
 import { DataExplorerView } from "@/component/widget/data_explorer_view";
+import { DokumenDownloadLink } from "@/component/widget/sister_file_links";
 import { useTRPC } from "@/lib/trpc";
 
 type ReplikaItemPanelProps = {
@@ -61,6 +62,13 @@ export function ReplikaItemPanel({ moduleKey, moduleLabel, onClose, row, sourceF
           <h3 className="text-sm font-semibold capitalize text-[hsl(var(--color-text))]">{section.label}</h3>
           <DataExplorerView
             result={section.result}
+            // Document tables (module dokumen arrays, kelas kuliah) get a
+            // download link through the server file route.
+            rowAction={
+              section.key.endsWith("_dokumen") || section.key === "kelas_dokumen" || (moduleKey === "dokumen" && section.key === "detail")
+                ? (row) => <DokumenDownloadLink id={row.id} />
+                : undefined
+            }
             sourceLabel={section.result.endpoint}
             title={`${moduleLabel} - ${section.label}`}
           />

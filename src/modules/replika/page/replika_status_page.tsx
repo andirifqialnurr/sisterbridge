@@ -20,9 +20,12 @@ function formatDateTime(value: string | null) {
 }
 
 function duration(start: string, end: string | null) {
-  if (!end) return "-";
-  const seconds = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 1000);
-  return seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}d` : `${seconds}d`;
+  const seconds = Math.round(((end ? new Date(end) : new Date()).getTime() - new Date(start).getTime()) / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const text =
+    hours > 0 ? `${hours} jam ${minutes} mnt` : minutes > 0 ? `${minutes} mnt ${seconds % 60} dtk` : `${seconds} dtk`;
+  return end ? text : `${text} (berjalan)`;
 }
 
 export function ReplikaStatusPage() {
@@ -65,6 +68,11 @@ export function ReplikaStatusPage() {
               { key: "target", header: "Target", render: (run) => run.target },
               { key: "scope", header: "Scope", render: (run) => run.scope },
               { key: "started", header: "Mulai", render: (run) => formatDateTime(run.started_at) },
+              {
+                key: "heartbeat",
+                header: "Heartbeat",
+                render: (run) => (run.status === "RUNNING" ? formatDateTime(run.heartbeat_at) : "-"),
+              },
               { key: "duration", header: "Durasi", render: (run) => duration(run.started_at, run.finished_at) },
               { key: "requests", header: "Request", render: (run) => run.request_count.toLocaleString("id-ID") },
               { key: "records", header: "Record", render: (run) => run.record_count.toLocaleString("id-ID") },

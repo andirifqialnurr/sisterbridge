@@ -334,4 +334,32 @@ describe("runReplicaSync", () => {
     expect(requests).toBeLessThan(60);
     expect(store.liveRecords()).toHaveLength(0);
   });
+
+  it("refuses to start while another sync holds the slot", async () => {
+    const store = new MemoryReplicaStore();
+    store.busyRunId = "run-live";
+    const { fetcher, calls } = fakeFetcher(baseResponses());
+
+    await expect(
+      runReplicaSync({ fetcher, store, authorize: async () => ({ role: "r" }) }, options),
+    ).rejects.toMatchObject({ name: "SyncAlreadyRunningError", runId: "run-live" });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("persists progress heartbeats while running", async () => {
+    const store = new MemoryReplicaStore();
+    const { fetcher: base } = fakeFetcher(baseResponses());
+    const fetcher: ReplicaFetcher = async (path, query) => {
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      return base(path, query);
+    };
+
+    await runReplicaSync(
+      { fetcher, store, authorize: async () => ({ role: "r" }), heartbeatMs: 5, rateGate: instantGate() },
+      { ...options, scope: "referensi" },
+    );
+
+    expect(store.heartbeats.length).toBeGreaterThan(0);
+    expect(store.heartbeats.at(-1)?.requestCount).toBeGreaterThan(0);
+  });
 });

@@ -161,6 +161,13 @@ hasilnya dan deploy ulang:
 docker compose --env-file .env run --rm   -v "$PWD/prisma/migrations:/app/prisma/migrations"   -v "$PWD/cookbook:/app/cookbook"   web bun run replica:views
 ```
 
+Hanya satu sync yang boleh berjalan. Bila cron menyala saat run sebelumnya
+(mis. sync pertama yang berjam-jam) masih hidup, perintah kedua keluar dengan
+**exit code 3** tanpa mengirim request. Run yang prosesnya mati (heartbeat
+`sister_sync_run.heartbeat_at` lebih tua dari 5 menit) otomatis ditandai
+`FAILED` oleh run berikutnya. Progres run yang sedang berjalan terlihat di
+halaman `/replika/status`.
+
 Status `PARTIAL` adalah normal saat ini: beberapa endpoint referensi SISTER
 selalu menjawab 500 (lihat daftar di `sister_replica.md`).
 

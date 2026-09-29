@@ -2,8 +2,8 @@
 // Service PT (see cookbook/sister_0*.md). The browser only ever sends a
 // module key from this catalog plus validated IDs; paths are resolved here,
 // so there is no generic proxy. Binary endpoints (foto, dokumen download)
-// and keyword searches (mahasiswa_pddikti, kolaborator_eksternal) are not
-// listed, matching the replica catalog.
+// are served by /api/sister/file/*; keyword searches (mahasiswa_pddikti,
+// kolaborator_eksternal) are "search" modules that take allowlisted inputs.
 
 export type JelajahGroup =
   | "Data pribadi"
@@ -14,6 +14,7 @@ export type JelajahGroup =
   | "Pengabdian dan penunjang"
   | "Kesejahteraan"
   | "Dokumen dan BKD"
+  | "Pencarian"
   | "Referensi";
 
 export type JelajahChild = {
@@ -27,13 +28,24 @@ export type JelajahChild = {
   queryParam?: string;
 };
 
+export type JelajahSearchField = {
+  name: "nama" | "nik" | "keyword" | "id_program_studi";
+  label: string;
+  // "prodi" is chosen from the PT's own program studi (unit_kerja jenis 3).
+  input: "text" | "prodi";
+  required?: boolean;
+};
+
 export type JelajahModule = {
   key: string;
   label: string;
   group: JelajahGroup;
   // sdm_list: list filtered by ?id_sdm=; sdm_object: object at /{id_sdm};
-  // referensi: list without SDM.
-  kind: "sdm_list" | "sdm_object" | "referensi";
+  // referensi: list without SDM; search: list driven by keyword inputs.
+  kind: "sdm_list" | "sdm_object" | "referensi" | "search";
+  searchFields?: JelajahSearchField[];
+  // At least one of these search fields must be filled.
+  searchAnyOf?: JelajahSearchField["name"][];
   path: string;
   detailPath?: string;
   paginated?: boolean;
@@ -233,6 +245,33 @@ export const jelajahModules: JelajahModule[] = [
   referensi("ref_kategori_kegiatan", "Kategori kegiatan", "/referensi/kategori_kegiatan", {
     query: { tipe: "list" },
   }),
+  {
+    key: "kolaborator_eksternal",
+    label: "Kolaborator eksternal",
+    group: "Pencarian",
+    kind: "search",
+    path: "/kolaborator_eksternal",
+    detailPath: "/kolaborator_eksternal/{id}",
+    searchFields: [
+      { name: "nama", label: "Nama", input: "text" },
+      { name: "nik", label: "NIK", input: "text" },
+    ],
+    searchAnyOf: ["nama", "nik"],
+    note: "Pencarian SISTER berdasarkan nama atau NIK; gateway kadang menjawab 503, coba ulang.",
+  },
+  {
+    key: "mahasiswa_pddikti",
+    label: "Mahasiswa PDDIKTI",
+    group: "Pencarian",
+    kind: "search",
+    path: "/referensi/mahasiswa_pddikti",
+    ownPtQuery: "id_perguruan_tinggi",
+    searchFields: [
+      { name: "id_program_studi", label: "Program studi", input: "prodi", required: true },
+      { name: "keyword", label: "Nama / NIM", input: "text", required: true },
+    ],
+    note: "Pencarian mahasiswa per program studi PT sendiri; gateway kadang menjawab 503, coba ulang.",
+  },
   referensi("ref_unit_kerja", "Unit kerja (PT sendiri)", "/referensi/unit_kerja", {
     ownPtQuery: "id_perguruan_tinggi",
     children: [

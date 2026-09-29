@@ -9,6 +9,7 @@ import { PageShell } from "@/component/ui/page_shell";
 import { State } from "@/component/ui/state";
 import { DataExplorerView, DetailButton } from "@/component/widget/data_explorer_view";
 import { ModuleNav } from "@/component/widget/module_nav";
+import { DokumenDownloadLink, SdmPhoto } from "@/component/widget/sister_file_links";
 import { useTRPC } from "@/lib/trpc";
 
 import { ReplikaItemPanel } from "../widget/replika_item_panel";
@@ -52,7 +53,7 @@ export function ReplikaPage() {
       breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: "Data Replika" }]}
     >
       <div className="flex flex-col gap-6 lg:flex-row">
-        <aside className="shrink-0 lg:w-64">
+        <aside className="shrink-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-64 lg:self-start lg:overflow-y-auto lg:pr-1">
           {modulesQuery.isPending && <State title="Memuat modul..." tone="loading" />}
           {modulesQuery.isError && (
             <State description={modulesQuery.error.message} title="Modul belum dapat dimuat" tone="error" />
@@ -87,6 +88,7 @@ export function ReplikaPage() {
               title="Pilih SDM terlebih dahulu"
             />
           )}
+          {moduleKey === "profil" && sdmId && <SdmPhoto idSdm={sdmId} />}
           {rowsQuery.isFetching && !rowsQuery.data && <State title="Membaca replika..." tone="loading" />}
           {rowsQuery.isError && (
             <State description={rowsQuery.error.message} title="Data replika belum dapat dimuat" tone="error" />
@@ -108,8 +110,13 @@ export function ReplikaPage() {
                 key={`${moduleKey}-${sdmId}`}
                 result={rowsQuery.data}
                 rowAction={
-                  selected.has_item
-                    ? (row) => <DetailButton onClick={() => setSelectedRow(row)} />
+                  selected.has_item || moduleKey === "dokumen"
+                    ? (row) => (
+                        <div className="flex justify-end gap-2">
+                          {moduleKey === "dokumen" && <DokumenDownloadLink id={row.id} />}
+                          {selected.has_item && <DetailButton onClick={() => setSelectedRow(row)} />}
+                        </div>
+                      )
                     : undefined
                 }
                 sourceLabel={rowsQuery.data.endpoint}

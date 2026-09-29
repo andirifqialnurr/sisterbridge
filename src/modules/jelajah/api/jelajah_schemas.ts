@@ -7,9 +7,19 @@ const sisterIdSchema = z.string().trim().regex(/^[A-Za-z0-9_-]{1,64}$/);
 
 export const jelajahModuleKeySchema = z.enum(jelajahModuleKeys);
 
+export const jelajahSearchInputSchema = z
+  .object({
+    nama: z.string().trim().min(3).max(100).optional(),
+    nik: z.string().trim().regex(/^\d{3,20}$/).optional(),
+    keyword: z.string().trim().min(3).max(100).optional(),
+    id_program_studi: z.string().uuid().optional(),
+  })
+  .strict();
+
 export const jelajahListInputSchema = z.object({
   module: jelajahModuleKeySchema,
   id_sdm: z.string().uuid().optional(),
+  search: jelajahSearchInputSchema.optional(),
 });
 
 export const jelajahDetailInputSchema = z.object({

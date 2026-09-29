@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { SisterNotFoundError } from "@/server/sister/errors";
 import { createTRPCRouter, operatorProcedure, protectedProcedure } from "@/server/trpc/init";
 
+import { getReplikaDashboard } from "./replika_dashboard_service";
 import {
   replikaItemInputSchema,
   replikaModuleInputSchema,
@@ -47,4 +48,5 @@ export const replikaRouter = createTRPCRouter({
     .input(replikaItemInputSchema)
     .query(({ input }) => run(() => getReplikaItem(input))),
   sync_status: operatorProcedure.query(() => run(() => getReplikaSyncStatus())),
+  dashboard: protectedProcedure.query(() => run(() => getReplikaDashboard())),
 });

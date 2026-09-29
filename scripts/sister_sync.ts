@@ -9,7 +9,8 @@
 //   bun run sister:sync --refresh-children          # re-fetch every detail
 //   bun run sister:sync --dry-run --dump out.json   # no database writes
 //
-// Only GET requests are sent. Outside production the sandbox base URL
+// Only GET requests are sent. Only one sync runs at a time: a second start
+// exits with code 3 while the first one's heartbeat is fresh (< 5 min). Outside production the sandbox base URL
 // (SISTER_BASE_URL_DEV) is used when configured; see src/server/sister/config.ts.
 import { writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
@@ -18,7 +19,7 @@ import { prisma } from "@/server/db/prisma";
 import { getSisterConfig } from "@/server/sister/config";
 import { fetchSisterJson } from "@/server/sister/replica/replica_fetch";
 import { MemoryReplicaStore } from "@/server/sister/replica/replica_memory_store";
-import { PrismaReplicaStore } from "@/server/sister/replica/replica_repository";
+import { PrismaReplicaStore, SyncAlreadyRunningError } from "@/server/sister/replica/replica_repository";
 import { runReplicaSync, type ReplicaSyncScope } from "@/server/sister/replica/replica_sync";
 import { getSisterToken } from "@/server/sister/token_provider";
 
@@ -122,6 +123,16 @@ Dry-run records written to ${values.dump}`);
   }
 
   process.exitCode = result.status === "FAILED" ? 1 : 0;
+} catch (error) {
+  // Another sync (e.g. a long first run while cron fires) owns the slot;
+  // running both would double the request rate and risk a SISTER 429 block.
+  if (error instanceof SyncAlreadyRunningError) {
+    const since = error.heartbeatAt ? ` (heartbeat ${error.heartbeatAt.toISOString()})` : "";
+    console.error(`Another sync is still running: run ${error.runId}${since}. Exiting without syncing.`);
+    process.exitCode = 3;
+  } else {
+    throw error;
+  }
 } finally {
   await prisma.$disconnect();
 }

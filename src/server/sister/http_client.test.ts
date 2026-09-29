@@ -12,7 +12,7 @@ vi.mock("./token_provider", () => ({
   getSisterToken: getSisterTokenMock,
 }));
 
-import { sisterGet } from "./http_client";
+import { sisterGet, sisterFileMaxBytes, sisterGetFile } from "./http_client";
 import { SisterApiError, SisterContractError } from "./errors";
 
 const liveConfig = {
@@ -231,5 +231,60 @@ describe("sisterGet", () => {
       sisterGet({ path: "/referensi/semester", schema: itemSchema }),
     ).rejects.toBeInstanceOf(SisterApiError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("sisterGetFile", () => {
+  it("passes allowlisted files through with a sanitized file name", async () => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok", role: "WS-BASIC", expires_at: 0 });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("%PDF", {
+          status: 200,
+          headers: {
+            "content-type": "application/pdf; charset=binary",
+            "content-disposition": String.raw`attachment; filename="../../SK \"Tugas\".pdf"`,
+          },
+        }),
+      ),
+    );
+
+    const file = await sisterGetFile("/dokumen/abc/download");
+    expect(file.contentType).toBe("application/pdf");
+    expect(file.fileName).toBe("SK _Tugas_.pdf");
+    expect(file.body.byteLength).toBe(4);
+  });
+
+  it("rejects content types outside the allowlist and oversized files", async () => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok", role: "WS-BASIC", expires_at: 0 });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("<script>", { status: 200, headers: { "content-type": "text/html" } })),
+    );
+    await expect(sisterGetFile("/dokumen/abc/download")).rejects.toBeInstanceOf(SisterContractError);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("x", {
+          status: 200,
+          headers: { "content-type": "image/jpeg", "content-length": String(sisterFileMaxBytes + 1) },
+        }),
+      ),
+    );
+    await expect(sisterGetFile("/data_pribadi/foto/abc")).rejects.toBeInstanceOf(SisterContractError);
+  });
+
+  it("keeps the HTTP status of a failed download", async () => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok", role: "WS-BASIC", expires_at: 0 });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("{}", { status: 404, headers: { "content-type": "application/json" } })),
+    );
+    await expect(sisterGetFile("/dokumen/abc/download")).rejects.toMatchObject({ status: 404 });
   });
 });

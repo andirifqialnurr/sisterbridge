@@ -32,6 +32,22 @@ export type ReplicaRunSummary = {
   stats: unknown;
 };
 
+export type ReplicaRunProgress = Omit<ReplicaRunSummary, "status" | "stats">;
+
+// Thrown by startRun when another sync still has a fresh heartbeat.
+export class SyncAlreadyRunningError extends Error {
+  constructor(
+    public readonly runId: string,
+    public readonly heartbeatAt: Date | null,
+  ) {
+    super(`Sync ${runId} is still running`);
+    this.name = "SyncAlreadyRunningError";
+  }
+}
+
+// A RUNNING run whose heartbeat is older than this is treated as crashed.
+export const syncStaleAfterMs = 5 * 60 * 1000;
+
 export type ReplicaStore = {
   ensureIntegration(input: {
     integrationId: string;
@@ -39,7 +55,10 @@ export type ReplicaStore = {
     credentialRef: string;
     expectedRole: string | null;
   }): Promise<void>;
+  // Claims the single sync slot: fails with SyncAlreadyRunningError while
+  // another run is alive, marks crashed runs FAILED, then creates the run.
   startRun(input: { integrationId: string; baseUrl: string; scope: string }): Promise<string>;
+  heartbeat(runId: string, progress: ReplicaRunProgress): Promise<void>;
   finishRun(runId: string, summary: ReplicaRunSummary): Promise<void>;
   // Upserts the complete result of one scope. Rows no longer returned by
   // SISTER are soft-deleted together with the child rows that hang off them,
@@ -76,7 +95,7 @@ function chunk<T>(items: T[], size = writeBatchSize) {
 
 type ReplicaClient = Pick<
   PrismaClient,
-  "sisterIntegration" | "sisterSyncRun" | "sisterReplicaRecord" | "sisterReplicaScope" | "$transaction"
+  "sisterIntegration" | "sisterSyncRun" | "sisterReplicaRecord" | "sisterReplicaScope" | "$transaction" | "$executeRawUnsafe"
 >;
 
 export class PrismaReplicaStore implements ReplicaStore {
@@ -108,15 +127,49 @@ export class PrismaReplicaStore implements ReplicaStore {
   }
 
   async startRun(input: { integrationId: string; baseUrl: string; scope: string }) {
-    const run = await this.client.sisterSyncRun.create({
-      data: {
-        integrationId: input.integrationId,
-        baseUrl: input.baseUrl,
-        scope: input.scope,
-      },
-      select: { id: true },
+    return this.client.$transaction(async (tx) => {
+      // Transaction-scoped advisory lock: only one process at a time runs
+      // this check-and-insert, whatever pooled connection it lands on.
+      await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('sister_replica_sync'))`);
+      const running = await tx.$queryRawUnsafe<{ id: string; heartbeat_at: Date | null; started_at: Date }[]>(
+        `SELECT id, heartbeat_at, started_at FROM public.sister_sync_run WHERE status = 'RUNNING'`,
+      );
+      const staleBefore = Date.now() - syncStaleAfterMs;
+      for (const run of running) {
+        const lastSign = (run.heartbeat_at ?? run.started_at).getTime();
+        if (lastSign > staleBefore) {
+          throw new SyncAlreadyRunningError(run.id, run.heartbeat_at);
+        }
+        await tx.$executeRawUnsafe(
+          `UPDATE public.sister_sync_run
+              SET status = 'FAILED', finished_at = now(),
+                  stats_json = coalesce(stats_json, '{}'::jsonb) || '{"abandoned": true}'::jsonb
+            WHERE id = $1::uuid`,
+          run.id,
+        );
+      }
+      const created = await tx.sisterSyncRun.create({
+        data: { integrationId: input.integrationId, baseUrl: input.baseUrl, scope: input.scope },
+        select: { id: true },
+      });
+      await tx.$executeRawUnsafe(`UPDATE public.sister_sync_run SET heartbeat_at = now() WHERE id = $1::uuid`, created.id);
+      return created.id;
     });
-    return run.id;
+  }
+
+  async heartbeat(runId: string, progress: ReplicaRunProgress) {
+    await this.client.$executeRawUnsafe(
+      `UPDATE public.sister_sync_run
+          SET heartbeat_at = now(), request_count = $2, record_count = $3,
+              changed_count = $4, deleted_count = $5, error_count = $6
+        WHERE id = $1::uuid AND status = 'RUNNING'`,
+      runId,
+      progress.requestCount,
+      progress.recordCount,
+      progress.changedCount,
+      progress.deletedCount,
+      progress.errorCount,
+    );
   }
 
   async finishRun(runId: string, summary: ReplicaRunSummary) {

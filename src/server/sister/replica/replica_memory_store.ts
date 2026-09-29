@@ -1,9 +1,11 @@
-import type {
-  ReplicaItem,
-  ReplicaRunSummary,
-  ReplicaSaveResult,
-  ReplicaScope,
-  ReplicaStore,
+import {
+  SyncAlreadyRunningError,
+  type ReplicaItem,
+  type ReplicaRunProgress,
+  type ReplicaRunSummary,
+  type ReplicaSaveResult,
+  type ReplicaScope,
+  type ReplicaStore,
 } from "./replica_repository";
 
 type MemoryRecord = ReplicaScope & ReplicaItem & { deleted: boolean };
@@ -18,10 +20,21 @@ export class MemoryReplicaStore implements ReplicaStore {
 
   async ensureIntegration() {}
 
+  readonly heartbeats: ReplicaRunProgress[] = [];
+  // Simulates another live sync holding the slot.
+  busyRunId: string | null = null;
+
   async startRun() {
+    if (this.busyRunId) {
+      throw new SyncAlreadyRunningError(this.busyRunId, new Date());
+    }
     const id = `run-${this.runs.size + 1}`;
     this.runs.set(id, null);
     return id;
+  }
+
+  async heartbeat(_runId: string, progress: ReplicaRunProgress) {
+    this.heartbeats.push(progress);
   }
 
   async finishRun(runId: string, summary: ReplicaRunSummary) {

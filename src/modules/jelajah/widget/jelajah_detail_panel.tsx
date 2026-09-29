@@ -10,6 +10,7 @@ import { State } from "@/component/ui/state";
 import { useTRPC } from "@/lib/trpc";
 
 import { DataExplorerView } from "@/component/widget/data_explorer_view";
+import { DokumenDownloadLink } from "@/component/widget/sister_file_links";
 
 type ChildSummary = {
   key: "bidang_ilmu" | "kelas_dokumen" | "detail_unit_kerja";
@@ -61,7 +62,13 @@ function ChildSection({
       {open && childQuery.isError && (
         <State description={childQuery.error.message} title={`${child.label} belum dapat dimuat`} tone="error" />
       )}
-      {childQuery.data && <DataExplorerView result={childQuery.data} title={child.label} />}
+      {childQuery.data && (
+        <DataExplorerView
+          result={childQuery.data}
+          rowAction={child.key === "kelas_dokumen" ? (row) => <DokumenDownloadLink id={row.id} /> : undefined}
+          title={child.label}
+        />
+      )}
     </section>
   );
 }

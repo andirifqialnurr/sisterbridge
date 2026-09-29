@@ -39,6 +39,7 @@ export type SyncRunRow = {
   errorCount: number;
   startedAt: Date;
   finishedAt: Date | null;
+  heartbeatAt: Date | null;
 };
 
 export type FailingScopeRow = {
@@ -49,7 +50,7 @@ export type FailingScopeRow = {
   lastFetchedAt: Date;
 };
 
-type ReplikaClient = Pick<PrismaClient, "$queryRawUnsafe" | "sisterSyncRun">;
+type ReplikaClient = Pick<PrismaClient, "$queryRawUnsafe">;
 
 function quoteIdent(name: string) {
   return `"${name.replaceAll('"', '""')}"`;
@@ -112,23 +113,17 @@ export class PrismaReplikaRepository implements ReplikaRepository {
   }
 
   async syncRuns(limit: number) {
-    return this.client.sisterSyncRun.findMany({
-      orderBy: { startedAt: "desc" },
-      take: limit,
-      select: {
-        id: true,
-        scope: true,
-        status: true,
-        baseUrl: true,
-        requestCount: true,
-        recordCount: true,
-        changedCount: true,
-        deletedCount: true,
-        errorCount: true,
-        startedAt: true,
-        finishedAt: true,
-      },
-    });
+    return this.client.$queryRawUnsafe<SyncRunRow[]>(
+      `SELECT id, scope, status::text AS status, base_url AS "baseUrl",
+              request_count AS "requestCount", record_count AS "recordCount",
+              changed_count AS "changedCount", deleted_count AS "deletedCount",
+              error_count AS "errorCount", started_at AS "startedAt",
+              finished_at AS "finishedAt", heartbeat_at AS "heartbeatAt"
+         FROM public.sister_sync_run
+        ORDER BY started_at DESC
+        LIMIT $1`,
+      limit,
+    );
   }
 
   async failingScopes(limit: number) {

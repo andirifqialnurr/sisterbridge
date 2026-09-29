@@ -8,7 +8,7 @@ export type ModuleNavItem = {
   key: string;
   label: string;
   group: string;
-  kind: "sdm_list" | "sdm_object" | "referensi";
+  kind: "sdm_list" | "sdm_object" | "referensi" | "search";
   // Optional record count shown as a badge (null = not applicable).
   count?: number | null;
 };
