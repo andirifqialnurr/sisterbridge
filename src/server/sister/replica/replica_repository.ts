@@ -76,8 +76,8 @@ export type ReplicaStore = {
     scope: ReplicaScope,
     failure: { status: number; code: string },
   ): Promise<void>;
-  // Returns the scope keys of `endpoint` that were fetched successfully at
-  // least once.
+  // Returns only scope keys whose latest fetch succeeded. A scope that had a
+  // previous success but later failed must be retried on the next sync.
   fetchedScopeKeys(integrationId: string, endpoint: string, scopeKeys: string[]): Promise<Set<string>>;
 };
 
@@ -353,7 +353,13 @@ export class PrismaReplicaStore implements ReplicaStore {
       return new Set<string>();
     }
     const rows = await this.client.sisterReplicaScope.findMany({
-      where: { integrationId, endpoint, scopeKey: { in: scopeKeys }, lastSuccessAt: { not: null } },
+      where: {
+        integrationId,
+        endpoint,
+        scopeKey: { in: scopeKeys },
+        lastStatus: 200,
+        lastSuccessAt: { not: null },
+      },
       select: { scopeKey: true },
     });
     return new Set(rows.map((row) => row.scopeKey));
