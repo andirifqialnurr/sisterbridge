@@ -1,6 +1,6 @@
 # Portable TODO dan Project Backlog
 
-Status: portable base + project profile
+Status: portable base + project profile; scope aktif UI managerial read-only.
 
 Backlog ini memiliki dua lapisan: checklist portable yang dapat dipakai ulang
 dan backlog detail untuk repository `sister-integrated`. Backlog detail adalah
@@ -55,74 +55,131 @@ menelusuri 307 halaman PDF sekaligus:
 | 08 | Referensi, Riwayat Pekerjaan, Sertifikasi Dosen, Sertifikasi Profesi | [sister_08_referensi_riwayat_sertifikasi.md](./sister_08_referensi_riwayat_sertifikasi.md) |
 | 09 | Tes, Tugas Tambahan, Tunjangan, Visiting Scientist | [sister_09_tes_tugas_tambahan_tunjangan_visiting_scientist.md](./sister_09_tes_tugas_tambahan_tunjangan_visiting_scientist.md) |
 
-Katalog tersebut adalah inventory dan peta kontrak, bukan klaim bahwa semua
-modul sudah diimplementasikan. Coverage repository saat checkpoint ini:
+## Scope aktif dan cara membaca status (2026-09-30)
 
-- **Implemented read-only:** BKD, Pendidikan Formal, Penugasan, dan Riwayat
-  Pekerjaan.
-- **Partial read-only:** Data Pokok (profil dan kepegawaian) serta Referensi
-  (SDM, semester, dan profil PT).
-- **Foundation only:** Akses melalui boundary auth/transport, tetapi
-  `POST /authorize` live belum diuji dengan credential UAT.
-- **Belum diimplementasikan:** 32 modul lain, termasuk seluruh workflow write,
-  upload/download dokumen, dan ajuan yang belum masuk scope MVP.
+Produk adalah report dan warning read-only untuk admin PT. Scope aktif
+seluruh 140 GET, termasuk halaman bisnis untuk setiap modul. CRUD, upload,
+submit/approve ajuan dan workflow write tidak masuk backlog aktif.
+`POST /authorize` tetap diperlukan server untuk autentikasi.
 
-Dengan demikian, TODO sebelumnya **belum mencakup seluruh 39 modul pada level
-endpoint**. Sembilan dokumen di atas menjadi source map untuk menurunkan item
-schema, adapter, permission, UI, test, dan UAT per modul. Checklist di bawah
-tetap harus dicentang per evidence; keberadaan file breakdown tidak dihitung
-sebagai implementasi.
+Acuan produk: [prd_managerial.md](./prd_managerial.md). Peta 39 modul dan
+140 endpoint → route/widget/dependensi: [ui_endpoint_map.md](./ui_endpoint_map.md).
+Kontrol UI: [security_ui.md](./security_ui.md). PRD/security lama belum dapat
+ditulis pada sesi ini karena izin file; scope aktif mengikuti dokumen tersebut.
+Daftar mutation di katalog hanya inventory kemampuan API.
 
-### Master checklist 39 modul
+Status dipisahkan: (1) read path terimplementasi, (2) GET live berhasil per
+scope, (3) data tersimpan, (4) UI bisnis diterima. Explorer atau view database
+tidak cukup untuk mencentang UI bisnis. Full sync lokal sebelumnya mencakup
+97 SDM dengan pengecualian eksternal; bukan janji semua scope HTTP 200.
 
-Setiap modul tetap memiliki task sendiri. Status `[x]` hanya dipakai untuk
-coverage read-only yang sudah memiliki evidence source/test pada repository;
-read-only tidak mencakup mutation atau ajuan.
+### Paket kerja UI yang dijalankan berurutan
 
-- [x] 01 Akses — live `POST /authorize` terverifikasi 2026-09-29
-      (sandbox + production, role `Sister-WS Basic`).
-- [ ] 02 Anggota Profesi — schema, adapter, permission, CRUD, dan dokumen.
-- [x] 03 BKD — enam endpoint GET dan UI read-only.
-- [ ] 04 Bahan Ajar — CRUD dan dependency dokumen/referensi.
-- [ ] 05 Beasiswa — CRUD dan dependency dokumen/referensi.
-- [ ] 06 Bimbingan Dosen — list/detail read-only.
-- [ ] 07 Bimbingan Mahasiswa — list/detail dan keputusan nested `bidang_ilmu`.
-- [ ] 08 Data Pokok — endpoint di luar profil/kepegawaian dan PII review.
-- [ ] 09 Detasering — CRUD.
-- [ ] 10 Diklat — CRUD dan dokumen.
-- [ ] 11 Dokumen — multipart upload, metadata, delete, dan binary download.
-- [ ] 12 Inpassing — CRUD.
-- [ ] 13 Jabatan Fungsional — CRUD dan readback ajuan.
-- [ ] 14 Jabatan Struktural — CRUD.
-- [ ] 15 Kekayaan Intelektual — CRUD dan nested `bidang_ilmu`.
-- [ ] 16 Kelas Kuliah — relasi dokumen pada `id_kls`.
-- [ ] 17 Kepangkatan — list/detail read-only.
-- [ ] 18 Kesejahteraan — CRUD dan PII/benefit review.
-- [ ] 19 Kolaborator Eksternal — CRUD.
-- [ ] 20 Orasi Ilmiah — CRUD.
-- [ ] 21 Pembicara — CRUD.
-- [x] 22 Pendidikan Formal — list/detail read-only.
-- [ ] 23 Penelitian — CRUD dan nested `bidang_ilmu`.
-- [ ] 24 Pengabdian — CRUD dan nested `bidang_ilmu`.
-- [ ] 25 Pengajaran — read-only utama dan keputusan nested `bidang_ilmu`.
-- [ ] 26 Pengelola Jurnal — CRUD.
-- [ ] 27 Penghargaan — CRUD dan referensi jenis/tingkat.
-- [ ] 28 Pengujian Mahasiswa — read-only utama dan nested `bidang_ilmu`.
-- [x] 29 Penugasan — list/detail read-only.
-- [ ] 30 Penunjang Lain — CRUD.
-- [ ] 31 Publikasi — CRUD dan nested `bidang_ilmu`.
-- [ ] 32 Referensi — 38 endpoint selector yang belum dibuka; tiga sudah ada.
-- [x] 33 Riwayat Pekerjaan — list/detail read-only.
-- [ ] 34 Sertifikasi Dosen — master/detail dan ajuan read-only.
-- [ ] 35 Sertifikasi Profesi — CRUD.
-- [ ] 36 Tes — nilai read-only dan workflow ajuan.
-- [ ] 37 Tugas Tambahan — CRUD.
-- [ ] 38 Tunjangan — CRUD dengan review data benefit/finansial.
-- [ ] 39 Visiting Scientist — CRUD.
+Setiap paket adalah task utuh; commit per paket, bukan per subtask.
+Baca kriteria penerimaan UI pada matriks sebelum mencentang. Semua task UI
+di bawah masih terbuka; dokumentasi ini tidak mengubah runtime aplikasi.
 
-Checkbox tidak boleh dicentang hanya karena kode terlihat selesai. Setiap item
-harus memiliki bukti yang sesuai: source check, unit test, contract test,
-UAT, atau browser QA.
+- [x] DOC-UI Petakan 39 modul dan 140 GET, sumber target, route/widget,
+  dependensi ID, kondisi awal dan pengecualian; selaraskan dokumen yang dapat ditulis.
+- [ ] DOC-ACCESS Terapkan patch PRD/security lama setelah izin tulis file
+  dipulihkan; hapus status kendala dan sinkronkan referensi dokumen pendamping.
+- [ ] UI-FOUNDATION Rapikan navigasi berkelompok, route/tab/filter di URL;
+  registry modul aktif dan permission yang ditegakkan juga pada server;
+  hilangkan placeholder Pengajuan/Pengaturan atau hubungkan ke alur nyata;
+  terapkan inset 30px dan hilangkan title/deskripsi berulang di halaman lama.
+  Buat/reuse widget list, detail berlabel, relasi, metadata dokumen, dan status.
+- [ ] UI-DATA Sediakan DTO terkurasi dan repository lokal per modul;
+  selaraskan view dengan full sync jika diperlukan, pagination server-side
+  dan total tanpa truncation. Pisahkan 404 upstream, empty sukses, belum sync,
+  partial, stale dan 403 lintas PT; jangan mengklaim semua status 200 lokal
+  berarti upstream 200. Lengkapi UI error scope di halaman bisnis.
+- [ ] UI-SDM Selesaikan UI-08, 09, 12, 13, 14, 17, 29, 33, 37:
+  data pokok dan kepegawaian, penugasan, ajuan jabatan, riwayat pekerjaan.
+- [ ] UI-PENDIDIKAN Selesaikan UI-05, 10, 22, 34, 35, 36:
+  pendidikan/kompetensi, termasuk master dan ajuan terpisah.
+- [ ] UI-PENGAJARAN Selesaikan UI-03, 04, 06, 07, 16, 20, 25, 28:
+  BKD enam GET, pengajaran/bimbingan/pengujian dan dokumen kelas dengan relasi sah.
+- [ ] UI-PENELITIAN Selesaikan UI-15, 23, 26, 31, 39:
+  penelitian/publikasi/KI, penulis/anggota/bidang ilmu/dokumen.
+- [ ] UI-PENGABDIAN Selesaikan UI-02, 21, 24, 27, 30:
+  pengabdian, pembicara, penunjang, penghargaan dan keanggotaan.
+- [ ] UI-DOKUMEN Selesaikan UI-11, 18, 38:
+  metadata/detail/unduh, kesejahteraan dan tunjangan, field sensitif dibatasi.
+- [ ] UI-REFERENSI Selesaikan UI-19, 32:
+  seluruh 41 GET referensi dan kolaborator; direktori, hierarki, selector,
+  live search prodi/keyword atau nama/NIK; tampilkan state sumber unavailable.
+- [ ] UI-OPERASI Selesaikan UI-01:
+  login/status integrasi/sync dan klasifikasi error; tanpa menampilkan token.
+- [ ] UI-REPORT Laporan SDM, BKD dan luaran; definisikan unit hitung dan
+  deduplikasi lintas SDM; filter dan drill-down ke sumber; ApexCharts + tabel.
+- [ ] UI-WARNING Pusat warning untuk kondisi sumber dan simpulan BKD
+  yang eksplisit. Catat rule, alasan, freshness dan link bukti. Kebijakan stale
+  serta rule bisnis tambahan harus ditetapkan sebelum diaktifkan.
+- [ ] UI-QA Verifikasi alur seluruh GET-ID melalui browser, role/tenant,
+  deep link/back, empty/error/stale, nested data, file dan search.
+  Uji 1280/1024/390/320, light/dark, keyboard. Perbarui matriks dengan evidence
+  nyata; tetap tandai keberhasilan live yang belum terverifikasi.
+
+### Master acceptance UI 39 modul
+
+Checkbox berikut berarti **UI target lengkap + evidence**, bukan keberadaan
+adapter. Halaman khusus yang sudah ada tetap perlu migrasi/review/QA sesuai
+matriks; Akses mencakup status integrasi, bukan endpoint GET tambahan.
+
+- [ ] UI-01 Akses — Status koneksi, role integrasi, dan sinkronisasi; login lokal terpisah; verifikasi status integrasi tanpa credential, sumber, state, permission dan QA.
+- [ ] UI-02 Anggota Profesi — Daftar keanggotaan; organisasi, periode, detail, dan bukti yang tersedia; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-03 BKD — Laporan akhir per semester; lima tab aktivitas, angka SKS dan simpulan dari SISTER; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-04 Bahan Ajar — Daftar bahan ajar; judul, jenis, tahun; detail penulis dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-05 Beasiswa — Riwayat beasiswa; jenis, penyelenggara, periode sesuai response; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-06 Bimbingan Dosen — Daftar/detail pembimbingan dosen dan pihak terkait; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-07 Bimbingan Mahasiswa — Daftar/detail bimbingan; mahasiswa, dosen, dan bidang ilmu; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-08 Data Pokok — Profil SDM dengan foto dan tujuh bagian data pokok; bagian sensitif dibatasi; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-09 Detasering — Riwayat penempatan detasering, instansi dan periode; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-10 Diklat — Daftar pelatihan, jenis, penyelenggara, periode dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-11 Dokumen — Daftar metadata, detail, preview yang didukung, dan unduh; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-12 Inpassing — Riwayat inpassing, informasi SK, tanggal dan bukti; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-13 Jabatan Fungsional — Riwayat jabatan dan tab ajuan terpisah dengan status dari SISTER; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-14 Jabatan Struktural — Riwayat jabatan, unit, periode dan informasi SK; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-15 Kekayaan Intelektual — Daftar karya, jenis, tahun; detail pihak terkait, dokumen dan bidang ilmu; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-16 Kelas Kuliah — Daftar dokumen kelas dibuka dari pengajaran; label kelas dan sumber PT; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-17 Kepangkatan — Riwayat pangkat/golongan, tanggal dan informasi SK; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-18 Kesejahteraan — Daftar/detail kesejahteraan per SDM dengan data sensitif dibatasi; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-19 Kolaborator Eksternal — Pencarian nama/NIK dan detail kolaborator; tidak ada daftar seluruh populasi; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-20 Orasi Ilmiah — Daftar/detail orasi, kegiatan, waktu dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-21 Pembicara — Daftar/detail kegiatan pembicara, peran, waktu dan bukti; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-22 Pendidikan Formal — Riwayat pendidikan, jenjang, institusi; dokumen dan ajuan terpisah; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-23 Penelitian — Daftar penelitian; judul, tahun, kategori; anggota, pendanaan bila tersedia, bidang ilmu dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-24 Pengabdian — Daftar pengabdian; judul, tahun, kategori; anggota, bidang ilmu dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-25 Pengajaran — Daftar pengajaran per semester, mata kuliah/kelas; detail, bidang ilmu dan dokumen kelas; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-26 Pengelola Jurnal — Daftar/detail jurnal, peran pengelola, periode dan bukti; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-27 Penghargaan — Daftar/detail penghargaan, jenis, tingkat, tahun dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-28 Pengujian Mahasiswa — Daftar/detail pengujian; mahasiswa, dosen dan bidang ilmu; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-29 Penugasan — Daftar/detail penempatan, PT/unit dan masa penugasan; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-30 Penunjang Lain — Daftar/detail kegiatan penunjang, peran, periode dan bukti; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-31 Publikasi — Daftar publikasi; judul, jenis, tahun; penulis, bidang ilmu dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-32 Referensi — Direktori referensi berlabel, profil PT dan hierarki unit/wilayah; pencarian mahasiswa terpisah; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-33 Riwayat Pekerjaan — Riwayat pekerjaan, institusi, jabatan, periode dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-34 Sertifikasi Dosen — Daftar/detail sertifikasi dan tab ajuan read-only; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-35 Sertifikasi Profesi — Daftar/detail sertifikasi, lembaga, bidang dan bukti; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-36 Tes — Daftar/detail hasil tes dan tab ajuan; detail 404 dibedakan dari list kosong; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-37 Tugas Tambahan — Daftar/detail tugas, jabatan, periode dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-38 Tunjangan — Daftar/detail tunjangan per SDM; nilai/nominal hanya jika tersedia dan diizinkan; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-39 Visiting Scientist — Riwayat kegiatan, institusi tujuan, periode dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+
+### Pekerjaan yang tidak dijadikan klaim selesai
+
+- [ ] Konfirmasi live endpoint yang masih 500 dan detail nilai tes yang pernah 404.
+- [ ] Verifikasi pencarian mahasiswa production jika nanti masuk deployment production.
+- [ ] Audit ownership file dan akses raw explorer/DTO sesuai security_ui.md.
+- [ ] Dokumentasikan cakupan sukses/kosong/gagal tiap scope saat release UI;
+  tidak menyebut 140/140 path sebagai 140/140 berhasil mengambil semua data.
+
+## Arsip checkpoint implementasi
+
+Bagian bertanggal di bawah adalah riwayat saat checkpoint tersebut dibuat.
+Kalimat “credential belum tersedia” atau “belum dipersist” tidak menjadi
+status terkini. Checklist portable/legacy setelah checkpoint dipakai sebagai
+referensi; rencana write/upload/rekonsiliasi mutation tidak aktif untuk produk ini.
 
 ## Implementation checkpoint: 2026-09-17
 
@@ -607,8 +664,16 @@ masing-masing dengan commit terpisah.
 - [x] Sync tunggal: advisory lock + heartbeat 30 detik, run kedua exit 3,
       run crash ditandai FAILED; progres tampil di `/replika/status`.
 - [ ] Cek `/referensi/mahasiswa_pddikti` di production (sandbox selalu `{}`).
-- [ ] Full sync 97 SDM pertama (beberapa jam; jalankan di VPS malam hari).
-- [ ] UI/tRPC membaca dari replika dan halaman status sinkronisasi admin.
+- [x] Full sync 97 SDM pertama dijalankan lokal; hasil parsial dengan exception
+      eksternal. Bukan bukti semua scope berhasil.
+- [x] Halaman replika dan status sinkronisasi tersedia.
+- [ ] Migrasikan seluruh UI khusus/tRPC bisnis ke replika (UI-DATA).
+
+## Checklist portable lama (bukan urutan task aktif)
+
+Item selesai/tergantikan ditelusuri melalui checkpoint terbaru. Bagian write,
+upload dan rekonsiliasi di bawah hanya template untuk project lain yang memang
+membutuhkannya; tidak boleh dijalankan sebagai perluasan scope Sisterbridge.
 
 ## 0. Gate kontrak eksternal
 
@@ -933,7 +998,7 @@ Satu fitur SISTER dianggap selesai apabila:
 2. schema, architecture, PRD, TODO, dan security contract konsisten;
 3. permission dan role behavior jelas;
 4. loading, empty, error, success, forbidden, dan stale state tersedia;
-5. write memiliki full payload dan audit;
+5. scope aktif hanya GET; write hanya bila ada perubahan scope produk terpisah;
 6. dokumen dan status ajuan ditangani bila relevan;
 7. unit/contract/integration test sesuai levelnya lulus;
 8. browser QA design system lulus;
@@ -951,7 +1016,7 @@ Satu fitur SISTER dianggap selesai apabila:
 - login dosen individual tanpa dukungan SSO/API resmi;
 - direct database SISTER;
 - local master data yang tidak punya endpoint SISTER;
-- sinkronisasi seluruh data secara massal tanpa kebutuhan;
+- sinkronisasi di luar GET dan batas PT yang telah disepakati;
 - webhook/callback yang belum tersedia pada PDF;
 - OCR, AI, dan enrichment eksternal;
 - mobile app;

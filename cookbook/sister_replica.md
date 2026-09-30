@@ -3,10 +3,36 @@
 Status: tahap 1 (GET saja), diverifikasi terhadap sandbox dan production
 SISTER pada 2026-09-29.
 
+## Coverage data dan UI (2026-09-30)
+
+135 GET JSON dalam mekanisme replika + 2 file live + 3 pencarian/detail
+pencarian = 140 read path. Full sync lokal 97 SDM telah dijalankan dengan
+pengecualian, bukan bukti seluruh record/endpoint berhasil. Snapshot sebelumnya
+memuat 134.856 record aktif. Riwayat 74 scope 403 terkait kelas lintas PT;
+14 scope 500 masih tercatat (9 detail ajuan pendidikan + 5 scope referensi).
+Angka per scope tidak sama dengan jumlah template endpoint gagal.
+
+Pemetaan seluruh UI: [ui_endpoint_map.md](./ui_endpoint_map.md).
+Scope produk: [prd_managerial.md](./prd_managerial.md).
+Status implementasi UI dan urutan paket: [todo.md](./todo.md).
+Halaman replika/explorer tersedia, namun halaman bisnis per modul, laporan dan
+warning masih harus dikembangkan. Sejumlah halaman khusus tetap memakai live
+adapter; tidak otomatis membaca DB setelah sync.
+
+Scope status saat ini menormalkan sebagian 404 sebagai sukses kosong.
+Sebelum UI menyatakan kelengkapan, pertahankan evidence status upstream dan
+bedakan not-found detail, empty terkonfirmasi, belum sync, error dan stale.
+Riwayat 403 yang dilewati karena lintas PT bukan error baru pada setiap run.
+
+Jangan memakai jumlah SDM profil atau run terakhir sebagai satu-satunya
+indikator kelengkapan semua child. View generated dari sampel juga bukan
+jaminan semua field baru telah menjadi kolom. UI/report membutuhkan DTO
+terkurasi dan pagination/total server-side, bukan raw JSON atau cuplikan data.
+
 ## Keputusan
 
 Tahap pertama proyek hanya membaca data SISTER dan menyalinnya ke PostgreSQL
-lokal di VPS. Ini mengubah prinsip awal "tidak menyalin database SISTER"
+lokal maupun VPS. Ini mengubah prinsip awal "tidak menyalin database SISTER"
 menjadi:
 
 - SISTER **tetap source of truth**. Replika adalah salinan baca yang bisa
@@ -15,8 +41,8 @@ menjadi:
 - Replika hanya diisi oleh `bun run sister:sync`. Tidak ada POST, PUT, atau
   DELETE ke SISTER; aplikasi juga tidak menulis ke tabel replika dari UI.
 - Payload disimpan apa adanya (JSONB) agar tidak ada data yang hilang karena
-  schema lokal belum lengkap. Tabel typed/view per modul dibuat di tahap
-  berikutnya ketika kebutuhan layar sudah jelas.
+  schema lokal belum lengkap. View typed/child telah dihasilkan dari sampel;
+  setelah sync baru, review apakah generator/view memerlukan pembaruan.
 - Replika memuat PII (data pribadi, keluarga, alamat, kepegawaian, tunjangan).
   Akses database dibatasi seperti data produksi: tidak diekspos ke publik,
   backup terenkripsi, dan tidak disalin ke laptop tanpa alasan.

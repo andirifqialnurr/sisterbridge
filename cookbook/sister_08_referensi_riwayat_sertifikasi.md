@@ -4,7 +4,33 @@ Bagian kedelapan katalog 39 modul dari `SISTER Web Service PT.pdf` versi API
 1.0.0. Modul Referensi paling besar secara jumlah endpoint dan harus dipahami
 sebagai dependency layer, bukan satu tabel UI raksasa.
 
-## Ringkasan
+## Scope UI aktif — 2026-09-30
+
+Produk Sisterbridge adalah report/warning admin dan seluruh GET harus memiliki
+tampilan bisnis. Pemetaan per endpoint, route, widget, dependency ID dan state:
+[ui_endpoint_map.md](./ui_endpoint_map.md). Backlog:
+[todo.md](./todo.md); requirement: [prd_managerial.md](./prd_managerial.md).
+
+Daftar metode POST/PUT/DELETE di bawah adalah inventory PDF, bukan scope
+implementasi aktif. Status repository pada katalog lama adalah snapshot awal;
+status UI terkini di tabel ini dan matriks endpoint harus dibaca terpisah dari
+keberhasilan live. Explorer/replika tersedia tetapi acceptance UI bisnis masih
+terbuka, termasuk perluasan dan QA halaman khusus yang sudah ada.
+
+| Acceptance | Owner folder | GET | UI bisnis yang wajib tersedia | Rujukan matriks |
+|---|---|---:|---|---|
+| UI-32 Referensi | `referensi` | 41 | Direktori referensi berlabel, profil PT dan hierarki unit/wilayah; pencarian mahasiswa terpisah | GET-000 s.d. GET-000 |
+| UI-33 Riwayat Pekerjaan | `riwayat_pekerjaan` | 2 | Riwayat pekerjaan, institusi, jabatan, periode dan dokumen | GET-000 s.d. GET-000 |
+| UI-34 Sertifikasi Dosen | `sertifikasi_dosen` | 4 | Daftar/detail sertifikasi dan tab ajuan read-only | GET-000 s.d. GET-000 |
+| UI-35 Sertifikasi Profesi | `sertifikasi_profesi` | 2 | Daftar/detail sertifikasi, lembaga, bidang dan bukti | GET-000 s.d. GET-000 |
+
+Setiap modul perlu list/detail atau konteks induk yang sesuai, field berlabel,
+widget nested/dokumen bila ada, filter yang didukung data, permission server,
+waktu pengambilan dan state sukses/kosong/belum sync/gagal/stale/partial.
+Tidak menciptakan field atau aturan warning dari nama modul. File/pencarian
+yang live mengikuti peta; default JSON bisnis dari replika lokal.
+
+## Ringkasan (inventory PDF dan snapshot awal)
 
 | No | Modul | PDF | Jumlah endpoint | Status repository |
 |---:|---|---:|---:|---|
@@ -107,4 +133,3 @@ sebagai dependency layer, bukan satu tabel UI raksasa.
 - **Pola:** CRUD; pisahkan master sertifikasi dari dokumen pendukung.
 - **Dependency:** `/referensi/lembaga_sertifikasi`, `/dokumen`, dan SDM.
 - **Status repository:** `planned`.
-

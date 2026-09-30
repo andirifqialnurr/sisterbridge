@@ -19,23 +19,63 @@ evidence auditnya.
 - Inventory: 236 endpoint unik dalam 39 domain.
 - Local database: PostgreSQL dengan Prisma.
 - Physical table dan column name: lowercase `snake_case`.
-- Local persistence hanya menyimpan user, konfigurasi, cache terbatas, audit,
-  operation status, ajuan cache, dan metadata dokumen.
-- Data SISTER tidak dimirror sebagai database bisnis lokal.
-- Read-only reference module saat ini mencakup `/referensi/profil_pt`,
-  `/referensi/semester`, `/referensi/wilayah` (referensi bertingkat
-  berdasarkan `id_level_wilayah`), `/referensi/perguruan_tinggi`, dan
-  `/referensi/unit_kerja` (referensi bertingkat berdasarkan
-  `id_perguruan_tinggi`); kelimanya belum dipersist ke database lokal.
-- Read-only assignment module mencakup `/penugasan` dan `/penugasan/{id}`;
-  keduanya tetap membaca source of truth SISTER dan belum dipersist ke database
-  lokal.
-- Read-only formal education module mencakup `/pendidikan_formal` dan
-  `/pendidikan_formal/{id}`; keduanya tetap membaca source of truth SISTER dan
-  belum dipersist ke database lokal.
-- Read-only work history module mencakup `/riwayat_pekerjaan` dan
-  `/riwayat_pekerjaan/{id}`; keduanya tetap membaca source of truth SISTER dan
-  belum dipersist ke database lokal.
+- Persistence lokal mencakup metadata aplikasi dan replika read-only 135 GET
+  JSON pada `sister_replica_record`, `sister_replica_scope`, `sister_sync_run`.
+- Schema `replica` berisi SQL view typed/child dari JSONB; bukan tabel master
+  SISTER yang boleh diedit. 2 file dan 3 pencarian/detail pencarian tetap live.
+- UI seluruh GET mengikuti [ui_endpoint_map.md](./ui_endpoint_map.md) dan
+  [prd_managerial.md](./prd_managerial.md); query UI melalui DTO terkurasi.
+- Data lokal sudah tersedia, tetapi sebagian halaman khusus masih memakai
+  adapter live. Migrasi UI ke read lokal adalah task UI-DATA.
+- Kontrak write pada bagian 6 adalah inventory/portable, bukan scope aktif.
+
+## Kontrak data untuk UI seluruh GET (aktif 2026-09-30)
+
+Peta endpoint → halaman/widget/dependensi ada di
+[ui_endpoint_map.md](./ui_endpoint_map.md).
+[replica_schema.md](./replica_schema.md) adalah output generator dari sampel;
+file itu tidak diedit manual. Tambahan field pada payload baru tidak otomatis
+membuat kolom view baru: review hasil generator/migration setelah full sync.
+
+| Lapisan | Fungsi | Aturan baca UI |
+|---|---|---|
+| `sister_replica_record` | Payload JSONB asli, identitas scope/record dan waktu | Raw JSON bukan default DTO browser |
+| `sister_replica_scope` | Fetch terakhir/sukses/error per endpoint + parameter | Empty hanya bila scope berhasil; gagal/belum sync berbeda |
+| `sister_sync_run` | Progres dan hasil run | Run terbaru tidak menggantikan status semua scope historis |
+| `replica.*` | View typed dan relasi array | Filter integration, SDM/parent, record aktif; kolom nullable |
+| DTO modul | Field berlabel dan tipe aman bagi actor | Allowlist field; timestamp/cakupan/state eksplisit |
+
+Target DTO list mempunyai item, pagination/total, sumber, waktu pengambilan dan
+status cakupan. Detail menyertakan identitas induk, bagian data serta status
+masing-masing bagian; kegagalan dokumen tidak menjadikan profil kosong.
+Nama field DTO ditetapkan saat implementasi dan divalidasi Zod.
+
+Relasi yang wajib dijaga:
+
+- SDM berasal dari `/referensi/sdm`; query `id_sdm` per aktivitas.
+- Detail/ajuan memakai ID dari list yang sesuai, bukan menukar ID master/ajuan.
+- Bidang ilmu menggunakan ID parent; dokumen/penulis/anggota/mahasiswa berasal
+  dari array response atau child endpoint yang terdokumentasi.
+- Dokumen kelas memakai `id_kelas` detail pengajaran sebagai `id_kls`;
+  cocokkan `id_pt` terhadap profil PT.
+- BKD aktivitas memakai pasangan SDM + semester laporan akhir SDM.
+- Unit kerja memakai profil PT; detail unit memakai ID unit; wilayah memakai
+  level dan relasi induk. File menggunakan ID foto/metadata yang terotorisasi.
+
+Kode/identifier tetap string jika semantiknya kode; decimal dan tanggal
+ditampilkan sesuai makna sumber. Null, string kosong, nol dan tidak tersedia
+tidak disamakan tanpa aturan endpoint. ID referensi tanpa label tidak ditebak.
+
+Report menggunakan query agregat terikat integration/PT dan unit hitung
+terdokumentasi. Jangan menghitung list + detail ganda atau seluruh partisipasi
+SDM sebagai kegiatan unik. Query agregasi tidak boleh memakai hanya cuplikan
+5.000 baris UI. Rule warning memakai data yang cukup lengkap dan fresh;
+kegagalan sumber menghasilkan belum dapat dinilai.
+
+Catatan status existing: 404 dapat dinormalkan menjadi scope sukses kosong
+oleh sync. Perbaiki pencatatan provenance/status sebelum mengklaim semua
+`last_status=200` lokal berarti HTTP 200 upstream. Tidak ada migration baru
+dalam task dokumentasi ini.
 
 ## Cara mengadaptasi dokumen
 
@@ -55,7 +95,7 @@ lokal hanya digunakan untuk:
 
 - user dan permission aplikasi;
 - konfigurasi instance SISTER serta referensi secret;
-- cache terbatas untuk kebutuhan performa;
+- replika response GET dan view typed untuk UI/report, dengan status/freshness;
 - audit operasi;
 - rekonsiliasi request yang hasilnya belum diketahui;
 - cache status ajuan bila fitur tersebut dipakai.
@@ -686,7 +726,8 @@ urutan dan ID kelompok bidang, bukan hanya menyimpan label tampilannya.
 
 ## 7. Schema penyimpanan lokal
 
-Schema ini adalah metadata integration, bukan mirror seluruh database SISTER.
+Schema lokal mencakup metadata aplikasi serta replika response GET SISTER.
+Tidak ada koneksi langsung ke database internal SISTER dan tidak ada UI edit replika.
 
 ### 7.0 Implementasi Prisma
 

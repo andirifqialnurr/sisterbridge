@@ -35,6 +35,60 @@ baseline pada [security.md](./security.md). Tujuannya adalah
 membangun lapisan kerja aman di atas SISTER, bukan menggantikan atau menyalin
 database SISTER.
 
+## UI managerial seluruh GET (scope aktif 2026-09-30)
+
+Scope produk: report dan warning untuk ADMIN, seluruh 140 GET memiliki tampilan
+bisnis. Kontrak aktif: [prd_managerial.md](./prd_managerial.md),
+[ui_endpoint_map.md](./ui_endpoint_map.md), [security_ui.md](./security_ui.md).
+Bagian write/upload/rekonsiliasi mutation dalam dokumen ini adalah pola
+portable untuk project yang membutuhkan, bukan pekerjaan aktif Sisterbridge.
+
+Alur target:
+
+    Route Next.js tipis
+      -> modules/<owner>/page
+      -> widget modul / component/widget
+      -> query tRPC modul (session + role + integration)
+      -> service (DTO + state + aturan report)
+      -> repository lokal (Prisma / view replica yang di-allowlist)
+
+Pengecualian live hanya pencarian keyword dan file, melalui adapter/route
+server. Jelajah tetap alat teknis terotorisasi. Halaman khusus existing masih
+perlu migrasi dari adapter live; desain target tidak berarti sudah berlaku.
+
+Setiap modul pada peta mempunyai folder owner. Misalnya penelitian menyimpan
+page list/detail, router/service/schema DTO, widget daftar/detail/anggota/
+bidang ilmu/dokumen, dan repository dalam `src/modules/penelitian/`.
+Route `app/penelitian` hanya delegasi. Data pokok dimiliki `pegawai`;
+dokumen kelas dimiliki `kelas_kuliah` dan dirangkai dari `pengajaran`.
+Ajuan tetap berada dalam modul pemilik; bukan workflow write generik.
+
+Modularitas: registry navigasi/policy menyatakan modul aktif, route dan
+permission. Modul opsional yang dinonaktifkan tidak ditampilkan dan query-nya
+ditolak server. Implementasi toggle runtime/config masih TODO, bukan
+capability yang sudah tersedia. Seluruh modul GET tetap memiliki implementasi
+UI target meskipun deployment tertentu hanya mengaktifkan sebagian.
+
+Shared widget memuat mekanisme tabel, detail berlabel, relasi, status data,
+file link, dan chart. Konfigurasi kolom/filter, label domain, DTO dan
+perhitungan tetap pada modul. Jangan menambah generic proxy path dari browser
+atau membuat page hanya merender JSON sebagai produk akhir.
+
+Pagination/filter/sort lokal dilakukan server dengan total yang benar.
+State URL menjaga SDM, semester, tab dan pagination. Detail dan child memeriksa
+relasi induk, bukan sekadar format ID. Query per bagian mengembalikan provenance
+dan state; kegagalan satu child tidak menghapus bagian sukses.
+
+Report pada owner `laporan` dan warning pada `peringatan` adalah target
+modul lokal yang menurunkan data SISTER, bukan endpoint SISTER baru. Service
+agregasi memakai scope dan definisi unit hitung, dengan drill-down ke DTO modul.
+Warning mempunyai rule yang dapat dijelaskan dan link bukti; belum ada
+deadline/ambang bisnis sampai field serta kebijakannya ditetapkan.
+
+Testing coverage UI harus melampaui test read-path union: per GET-ID
+verifikasi navigasi, sumber, DTO, dependency, role, state, list/detail/child/
+search/file dan browser flow. Reuse widget tidak menggantikan evidence modul.
+
 ## 1. Keputusan arsitektur utama
 
 1. SISTER menjadi source of truth.
@@ -52,8 +106,8 @@ database SISTER.
     menyalin route atau domain dari project reference.
 13. Audit operasi bisnis dan audit security disimpan sebagai event terpisah
     dengan redaction dan akses terbatas.
-14. Tahap 1 (2026-09-29): seluruh data GET SISTER direplikasi read-only ke
-    PostgreSQL lokal oleh job `sister:sync`; SISTER tetap source of truth dan
+14. Tahap 1 (2026-09-29): 135 GET JSON SISTER masuk mekanisme replika ke
+    PostgreSQL lokal oleh job `sister:sync`; 2 file dan 3 pencarian tetap live; SISTER tetap source of truth dan
     replika tidak pernah menulis balik. Detail di
     [sister_replica.md](./sister_replica.md).
 15. User aplikasi login dengan akun lokal (better-auth, email + password,
@@ -68,7 +122,7 @@ database SISTER.
 - App Router untuk route halaman dan server boundary.
 - tRPC sebagai API internal typed antara UI dan server aplikasi.
 - Next.js Route Handler sebagai transport tRPC dan endpoint khusus file.
-- PostgreSQL untuk metadata lokal.
+- PostgreSQL untuk metadata lokal, replika GET dan agregasi managerial.
 - Prisma sebagai data access layer lokal.
 
 ### 2.1.1 Naming dan physical database
@@ -503,7 +557,7 @@ sebagai UUID di procedure. Slice ini hanya membuka GET list/detail sesuai PDF
 halaman 260-263; dokumen hanya ditampilkan sebagai metadata, tanpa binary
 download, cache, atau mutation.
 
-## 8. Alur write dan update penuh
+## 8. Alur write dan update penuh (portable, tidak aktif)
 
 Untuk create:
 
@@ -532,7 +586,7 @@ PUT tidak boleh memakai payload partial hanya karena form hanya menampilkan
 sebagian field. Field yang tidak ditampilkan harus berasal dari detail SISTER
 atau strategi schema yang telah diverifikasi.
 
-## 9. Alur dokumen
+## 9. Alur dokumen (upload portable; scope aktif hanya baca/unduh)
 
 External API dapat memisahkan dokumen dari data utama. Pada project
 `sister-integrated`, API SISTER memang menggunakan pola berikut:
@@ -750,7 +804,7 @@ Arsitektur ini tidak mencakup:
 - menganggap SSO publik sebagai API OAuth tanpa dokumen;
 - mengubah data yang dinyatakan read-only;
 - membuat endpoint lokal yang tidak punya use case SISTER;
-- bulk import atau sinkronisasi seluruh 236 endpoint tanpa kebutuhan;
+- bulk import/write SISTER di luar scope 140 GET yang disetujui;
 - analytics yang mengarang metrik yang tidak tersedia dari API;
 - OCR atau AI untuk mengisi data tanpa scope baru.
 

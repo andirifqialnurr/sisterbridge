@@ -3,7 +3,33 @@
 Bagian keempat katalog 39 modul dari `SISTER Web Service PT.pdf` versi API
 1.0.0.
 
-## Ringkasan
+## Scope UI aktif — 2026-09-30
+
+Produk Sisterbridge adalah report/warning admin dan seluruh GET harus memiliki
+tampilan bisnis. Pemetaan per endpoint, route, widget, dependency ID dan state:
+[ui_endpoint_map.md](./ui_endpoint_map.md). Backlog:
+[todo.md](./todo.md); requirement: [prd_managerial.md](./prd_managerial.md).
+
+Daftar metode POST/PUT/DELETE di bawah adalah inventory PDF, bukan scope
+implementasi aktif. Status repository pada katalog lama adalah snapshot awal;
+status UI terkini di tabel ini dan matriks endpoint harus dibaca terpisah dari
+keberhasilan live. Explorer/replika tersedia tetapi acceptance UI bisnis masih
+terbuka, termasuk perluasan dan QA halaman khusus yang sudah ada.
+
+| Acceptance | Owner folder | GET | UI bisnis yang wajib tersedia | Rujukan matriks |
+|---|---|---:|---|---|
+| UI-16 Kelas Kuliah | `kelas_kuliah` | 1 | Daftar dokumen kelas dibuka dari pengajaran; label kelas dan sumber PT | GET-000 s.d. GET-000 |
+| UI-17 Kepangkatan | `kepangkatan` | 2 | Riwayat pangkat/golongan, tanggal dan informasi SK | GET-000 s.d. GET-000 |
+| UI-18 Kesejahteraan | `kesejahteraan` | 2 | Daftar/detail kesejahteraan per SDM dengan data sensitif dibatasi | GET-000 s.d. GET-000 |
+| UI-19 Kolaborator Eksternal | `kolaborator_eksternal` | 2 | Pencarian nama/NIK dan detail kolaborator; tidak ada daftar seluruh populasi | GET-000 s.d. GET-000 |
+
+Setiap modul perlu list/detail atau konteks induk yang sesuai, field berlabel,
+widget nested/dokumen bila ada, filter yang didukung data, permission server,
+waktu pengambilan dan state sukses/kosong/belum sync/gagal/stale/partial.
+Tidak menciptakan field atau aturan warning dari nama modul. File/pencarian
+yang live mengikuti peta; default JSON bisnis dari replika lokal.
+
+## Ringkasan (inventory PDF dan snapshot awal)
 
 | No | Modul | PDF | Jumlah endpoint | Status repository |
 |---:|---|---:|---:|---|
@@ -75,4 +101,3 @@ Bagian keempat katalog 39 modul dari `SISTER Web Service PT.pdf` versi API
 - Konfirmasi apakah document endpoint menggunakan binary yang sama dengan
   `/dokumen`.
 - Tentukan retention dan minimization untuk data kesejahteraan.
-

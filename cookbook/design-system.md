@@ -23,6 +23,58 @@ bawahnya.
 - Kontrak security lintas layer: `security.md`; dokumen ini hanya menetapkan
   perilaku security yang terlihat pada UI.
 
+## UI baca lengkap dan managerial (2026-09-30)
+
+Pola portable: setiap operasi baca mempunyai tujuan pengguna, jalur navigasi,
+list/detail atau konteks induk, label bisnis, dan state sumber. Generic JSON
+explorer tidak menjadi kriteria selesai sebuah halaman bisnis.
+Project Profile Sisterbridge mengikuti [ui_endpoint_map.md](./ui_endpoint_map.md)
+dan [prd_managerial.md](./prd_managerial.md); cakupan seluruh GET, read-only.
+
+- Sidebar mengelompokkan modul sesuai domain; referensi memakai direktori.
+  Tidak perlu menu per endpoint. Ajuan berada pada modulnya, dokumen kelas
+  dibuka dari pengajaran. Jangan menampilkan link hash atau tombol placeholder.
+- List memakai kolom yang dipilih untuk tugas admin; nama/label didahulukan,
+  bukan UUID mentah. Filter hanya untuk field yang benar-benar ada.
+- Detail terdiri dari field berlabel dan widget relasi. Array penulis,
+  anggota, mahasiswa, bidang ilmu, dan dokumen dapat ditelusuri;
+  “[n item]” atau JSON mentah bukan satu-satunya tampilan.
+- Search/filter/tab/pagination berada pada URL agar deep link/back/refresh
+  bekerja. State per child terpisah dari state halaman induk.
+- Referensi memakai label dan kode; pilih parent sebelum child. Nilai yang
+  belum tersedia tidak boleh tampil seperti opsi valid kosong.
+- Report menampilkan scope, periode, freshness, unit hitung dan drill-down.
+  Grafik ApexCharts mempunyai padanan tabel; jangan memaksakan chart pada
+  tiap endpoint yang hanya berupa data detail.
+- Warning menampilkan alasan dan sumber record. “Belum dapat dinilai”
+  berbeda dari “Bermasalah”. Teknis HTTP/detail SQL disimpan di alat diagnosis;
+  halaman admin memakai penjelasan yang membantu keputusan.
+- Foto/preview/unduh berada pada konteks dokumen; indikator live bila
+  membutuhkan SISTER. Binary tidak dimuat massal saat halaman list dibuka.
+
+Inset horizontal header dan semua halaman **30px**. Width cap/centering lama
+tidak boleh menambah margin horizontal aktual melebihi permintaan ini pada
+halaman workspace; konten harus memanfaatkan lebar yang tersisa setelah sidebar.
+Pada mobile pertahankan inset, izinkan toolbar wrap dan tabel scroll lokal.
+
+Breadcrumb body maksimal tiga level: icon kotak-kotak > menu > submenu.
+Detail: icon kotak-kotak > elipsis tengah > Detail nama record.
+Header hanya search global dan profil kanan. Action/filter/search halaman
+sejajar di kanan breadcrumb; aksi baris/pagination tetap dekat tabel.
+Tidak ada title/deskripsi visual yang mengulang breadcrumb; h1 sr-only.
+Tidak ada card pembungkus form/filter atau card dalam card; gunakan divider.
+
+Shared widget target: daftar, detail berlabel, relasi anak, metadata/file,
+status/freshness, report dengan drill-down, dan daftar warning.
+Primitive tetap pada component/ui, widget gabungan pada component/widget atau
+module/widget. Warna/font hanya dari const/theme.ts. Nama widget spesifik
+endpoint pada matriks adalah owner/tanggung jawab dan boleh menggunakan
+shared widget yang sama agar styling berubah serentak.
+
+Acceptance visual setiap modul: 1280/1024/390/320, light/dark, keyboard,
+focus/aria, breadcrumb/toolbar, dan state loading/empty/not-synced/partial/
+stale/forbidden/error. Tanda selesai API tidak menggantikan QA tersebut.
+
 ## Cara Menggunakan
 
 File ini adalah spesifikasi, bukan package UI. Mengambil file Markdown saja tidak
@@ -327,8 +379,9 @@ section: heading/toolbar -> content -> pagination
 - Breadcrumb selalu berada di area halaman, bukan di header.
 - Breadcrumb row memiliki satu breadcrumb di kiri dan satu grup aksi/filter di
   kanan.
-- Page content memiliki `max-width: 1680px`, `margin: 0 auto`, dan `min-width: 0`
-  pada setiap child langsung agar tabel tidak memaksa halaman melebar.
+- Page content mengisi lebar workspace dengan inset horizontal 30px dan
+  `min-width: 0` pada child. Jangan menambah max-width/margin-auto yang
+  memperbesar margin horizontal halaman; tabel memakai scroll lokal.
 - Section data tidak dibungkus card tambahan.
 - Halaman tidak menampilkan title dan deskripsi visual terpisah bila nama
   halaman sudah jelas dari breadcrumb. Jika tetap perlu heading aksesibel,

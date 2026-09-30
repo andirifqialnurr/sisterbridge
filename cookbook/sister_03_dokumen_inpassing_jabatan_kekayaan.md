@@ -3,7 +3,34 @@
 Bagian ketiga katalog 39 modul dari `SISTER Web Service PT.pdf` versi API
 1.0.0. Bagian ini memuat resource CRUD dan boundary dokumen/bidang ilmu.
 
-## Ringkasan
+## Scope UI aktif — 2026-09-30
+
+Produk Sisterbridge adalah report/warning admin dan seluruh GET harus memiliki
+tampilan bisnis. Pemetaan per endpoint, route, widget, dependency ID dan state:
+[ui_endpoint_map.md](./ui_endpoint_map.md). Backlog:
+[todo.md](./todo.md); requirement: [prd_managerial.md](./prd_managerial.md).
+
+Daftar metode POST/PUT/DELETE di bawah adalah inventory PDF, bukan scope
+implementasi aktif. Status repository pada katalog lama adalah snapshot awal;
+status UI terkini di tabel ini dan matriks endpoint harus dibaca terpisah dari
+keberhasilan live. Explorer/replika tersedia tetapi acceptance UI bisnis masih
+terbuka, termasuk perluasan dan QA halaman khusus yang sudah ada.
+
+| Acceptance | Owner folder | GET | UI bisnis yang wajib tersedia | Rujukan matriks |
+|---|---|---:|---|---|
+| UI-11 Dokumen | `dokumen` | 3 | Daftar metadata, detail, preview yang didukung, dan unduh | GET-000 s.d. GET-000 |
+| UI-12 Inpassing | `inpassing` | 2 | Riwayat inpassing, informasi SK, tanggal dan bukti | GET-000 s.d. GET-000 |
+| UI-13 Jabatan Fungsional | `jabatan_fungsional` | 4 | Riwayat jabatan dan tab ajuan terpisah dengan status dari SISTER | GET-000 s.d. GET-000 |
+| UI-14 Jabatan Struktural | `jabatan_struktural` | 2 | Riwayat jabatan, unit, periode dan informasi SK | GET-000 s.d. GET-000 |
+| UI-15 Kekayaan Intelektual | `kekayaan_intelektual` | 3 | Daftar karya, jenis, tahun; detail pihak terkait, dokumen dan bidang ilmu | GET-000 s.d. GET-000 |
+
+Setiap modul perlu list/detail atau konteks induk yang sesuai, field berlabel,
+widget nested/dokumen bila ada, filter yang didukung data, permission server,
+waktu pengambilan dan state sukses/kosong/belum sync/gagal/stale/partial.
+Tidak menciptakan field atau aturan warning dari nama modul. File/pencarian
+yang live mengikuti peta; default JSON bisnis dari replika lokal.
+
+## Ringkasan (inventory PDF dan snapshot awal)
 
 | No | Modul | PDF | Jumlah endpoint | Status repository |
 |---:|---|---:|---:|---|
@@ -100,4 +127,3 @@ kemudian direferensikan oleh resource utama.
 - **Security:** nested PUT harus diperlakukan sebagai mutation terpisah,
   dengan full payload dan audit; jangan menyamakan dengan PATCH parsial.
 - **Status repository:** `planned` dan menunggu keputusan nested bidang ilmu.
-

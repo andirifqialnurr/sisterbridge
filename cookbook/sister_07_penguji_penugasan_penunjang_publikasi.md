@@ -3,7 +3,33 @@
 Bagian ketujuh katalog 39 modul dari `SISTER Web Service PT.pdf` versi API
 1.0.0.
 
-## Ringkasan
+## Scope UI aktif — 2026-09-30
+
+Produk Sisterbridge adalah report/warning admin dan seluruh GET harus memiliki
+tampilan bisnis. Pemetaan per endpoint, route, widget, dependency ID dan state:
+[ui_endpoint_map.md](./ui_endpoint_map.md). Backlog:
+[todo.md](./todo.md); requirement: [prd_managerial.md](./prd_managerial.md).
+
+Daftar metode POST/PUT/DELETE di bawah adalah inventory PDF, bukan scope
+implementasi aktif. Status repository pada katalog lama adalah snapshot awal;
+status UI terkini di tabel ini dan matriks endpoint harus dibaca terpisah dari
+keberhasilan live. Explorer/replika tersedia tetapi acceptance UI bisnis masih
+terbuka, termasuk perluasan dan QA halaman khusus yang sudah ada.
+
+| Acceptance | Owner folder | GET | UI bisnis yang wajib tersedia | Rujukan matriks |
+|---|---|---:|---|---|
+| UI-28 Pengujian Mahasiswa | `pengujian_mahasiswa` | 3 | Daftar/detail pengujian; mahasiswa, dosen dan bidang ilmu | GET-000 s.d. GET-000 |
+| UI-29 Penugasan | `penugasan` | 2 | Daftar/detail penempatan, PT/unit dan masa penugasan | GET-000 s.d. GET-000 |
+| UI-30 Penunjang Lain | `penunjang_lain` | 2 | Daftar/detail kegiatan penunjang, peran, periode dan bukti | GET-000 s.d. GET-000 |
+| UI-31 Publikasi | `publikasi` | 3 | Daftar publikasi; judul, jenis, tahun; penulis, bidang ilmu dan dokumen | GET-000 s.d. GET-000 |
+
+Setiap modul perlu list/detail atau konteks induk yang sesuai, field berlabel,
+widget nested/dokumen bila ada, filter yang didukung data, permission server,
+waktu pengambilan dan state sukses/kosong/belum sync/gagal/stale/partial.
+Tidak menciptakan field atau aturan warning dari nama modul. File/pencarian
+yang live mengikuti peta; default JSON bisnis dari replika lokal.
+
+## Ringkasan (inventory PDF dan snapshot awal)
 
 | No | Modul | PDF | Jumlah endpoint | Status repository |
 |---:|---|---:|---:|---|
@@ -74,4 +100,3 @@ Bagian ketujuh katalog 39 modul dari `SISTER Web Service PT.pdf` versi API
   `/dokumen`, dan SDM.
 - **Status repository:** `planned`; jangan membuka chart/analytics sebelum
   response agregat yang dibutuhkan benar-benar tersedia.
-

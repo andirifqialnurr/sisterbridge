@@ -2,7 +2,34 @@
 
 Bagian kedua katalog 39 modul `SISTER Web Service PT.pdf` versi API 1.0.0.
 
-## Ringkasan
+## Scope UI aktif — 2026-09-30
+
+Produk Sisterbridge adalah report/warning admin dan seluruh GET harus memiliki
+tampilan bisnis. Pemetaan per endpoint, route, widget, dependency ID dan state:
+[ui_endpoint_map.md](./ui_endpoint_map.md). Backlog:
+[todo.md](./todo.md); requirement: [prd_managerial.md](./prd_managerial.md).
+
+Daftar metode POST/PUT/DELETE di bawah adalah inventory PDF, bukan scope
+implementasi aktif. Status repository pada katalog lama adalah snapshot awal;
+status UI terkini di tabel ini dan matriks endpoint harus dibaca terpisah dari
+keberhasilan live. Explorer/replika tersedia tetapi acceptance UI bisnis masih
+terbuka, termasuk perluasan dan QA halaman khusus yang sudah ada.
+
+| Acceptance | Owner folder | GET | UI bisnis yang wajib tersedia | Rujukan matriks |
+|---|---|---:|---|---|
+| UI-06 Bimbingan Dosen | `bimbing_dosen` | 2 | Daftar/detail pembimbingan dosen dan pihak terkait | GET-000 s.d. GET-000 |
+| UI-07 Bimbingan Mahasiswa | `bimbingan_mahasiswa` | 3 | Daftar/detail bimbingan; mahasiswa, dosen, dan bidang ilmu | GET-000 s.d. GET-000 |
+| UI-08 Data Pokok | `pegawai` | 8 | Profil SDM dengan foto dan tujuh bagian data pokok; bagian sensitif dibatasi | GET-000 s.d. GET-000 |
+| UI-09 Detasering | `detasering` | 2 | Riwayat penempatan detasering, instansi dan periode | GET-000 s.d. GET-000 |
+| UI-10 Diklat | `diklat` | 2 | Daftar pelatihan, jenis, penyelenggara, periode dan dokumen | GET-000 s.d. GET-000 |
+
+Setiap modul perlu list/detail atau konteks induk yang sesuai, field berlabel,
+widget nested/dokumen bila ada, filter yang didukung data, permission server,
+waktu pengambilan dan state sukses/kosong/belum sync/gagal/stale/partial.
+Tidak menciptakan field atau aturan warning dari nama modul. File/pencarian
+yang live mengikuti peta; default JSON bisnis dari replika lokal.
+
+## Ringkasan (inventory PDF dan snapshot awal)
 
 | No | Modul | PDF | Jumlah endpoint | Status repository |
 |---:|---|---:|---:|---|
@@ -105,4 +132,3 @@ Bagian kedua katalog 39 modul `SISTER Web Service PT.pdf` versi API 1.0.0.
 Modul pada bagian ini menyentuh PII atau nested resource. Mulai dari GET yang
 memiliki kebutuhan UI nyata; jangan membuka PUT foto, keluarga, alamat, atau
 bidang ilmu sebelum authz, audit, file validation, dan UAT disepakati.
-
