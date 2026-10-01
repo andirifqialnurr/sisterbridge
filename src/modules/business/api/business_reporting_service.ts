@@ -87,26 +87,26 @@ export async function getBusinessReport(input: BusinessReportInput, repository =
 }
 
 function endpointHref(endpoint: string, idSdm?: string | null, scopeKey?: string) {
-  const module = jelajahModules.find((candidate) =>
+  const catalogEntry = jelajahModules.find((candidate) =>
     candidate.path === endpoint ||
     candidate.detailPath === endpoint ||
     candidate.children?.some((child) => child.path === endpoint),
   );
-  if (!module) return "/replika/status";
-  if (module.kind === "sdm_object") {
+  if (!catalogEntry) return "/replika/status";
+  if (catalogEntry.kind === "sdm_object") {
     const path = idSdm ? "/pegawai/" + encodeURIComponent(idSdm) : "/pegawai";
-    return path + "?tab=" + encodeURIComponent(module.key);
+    return path + "?tab=" + encodeURIComponent(catalogEntry.key);
   }
   const scopedParams = new URLSearchParams(scopeKey && scopeKey !== "-" ? scopeKey : "");
-  const params = new URLSearchParams(module.query ?? {});
+  const params = new URLSearchParams(catalogEntry.query ?? {});
   if (idSdm) params.set("id_sdm", idSdm);
   for (const [key, value] of scopedParams) {
     if (key !== "id" && key !== "id_sdm") params.set(key, value);
   }
-  const detailId = module.detailPath === endpoint ? scopedParams.get("id") : null;
-  const path = detailId && module.detailPath
-    ? module.detailPath.replace("{id}", encodeURIComponent(detailId))
-    : module.path;
+  const detailId = catalogEntry.detailPath === endpoint ? scopedParams.get("id") : null;
+  const path = detailId && catalogEntry.detailPath
+    ? catalogEntry.detailPath.replace("{id}", encodeURIComponent(detailId))
+    : catalogEntry.path;
   const query = params.toString();
   return path + (query ? "?" + query : "");
 }
@@ -122,12 +122,12 @@ export async function getBusinessWarnings(repository = new PrismaBusinessReporti
   const byEndpoint = new Map(groups.map((row) => [row.endpoint, row]));
   const endpoints = replicaEndpointTemplates().map((endpoint) => {
     const group = byEndpoint.get(endpoint);
-    const module = jelajahModules.find((candidate) =>
+    const catalogEntry = jelajahModules.find((candidate) =>
       candidate.path === endpoint || candidate.detailPath === endpoint || candidate.children?.some((child) => child.path === endpoint),
     );
     return {
       endpoint,
-      label: module?.label ?? endpoint,
+      label: catalogEntry?.label ?? endpoint,
       href: endpointHref(endpoint),
       scope_count: group?.total ?? 0,
       failed_scope_count: group?.failed ?? 0,

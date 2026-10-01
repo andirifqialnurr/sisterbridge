@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/component/ui/page_shell";
-import { State } from "@/component/ui/state";
 import { StatusBadge } from "@/component/ui/status_badge";
 import { Tabs } from "@/component/ui/tabs";
 import { DataTable, type DataTableColumn } from "@/component/widget/data_table";

@@ -21,19 +21,19 @@ function queryMatches(module: (typeof jelajahModules)[number], params: SearchPar
 export default async function BusinessRoute({ params, searchParams }: { params: Promise<{ segments: string[] }>; searchParams: Promise<SearchParams> }) {
   const [{ segments }, query] = await Promise.all([params, searchParams]);
   const path = `/${segments.join("/")}`;
-  for (const module of jelajahModules) {
-    const exact = matches(module.path, path);
-    if (exact?.length === 0 && queryMatches(module, query)) {
-      if (module.key.startsWith("bkd_") || module.key === "laporan_akhir_bkd") return <BusinessBkdPage initialTab={module.key} />;
-      return <BusinessModulePage moduleKey={module.key} />;
+  for (const catalogEntry of jelajahModules) {
+    const exact = matches(catalogEntry.path, path);
+    if (exact?.length === 0 && queryMatches(catalogEntry, query)) {
+      if (catalogEntry.key.startsWith("bkd_") || catalogEntry.key === "laporan_akhir_bkd") return <BusinessBkdPage initialTab={catalogEntry.key} />;
+      return <BusinessModulePage moduleKey={catalogEntry.key} />;
     }
-    if (exact?.length === 1 && module.kind === "sdm_object") return <BusinessModulePage itemId={exact[0]} moduleKey={module.key} />;
-    if (module.detailPath) {
-      const detail = matches(module.detailPath, path);
-      if (detail?.length === 1) return <BusinessModulePage itemId={detail[0]} moduleKey={module.key} />;
-    } else if (module.children?.length) {
-      const detail = matches(`${module.path}/{id}`, path);
-      if (detail?.length === 1) return <BusinessModulePage itemId={detail[0]} moduleKey={module.key} />;
+    if (exact?.length === 1 && catalogEntry.kind === "sdm_object") return <BusinessModulePage itemId={exact[0]} moduleKey={catalogEntry.key} />;
+    if (catalogEntry.detailPath) {
+      const detail = matches(catalogEntry.detailPath, path);
+      if (detail?.length === 1) return <BusinessModulePage itemId={detail[0]} moduleKey={catalogEntry.key} />;
+    } else if (catalogEntry.children?.length) {
+      const detail = matches(`${catalogEntry.path}/{id}`, path);
+      if (detail?.length === 1) return <BusinessModulePage itemId={detail[0]} moduleKey={catalogEntry.key} />;
     }
   }
   notFound();

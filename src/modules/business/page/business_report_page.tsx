@@ -118,8 +118,8 @@ function BkdReport({ data, state, page }: { data: ReportData; state: ReturnType<
       { key: "name", header: "Nama SDM", render: (row) => formatValue(row.nama_sdm) },
       { key: "nidn", header: "NIDN", render: (row) => formatValue(row.nidn) },
       { key: "conclusion", header: "Simpulan", render: (row) => row.simpulan ?? "Tidak tersedia" },
-      { key: "open", header: "", render: (row) => <Link className="font-semibold text-[hsl(var(--color-primary))]" href={"/bkd?id_sdm=" + encodeURIComponent(row.id_sdm) + "&id_smt=" + encodeURIComponent(row.id_smt) + "&tab=laporan_akhir_bkd"}>Lihat laporan</Link> },
-    ] as DataTableColumn<Row>[]} empty="Tidak ada laporan pada filter ini." getRowKey={(row) => row.id_sdm + row.id_smt} rows={data.rows} pagination={<ReportPagination page={page} total={data.total} perPage={data.per_page} onPage={(value) => state.set({ page: String(value) })} />} />}
+      { key: "open", header: "", render: (row) => row.id_smt ? <Link className="font-semibold text-[hsl(var(--color-primary))]" href={"/bkd?id_sdm=" + encodeURIComponent(row.id_sdm) + "&id_smt=" + encodeURIComponent(row.id_smt) + "&tab=laporan_akhir_bkd"}>Lihat laporan</Link> : "Semester tidak tersedia" },
+    ] as DataTableColumn<Row>[]} empty="Tidak ada laporan pada filter ini." getRowKey={(row) => row.id_sdm + (row.id_smt ?? "")} rows={data.rows} pagination={<ReportPagination page={page} total={data.total} perPage={data.per_page} onPage={(value) => state.set({ page: String(value) })} />} />}
   </div>;
 }
 function ReportPagination({ page, perPage, total, onPage }: { page: number; perPage: number; total: number; onPage: (page: number) => void }) {

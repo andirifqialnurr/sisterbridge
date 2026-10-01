@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Select } from "@/component/ui/select";
@@ -50,13 +50,13 @@ export function useUrlState(): UrlState {
     read(); setReady(true); window.addEventListener("popstate", read);
     return () => window.removeEventListener("popstate", read);
   }, []);
-  function set(next: Record<string, string | null>) {
+  const set = useCallback((next: Record<string, string | null>) => {
     const params = new URLSearchParams(window.location.search);
-    for (const [key, value] of Object.entries(next)) value ? params.set(key, value) : params.delete(key);
+    for (const [key, value] of Object.entries(next)) { if (value) params.set(key, value); else params.delete(key); }
     const query = params.toString();
     window.history.pushState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
     setValues(Object.fromEntries(params.entries()));
-  }
+  }, []);
   return { values, ready, set };
 }
 
@@ -129,8 +129,8 @@ export function SdmPicker({ value, onChange, enabled = true }: { value: string; 
 }
 
 export function rowColumns(moduleKey: string, columns: BusinessColumn[], idSdm?: string): DataTableColumn<BusinessRow>[] {
-  const module = getJelajahModule(moduleKey);
-  const hasDetail = Boolean(module?.detailPath || module?.children?.length);
+  const catalogEntry = getJelajahModule(moduleKey);
+  const hasDetail = Boolean(catalogEntry?.detailPath || catalogEntry?.children?.length);
   const fields = columns.map((column) => column.key);
   const summaryFields = hasDetail ? columns.filter((column) => column.type !== "jsonb" && column.key !== "id" && column.key !== "id_sdm" && !column.key.startsWith("id_")).map((column) => column.key) : fields;
   const preferred = preferredFields[moduleKey] ?? [];
@@ -138,10 +138,10 @@ export function rowColumns(moduleKey: string, columns: BusinessColumn[], idSdm?:
     ? [...preferred.filter((key) => summaryFields.includes(key)), ...summaryFields.filter((key) => !preferred.includes(key))].slice(0, 5)
     : summaryFields;
   const result: DataTableColumn<BusinessRow>[] = keys.map((key) => ({ key, header: labelFor(key), render: (row) => <span className="whitespace-normal">{formatValue(row.values[key])}</span> }));
-  if (module && hasDetail) result.push({
+  if (catalogEntry && hasDetail) result.push({
     key: "detail", header: "", className: "w-28 text-right",
     render: (row) => {
-      const href = module.detailPath ? module.detailPath.replace("{id}", encodeURIComponent(row.id)) : `${module.path}/${encodeURIComponent(row.id)}`;
+      const href = catalogEntry.detailPath ? catalogEntry.detailPath.replace("{id}", encodeURIComponent(row.id)) : `${catalogEntry.path}/${encodeURIComponent(row.id)}`;
       const query = new URLSearchParams(idSdm ? { id_sdm: idSdm } : {}).toString();
       return <Link className="font-semibold text-[hsl(var(--color-primary))] hover:underline" href={`${href}${query ? `?${query}` : ""}`}>Lihat detail</Link>;
     },

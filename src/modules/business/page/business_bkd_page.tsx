@@ -45,7 +45,7 @@ export function BusinessBkdPage({ initialTab = "laporan_akhir_bkd" }: { initialT
     : semesters;
   useEffect(() => {
     if (state.ready && idSdm && !state.values.id_smt && semesters[0]) state.set({ id_smt: semesters[0].value });
-  }, [state.ready, idSdm, state.values.id_smt, semesters]);
+  }, [state.ready, idSdm, state.values.id_smt, semesters, state.set]);
 
   const currentModule = getJelajahModule(activeTab)!;
   const activity = useQuery({

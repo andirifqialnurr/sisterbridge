@@ -63,8 +63,8 @@ export const businessRouter = createTRPCRouter({
     return getJelajahList(input);
   })),
   live_detail: adminProcedure.input(businessLiveDetailInputSchema).query(({ input }) => run(() => {
-    const module = getJelajahModule(input.module);
-    if (module?.kind !== "search" || !module.detailPath) throw new BusinessDataUnavailableError("Detail langsung hanya tersedia untuk hasil pencarian yang diizinkan.");
+    const catalogEntry = getJelajahModule(input.module);
+    if (catalogEntry?.kind !== "search" || !catalogEntry.detailPath) throw new BusinessDataUnavailableError("Detail langsung hanya tersedia untuk hasil pencarian yang diizinkan.");
     return getJelajahDetail(input);
   })),
 });
