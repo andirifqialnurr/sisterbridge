@@ -1,5 +1,5 @@
-import { PegawaiPage } from "@/modules/pegawai/page/pegawai_page";
+﻿import { SdmDirectoryPage } from "@/modules/business/page/business_module_pages";
 
-export default function PegawaiRoute() {
-  return <PegawaiPage />;
+export default function Page() {
+  return <SdmDirectoryPage />;
 }

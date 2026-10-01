@@ -311,6 +311,7 @@ export async function runReplicaSync(
     };
 
     const collected: unknown[] = [];
+    let responseStatus: 200 | 404 = 200;
     for (let page = 1; page <= maxPages; page += 1) {
       const query = input.paginated
         ? { ...input.query, per_page: String(replicaPageSize), page: String(page) }
@@ -323,9 +324,10 @@ export async function runReplicaSync(
       stats.statuses[statusKey] = (stats.statuses[statusKey] ?? 0) + 1;
 
       if (!response.ok) {
-        // 404 is SISTER's answer for "no data" on single-object endpoints;
-        // treat it as an empty but complete scope so stale rows get retired.
+        // A 404 on the first page is a completed not-found scope. A 404 after
+        // earlier pages simply ends pagination.
         if (response.status === 404) {
+          if (collected.length === 0) responseStatus = 404;
           break;
         }
         stats.failed += 1;
@@ -355,7 +357,7 @@ export async function runReplicaSync(
     }
 
     const replicaItems = toReplicaItems(collected, input.kind);
-    const saved = await deps.store.saveScope(runId!, options.integrationId, scope, replicaItems);
+    const saved = await deps.store.saveScope(runId!, options.integrationId, scope, replicaItems, responseStatus);
     stats.records += replicaItems.length;
     stats.created += saved.created;
     stats.changed += saved.changed;

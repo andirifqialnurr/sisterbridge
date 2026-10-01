@@ -19,7 +19,7 @@ export function PageShell({
   breadcrumb,
   children,
   detailLabel,
-  maxWidth = "1440px",
+  maxWidth = "none",
 }: PageShellProps) {
   return (
     <div className="flex min-h-screen">
@@ -27,7 +27,7 @@ export function PageShell({
       <div className="min-w-0 flex-1 bg-[hsl(var(--color-canvas))]">
         <AppHeader maxWidth={maxWidth} />
         <main
-          className="mx-auto min-w-0 space-y-6 px-[40px] py-6"
+          className="min-w-0 space-y-6 px-[30px] py-6"
           style={{ maxWidth }}
         >
           <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">

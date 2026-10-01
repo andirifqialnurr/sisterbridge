@@ -1022,3 +1022,14 @@ Satu fitur SISTER dianggap selesai apabila:
 - mobile app;
 - payment atau workflow non-SISTER;
 - analytics yang membutuhkan data yang tidak diberikan API.
+
+
+## Progress implementasi UI (2026-10-01)
+
+Route katalog kini membuka halaman bisnis berbasis replika untuk modul, direktori
+SDM dan referensi, detail, pencarian langsung, BKD, laporan, peringatan, dan
+status akses. Pemetaan endpoint diperbarui agar tidak lagi menyebut halaman
+bisnis sebagai rencana. Ini adalah status implementasi source, bukan bukti
+acceptance: checklist master dan paket UI tetap terbuka sampai role/tenant,
+deep link, state data, responsive layout, keyboard, light/dark, dan alur file
+diverifikasi melalui QA browser. QA tersebut belum dijalankan pada perubahan ini.

@@ -17,6 +17,7 @@ export class MemoryReplicaStore implements ReplicaStore {
   readonly runs = new Map<string, ReplicaRunSummary | null>();
   readonly fetchedScopes = new Set<string>();
   readonly failedScopes = new Map<string, number>();
+  readonly scopeStatuses = new Map<string, number>();
 
   async ensureIntegration() {}
 
@@ -46,6 +47,7 @@ export class MemoryReplicaStore implements ReplicaStore {
     _integrationId: string,
     scope: ReplicaScope,
     items: ReplicaItem[],
+    responseStatus: 200 | 404 = 200,
   ): Promise<ReplicaSaveResult> {
     const prefix = `${scope.endpoint}|${scope.scopeKey}|`;
     const result: ReplicaSaveResult = { created: 0, changed: 0, unchanged: 0, deleted: 0, changedKeys: [] };
@@ -84,6 +86,7 @@ export class MemoryReplicaStore implements ReplicaStore {
 
     this.fetchedScopes.add(`${scope.endpoint}|${scope.scopeKey}`);
     this.failedScopes.delete(`${scope.endpoint}|${scope.scopeKey}`);
+    this.scopeStatuses.set(`${scope.endpoint}|${scope.scopeKey}`, responseStatus);
     return result;
   }
 

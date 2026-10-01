@@ -9,6 +9,7 @@ import { securityRouter } from "@/modules/security/api/security_router";
 import { bkdRouter } from "@/modules/bkd/api/bkd_router";
 import { jelajahRouter } from "@/modules/jelajah/api/jelajah_router";
 import { replikaRouter } from "@/modules/replika/api/replika_router";
+import { businessRouter } from "@/modules/business/api/business_router";
 
 export const appRouter = createTRPCRouter({
   overview: overviewRouter,
@@ -20,6 +21,7 @@ export const appRouter = createTRPCRouter({
   bkd: bkdRouter,
   jelajah: jelajahRouter,
   replika: replikaRouter,
+  business: businessRouter,
   security: securityRouter,
 });
 

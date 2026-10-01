@@ -1,8 +1,9 @@
 import { getFixtureUser } from "@/server/auth/session";
 import { getSisterConfigurationStatus } from "@/server/sister/config";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/trpc/init";
+import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/trpc/init";
 
-import { overviewSessionSchema, overviewStatusSchema } from "../schema/overview_schema";
+import { getSisterIntegrationStatus } from "./overview_service";
+import { overviewIntegrationSchema, overviewSessionSchema, overviewStatusSchema } from "../schema/overview_schema";
 
 export const overviewRouter = createTRPCRouter({
   health: publicProcedure.query(({ ctx }) => ({
@@ -30,4 +31,7 @@ export const overviewRouter = createTRPCRouter({
       sister_configuration: sisterStatus.configuration,
     });
   }),
+  integration: adminProcedure.query(async () =>
+    overviewIntegrationSchema.parse(await getSisterIntegrationStatus()),
+  ),
 });

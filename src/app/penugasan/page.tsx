@@ -1,5 +1,5 @@
-import { PenugasanPage } from "@/modules/penugasan/page/penugasan_page";
+﻿import { BusinessModulePage } from "@/modules/business/page/business_module_pages";
 
-export default function PenugasanRoute() {
-  return <PenugasanPage />;
+export default function Page() {
+  return <BusinessModulePage moduleKey="penugasan" />;
 }

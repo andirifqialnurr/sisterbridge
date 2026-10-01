@@ -219,6 +219,20 @@ export const jelajahModules: JelajahModule[] = [
   sdmList("dokumen", "Dokumen (metadata)", "Dokumen dan BKD", "/dokumen", {
     note: "Hanya metadata; unduhan file tidak dibuka.",
   }),
+  ...([
+    ["bkd_pendidikan", "BKD pendidikan", "/bkd/pendidikan"],
+    ["bkd_ajar", "BKD pengajaran", "/bkd/ajar"],
+    ["bkd_tunjang", "BKD penunjang", "/bkd/tunjang"],
+    ["bkd_pengmas", "BKD pengabdian", "/bkd/pengmas"],
+    ["bkd_penelitian", "BKD penelitian", "/bkd/penelitian"],
+  ] as const).map(([key, label, path]) => ({
+    key,
+    label,
+    group: "Dokumen dan BKD" as const,
+    kind: "sdm_list" as const,
+    path,
+    note: "Data dibaca dari replika per semester.",
+  })),
   {
     key: "laporan_akhir_bkd",
     label: "Laporan akhir BKD",

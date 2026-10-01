@@ -1,3 +1,5 @@
+import { getSisterConfig } from "@/server/sister/config";
+
 import {
   PrismaReplikaDashboardRepository,
   type ReplikaDashboardRepository,
@@ -35,16 +37,18 @@ export async function getReplikaDashboard(
   repository: ReplikaDashboardRepository = new PrismaReplikaDashboardRepository(),
   now = new Date(),
 ) {
-  const [composition, synced, publikasi, penelitian, pengabdian, bkd, lastSync] = await Promise.all([
-    section(() => repository.sdmComposition()),
-    section(() => repository.syncedSdmCount()),
-    section(() => repository.publikasiPerTahun()),
-    section(() => repository.penelitianPerTahun()),
-    section(() => repository.pengabdianPerTahun()),
-    section(() => repository.bkdPerSemester()),
-    section(() => repository.lastSync()),
-  ]);
-
+  const integrationId = getSisterConfig().integration_id;
+  const [composition, synced, publikasi, penelitian, pengabdian, bkd, lastSync] = integrationId
+    ? await Promise.all([
+        section(() => repository.sdmComposition(integrationId)),
+        section(() => repository.syncedSdmCount(integrationId)),
+        section(() => repository.publikasiPerTahun(integrationId)),
+        section(() => repository.penelitianPerTahun(integrationId)),
+        section(() => repository.pengabdianPerTahun(integrationId)),
+        section(() => repository.bkdPerSemester(integrationId)),
+        section(() => repository.lastSync(integrationId)),
+      ])
+    : [null, null, null, null, null, null, null];
   const currentYear = now.getFullYear();
   const years = Array.from({ length: trendYears }, (_, index) => currentYear - trendYears + 1 + index);
 

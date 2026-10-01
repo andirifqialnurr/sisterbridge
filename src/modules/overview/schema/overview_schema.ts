@@ -11,11 +11,20 @@ export const overviewStatusSchema = z.object({
   sister_configuration: z.enum(["ready", "incomplete"]),
 });
 
+export const overviewIntegrationSchema = z.object({
+  configured: z.boolean(),
+  registered: z.boolean(),
+  enabled: z.boolean(),
+  expected_role: z.string().nullable(),
+  last_health_at: z.string().datetime().nullable(),
+  database_available: z.boolean(),
+});
+
 export type OverviewStatus = z.infer<typeof overviewStatusSchema>;
+export type OverviewIntegration = z.infer<typeof overviewIntegrationSchema>;
 
 export const overviewSessionSchema = z.object({
   role: z.enum(["ADMIN", "OPERATOR", "REVIEWER", "VIEWER"]),
 });
 
 export type OverviewSession = z.infer<typeof overviewSessionSchema>;
-

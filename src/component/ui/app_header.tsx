@@ -10,7 +10,7 @@ export function AppHeader({ maxWidth }: AppHeaderProps) {
   return (
     <header className="border-b border-[hsl(var(--color-border))] bg-white">
       <div
-        className="mx-auto flex h-16 min-w-0 items-center justify-between gap-4 px-[40px]"
+        className="mx-auto flex h-16 min-w-0 items-center justify-between gap-4 px-[30px]"
         style={{ maxWidth }}
       >
         <form className="relative hidden w-full max-w-[480px] sm:block" role="search">

@@ -1,5 +1,6 @@
 import { jelajahModules, getJelajahModule, type JelajahModule } from "@/modules/jelajah/api/jelajah_catalog";
 import { SisterNotFoundError } from "@/server/sister/errors";
+import { getSisterConfig } from "@/server/sister/config";
 import { replicaEndpointTemplates } from "@/server/sister/replica/replica_catalog";
 import { viewNameFor } from "@/server/sister/replica/replica_views";
 
@@ -20,6 +21,11 @@ import type {
 const maxRows = 5000;
 const hiddenColumns = new Set(["r_payload", "r_integration_id"]);
 const allEndpoints = new Set(replicaEndpointTemplates());
+function currentIntegrationId() {
+  const id = getSisterConfig().integration_id;
+  if (!id) throw new ReplikaUnavailableError("ID integrasi belum dikonfigurasi untuk membaca replika.");
+  return id;
+}
 
 export class ReplikaUnavailableError extends Error {
   constructor(message: string) {
@@ -65,7 +71,7 @@ async function readRows(
 
   const [columns, rawRows] = await Promise.all([
     repository.columns(view),
-    repository.rows(view, filter, maxRows + 1),
+    repository.rows(view, { ...filter, integrationId: currentIntegrationId() }, maxRows + 1),
   ]);
   const types = new Map(columns.map((column) => [column.name, column.dataType]));
   // Payload columns first, meta (r_*) last, so tables start with real data.
@@ -114,7 +120,7 @@ export async function listReplikaModules(
   input: ReplikaModulesInput,
   repository: ReplikaRepository = new PrismaReplikaRepository(),
 ) {
-  const counts = input.id_sdm ? await repository.countByEndpointForSdm(input.id_sdm) : [];
+  const counts = input.id_sdm ? await repository.countByEndpointForSdm(input.id_sdm, currentIntegrationId()) : [];
   const countByEndpoint = new Map(counts.map((row) => [row.endpoint, row.count]));
   // Search modules are live-only (keyword driven); they have no replica view.
   return jelajahModules.filter((definition) => definition.kind !== "search").map((definition) => ({
@@ -194,7 +200,8 @@ export async function getReplikaItem(
 }
 
 export async function getReplikaSyncStatus(repository: ReplikaRepository = new PrismaReplikaRepository()) {
-  const [runs, failing] = await Promise.all([repository.syncRuns(20), repository.failingScopes(50)]);
+  const integrationId = currentIntegrationId();
+  const [runs, failing] = await Promise.all([repository.syncRuns(20, integrationId), repository.failingScopes(50, integrationId)]);
   return {
     runs: runs.map((run) => ({
       id: run.id,

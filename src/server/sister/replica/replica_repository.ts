@@ -68,6 +68,7 @@ export type ReplicaStore = {
     integrationId: string,
     scope: ReplicaScope,
     items: ReplicaItem[],
+    responseStatus?: 200 | 404,
   ): Promise<ReplicaSaveResult>;
   // Records a failed fetch without touching the rows already replicated.
   recordScopeFailure(
@@ -193,6 +194,7 @@ export class PrismaReplicaStore implements ReplicaStore {
     integrationId: string,
     scope: ReplicaScope,
     items: ReplicaItem[],
+    responseStatus: 200 | 404 = 200,
   ): Promise<ReplicaSaveResult> {
     const scopeWhere = {
       integrationId,
@@ -288,18 +290,19 @@ export class PrismaReplicaStore implements ReplicaStore {
           ...scopeWhere,
           idSdm: scope.idSdm,
           itemCount: items.length,
-          lastStatus: 200,
+          lastStatus: responseStatus,
+          lastErrorCode: responseStatus === 404 ? "SISTER_HTTP_404" : null,
           lastFetchedAt: now,
-          lastSuccessAt: now,
+          lastSuccessAt: responseStatus === 200 ? now : null,
           lastSyncRunId: runId,
         },
         update: {
           idSdm: scope.idSdm,
           itemCount: items.length,
-          lastStatus: 200,
-          lastErrorCode: null,
+          lastStatus: responseStatus,
+          lastErrorCode: responseStatus === 404 ? "SISTER_HTTP_404" : null,
           lastFetchedAt: now,
-          lastSuccessAt: now,
+          lastSuccessAt: responseStatus === 200 ? now : undefined,
           lastSyncRunId: runId,
         },
       });
@@ -357,8 +360,7 @@ export class PrismaReplicaStore implements ReplicaStore {
         integrationId,
         endpoint,
         scopeKey: { in: scopeKeys },
-        lastStatus: 200,
-        lastSuccessAt: { not: null },
+        lastStatus: { in: [200, 404] },
       },
       select: { scopeKey: true },
     });

@@ -1,5 +1,5 @@
-import { ReferensiPage } from "@/modules/referensi/page/referensi_page";
+﻿import { ReferenceDirectoryPage } from "@/modules/business/page/business_module_pages";
 
-export default function ReferensiRoute() {
-  return <ReferensiPage />;
+export default function Page() {
+  return <ReferenceDirectoryPage />;
 }

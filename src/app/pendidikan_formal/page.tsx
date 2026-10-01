@@ -1,5 +1,5 @@
-import { PendidikanFormalPage } from "@/modules/pendidikan_formal/page/pendidikan_formal_page";
+﻿import { BusinessModulePage } from "@/modules/business/page/business_module_pages";
 
-export default function PendidikanFormalRoute() {
-  return <PendidikanFormalPage />;
+export default function Page() {
+  return <BusinessModulePage moduleKey="pendidikan_formal" />;
 }

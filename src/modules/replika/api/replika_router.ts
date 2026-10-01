@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import { SisterNotFoundError } from "@/server/sister/errors";
-import { createTRPCRouter, operatorProcedure, protectedProcedure } from "@/server/trpc/init";
+import { adminProcedure, createTRPCRouter, operatorProcedure } from "@/server/trpc/init";
 
 import { getReplikaDashboard } from "./replika_dashboard_service";
 import {
@@ -38,15 +38,15 @@ async function run<T>(query: () => Promise<T>) {
 // Replica rows carry the same data the live pages show, so they follow the
 // same protected boundary; sync diagnostics are for operators.
 export const replikaRouter = createTRPCRouter({
-  modules: protectedProcedure
+  modules: operatorProcedure
     .input(replikaModulesInputSchema)
     .query(({ input }) => run(() => listReplikaModules(input))),
-  rows: protectedProcedure
+  rows: operatorProcedure
     .input(replikaModuleInputSchema)
     .query(({ input }) => run(() => getReplikaRows(input))),
-  item: protectedProcedure
+  item: operatorProcedure
     .input(replikaItemInputSchema)
     .query(({ input }) => run(() => getReplikaItem(input))),
   sync_status: operatorProcedure.query(() => run(() => getReplikaSyncStatus())),
-  dashboard: protectedProcedure.query(() => run(() => getReplikaDashboard())),
+  dashboard: adminProcedure.query(() => run(() => getReplikaDashboard())),
 });

@@ -1,5 +1,5 @@
-import { RiwayatPekerjaanPage } from "@/modules/riwayat_pekerjaan/page/riwayat_pekerjaan_page";
+﻿import { BusinessModulePage } from "@/modules/business/page/business_module_pages";
 
 export default function Page() {
-  return <RiwayatPekerjaanPage />;
+  return <BusinessModulePage moduleKey="riwayat_pekerjaan" />;
 }

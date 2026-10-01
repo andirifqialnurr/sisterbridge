@@ -1,5 +1,5 @@
-import { BkdPage } from "@/modules/bkd/page/bkd_page";
+﻿import { BusinessBkdPage } from "@/modules/business/page/business_bkd_page";
 
-export default function BkdRoute() {
-  return <BkdPage />;
+export default function Page() {
+  return <BusinessBkdPage />;
 }
