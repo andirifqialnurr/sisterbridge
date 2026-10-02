@@ -389,6 +389,28 @@ section: heading/toolbar -> content -> pagination
 - Aksi per baris dan pagination tetap dekat dengan tabel, bukan dipindah ke
   breadcrumb row.
 
+### Navigasi sidebar (2026-10-02)
+
+- Menu utama memiliki ikon Lucide yang sesuai domain dan judul. Menu tanpa
+  submenu tetap berupa link berikon. Workspace merupakan label bagian.
+- Menu induk dengan submenu hanya menampilkan ikon domain dan judul, tanpa
+  panah/chevron atau marker dropdown bawaan browser. Klik, Enter atau Space
+  pada judul membuka/menutup submenu dengan semantic disclosure native.
+- Submenu hanya berupa teks. Garis vertikal bercabang dengan lengkungan ke
+  setiap submenu menjelaskan hubungan induk-anak; berhenti pada anak terakhir.
+- Unselected memakai surface sidebar dan teks muted. Hover memakai hijau
+  lebih terang; pressed/selected memakai hijau gelap solid dan teks kontras.
+  Selected tetap gelap saat hover. Tidak ada gradient atau perubahan hue.
+- Nilai warna light/dark berasal dari `theme.sidebar` di `src/const/theme.ts`.
+  Garis cabang memakai token border; focus ring memakai primary.
+- Pilihan aktif dicocokkan dengan route dan konteks halaman, bukan label saja
+  (contoh Jabatan fungsional berbeda dari Referensi jabatan fungsional).
+  Link aktif memiliki `aria-current="page"`; induknya ikut ditandai dan terbuka.
+- Radius item 6px, font 14/22px weight 500, ikon 18px, target desktop minimal
+  40px dan mobile 44px. Label panjang boleh wrap; submenu tidak memakai ikon.
+- Sidebar desktop 224px sticky setinggi viewport, navigasi scroll internal;
+  mobile memakai panel dengan tombol buka/tutup. Aturan sama pada kedua tema.
+
 ### Breadcrumb Dan Page Actions
 
 Breadcrumb menggantikan judul yang terlihat. Tetap render satu `h1` aksesibel

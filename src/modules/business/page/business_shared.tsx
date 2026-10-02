@@ -10,9 +10,9 @@ import type { DataTableColumn } from "@/component/widget/data_table";
 import { getJelajahModule } from "@/modules/jelajah/api/jelajah_catalog";
 import { useTRPC } from "@/lib/trpc";
 
-export type BusinessRow = { id: string; values: Record<string, unknown> };
+export type BusinessRow = { id: string; row_key?: string; id_sdm?: string; nama_sdm?: string; values: Record<string, unknown> };
 export type BusinessColumn = { key: string; type: string };
-export type BusinessSource = { status: number; error_code: string | null; item_count: number; last_fetched_at: string; last_success_at: string | null } | null;
+export type BusinessSource = { status: number; scope_count?: number; failed_scope_count?: number; error_code: string | null; item_count: number; last_fetched_at: string; last_success_at: string | null } | null;
 export type BusinessSection = { key: string; label: string; endpoint: string; columns: BusinessColumn[]; rows: BusinessRow[]; source: BusinessSource; total: number; page: number; per_page: number };
 export type UrlState = { values: Record<string, string>; ready: boolean; set: (values: Record<string, string | null>) => void };
 
@@ -87,6 +87,8 @@ export function asBusinessRows(value: unknown): BusinessRow[] {
 export function SourceLine({ source }: { source: BusinessSource }) {
   const text = !source
     ? { label: "Belum tersinkron", tone: "neutral" as const, detail: "Belum ada status fetch untuk scope ini." }
+    : source.failed_scope_count
+      ? { label: "Replika parsial", tone: "warning" as const, detail: `${source.failed_scope_count} dari ${source.scope_count} scope gagal diperbarui; data yang tersedia tetap ditampilkan. Pemeriksaan terlama ${new Date(source.last_fetched_at).toLocaleString("id-ID")}.` }
     : source.status === 404
       ? { label: "SISTER HTTP 404", tone: "warning" as const, detail: `SISTER menjawab 404 · ${source.last_success_at ? "snapshot terakhir " + new Date(source.last_success_at).toLocaleString("id-ID") : "belum ada snapshot sukses"}.` }
       : source.status !== 200
@@ -99,6 +101,7 @@ export function SourceLine({ source }: { source: BusinessSource }) {
 
 export function emptyDescription(source: BusinessSource) {
   if (!source) return "Belum ada scope sinkronisasi untuk data ini.";
+  if (source.failed_scope_count) return "Belum ada record untuk filter ini; sebagian scope gagal diperbarui.";
   if (source.status === 404) return "SISTER menjawab HTTP 404 untuk scope ini.";
   if (source.status !== 200) return `Fetch terakhir gagal dengan HTTP ${source.status}; replika sebelumnya tetap dipertahankan bila tersedia.`;
   return "Scope berhasil diperiksa dan tidak memiliki record.";
@@ -114,7 +117,7 @@ export function PageError({ pending, error, title }: { pending: boolean; error: 
   return error ? <ErrorState message={error.message} title={title} /> : null;
 }
 
-export function SdmPicker({ value, onChange, enabled = true }: { value: string; onChange: (id: string) => void; enabled?: boolean }) {
+export function SdmPicker({ value, onChange, enabled = true, optional = false }: { value: string; onChange: (id: string) => void; enabled?: boolean; optional?: boolean }) {
   const trpc = useTRPC();
   const [search, setSearch] = useState("");
   const query = useQuery({ ...trpc.business.sdm.queryOptions({ search, page: 1, per_page: 100 }), enabled });
@@ -125,7 +128,7 @@ export function SdmPicker({ value, onChange, enabled = true }: { value: string; 
     return { value: id, label: `${name}${identity ? ` · ${String(identity)}` : ""}` };
   });
   if (value && !options.some((item) => item.value === value)) options.unshift({ value, label: value });
-  return <div className="flex min-w-0 flex-col gap-2 sm:flex-row"><label className="min-w-0"><span className="sr-only">Cari SDM</span><input className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm outline-none focus:border-[hsl(var(--color-primary))] sm:w-44" onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama / NIDN" type="search" value={search} /></label><Select ariaLabel="Pilih SDM" disabled={!enabled || query.isPending || query.isError} onValueChange={onChange} options={[{ label: "Pilih SDM", value: "" }, ...options]} value={value} /></div>;
+  return <div className="flex min-w-0 flex-col gap-2 sm:flex-row"><label className="min-w-0"><span className="sr-only">Cari SDM</span><input className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm outline-none focus:border-[hsl(var(--color-primary))] sm:w-44" onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama / NIDN" type="search" value={search} /></label><Select ariaLabel="Pilih SDM" disabled={!enabled || query.isPending || query.isError} onValueChange={onChange} options={[{ label: optional ? "Semua SDM" : "Pilih SDM", value: "" }, ...options]} value={value} /></div>;
 }
 
 export function rowColumns(moduleKey: string, columns: BusinessColumn[], idSdm?: string): DataTableColumn<BusinessRow>[] {
@@ -138,11 +141,15 @@ export function rowColumns(moduleKey: string, columns: BusinessColumn[], idSdm?:
     ? [...preferred.filter((key) => summaryFields.includes(key)), ...summaryFields.filter((key) => !preferred.includes(key))].slice(0, 5)
     : summaryFields;
   const result: DataTableColumn<BusinessRow>[] = keys.map((key) => ({ key, header: labelFor(key), render: (row) => <span className="whitespace-normal">{formatValue(row.values[key])}</span> }));
+  if (!idSdm && catalogEntry?.kind === "sdm_list") result.unshift({
+    key: "owner", header: "SDM", render: (row) => formatValue(row.nama_sdm),
+  });
   if (catalogEntry && hasDetail) result.push({
     key: "detail", header: "", className: "w-28 text-right",
     render: (row) => {
       const href = catalogEntry.detailPath ? catalogEntry.detailPath.replace("{id}", encodeURIComponent(row.id)) : `${catalogEntry.path}/${encodeURIComponent(row.id)}`;
-      const query = new URLSearchParams(idSdm ? { id_sdm: idSdm } : {}).toString();
+      const owner = idSdm || row.id_sdm;
+      const query = new URLSearchParams(owner ? { id_sdm: owner } : {}).toString();
       return <Link className="font-semibold text-[hsl(var(--color-primary))] hover:underline" href={`${href}${query ? `?${query}` : ""}`}>Lihat detail</Link>;
     },
   });

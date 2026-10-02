@@ -1033,3 +1033,32 @@ bisnis sebagai rencana. Ini adalah status implementasi source, bukan bukti
 acceptance: checklist master dan paket UI tetap terbuka sampai role/tenant,
 deep link, state data, responsive layout, keyboard, light/dark, dan alur file
 diverifikasi melalui QA browser. QA tersebut belum dijalankan pada perubahan ini.
+
+
+## Progress sidebar dan pembacaan replika (2026-10-02)
+
+Sidebar memakai ikon pada menu utama, submenu teks dengan garis melengkung,
+hover hijau terang, dan selected hijau gelap solid sesuai design-system.md.
+Daftar aktivitas membuka seluruh SDM dalam integrasi aktif secara default;
+filter SDM tetap tersedia. Profil personal tetap melalui pemilihan SDM.
+Query UUID, drill-down laporan, detail aktivitas bersama, serta pagination
+referensi besar diperbaiki tanpa membuka akses lintas integrasi/role.
+
+Pemeriksaan langsung database lokal: 134.856 record aktif pada 118 endpoint,
+97 SDM; 86 varian daftar modul/referensi berhasil dibaca, lima sampel detail
+penelitian berhasil, dan query laporan SDM/luaran/BKD berhasil. Snapshot tetap
+memiliki scope 403/500; status parsial ditampilkan dan akses upstream tidak diubah.
+
+Migrasi `20261002115127_replica_views` dan replica_schema.md diregenerasi dari
+payload aktual. Migrasi belum diterapkan karena Prisma schema engine terkena
+pembatasan eksekusi EPERM. Jabatan struktural, detasering, nilai tes ajuan,
+visiting scientist, dan tunjangan masih membutuhkan view hasil migrasi untuk
+menampilkan kolom bisnis. QA browser/responsive/light-dark belum dilakukan;
+status ini bukan acceptance seluruh GET atau production readiness.
+
+Validasi perubahan: typecheck dan lint lulus; 14 test terarah sidebar,
+layanan bisnis, dan generator view lulus. Filter semester BKD diuji langsung
+(1.256 baris, seluruh sampel sesuai semester). Suite penuh belum lulus:
+empat test replika yang tidak diubah masih mengharapkan kontrak lama tanpa
+integrationId atau validasi input sebelum penolakan role. Build Next.js
+terhenti pada spawn EPERM di lingkungan eksekusi ini.

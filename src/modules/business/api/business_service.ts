@@ -52,10 +52,12 @@ function presentScopeCount(scope: Awaited<ReturnType<PrismaBusinessRepository["s
   return source ? { ...source, item_count: itemCount } : null;
 }
 
-function presentScope(scope: Awaited<ReturnType<PrismaBusinessRepository["scope"]>>) {
+function presentScope(scope: (Awaited<ReturnType<PrismaBusinessRepository["scope"]>> & { scopeCount?: number; failedScopeCount?: number }) | null) {
   return scope
     ? {
         status: scope.lastStatus,
+        scope_count: scope.scopeCount,
+        failed_scope_count: scope.failedScopeCount,
         error_code: scope.lastErrorCode,
         item_count: scope.itemCount,
         last_fetched_at: scope.lastFetchedAt.toISOString(),
@@ -71,6 +73,9 @@ function presentRows(
   const payloadColumns = columns.filter((column) => !column.name.startsWith("r_"));
   return rows.map((row) => ({
     id: String(row.id ?? row.id_sdm ?? row.id_dokumen ?? row.r_item_key ?? ""),
+    row_key: `${row.r_scope_key ?? ""}:${row.r_item_key ?? row.id ?? ""}`,
+    id_sdm: typeof row.r_id_sdm === "string" ? row.r_id_sdm : undefined,
+    nama_sdm: typeof row.owner_name === "string" ? row.owner_name : undefined,
     values: Object.fromEntries(
       payloadColumns.map((column) => [column.name, businessJsonValue(row[column.name], column.dataType)]),
     ),
@@ -93,6 +98,9 @@ async function resolveListScope(
   }
   if (module.kind === "referensi") {
     return { key: "-", meta: await repository.scope(integration, module.path, "-"), idSdm: undefined };
+  }
+  if (!input.id_sdm && module.kind === "sdm_list") {
+    return { key: undefined, meta: await repository.scopeSummary(integration, module.path, input.id_smt), idSdm: undefined };
   }
   if (!input.id_sdm) throw new BusinessDataUnavailableError("Pilih SDM terlebih dahulu.");
   const query = { id_sdm: input.id_sdm };
@@ -140,14 +148,16 @@ export async function getBusinessRows(
   const catalogEntry = requireModule(input.module);
   if (catalogEntry.kind === "search") throw new BusinessDataUnavailableError("Modul ini membutuhkan pencarian langsung.");
   const integration = integrationId();
-  if (catalogEntry.kind !== "referensi") {
-    if (!input.id_sdm) throw new BusinessDataUnavailableError("Pilih SDM terlebih dahulu.");
+  if (catalogEntry.kind !== "referensi" && input.id_sdm) {
     await requireKnownSdm(input.id_sdm, integration, repository);
   }
-  if (catalogEntry.key.startsWith("bkd_") && catalogEntry.key !== "bkd_laporan_akhir" && !input.id_smt) {
-    throw new BusinessDataUnavailableError("Pilih semester terlebih dahulu.");
+  if (catalogEntry.kind === "sdm_object" && !input.id_sdm) {
+    throw new BusinessDataUnavailableError("Pilih SDM terlebih dahulu.");
   }
 
+  if (catalogEntry.key.startsWith("bkd_") && input.id_sdm && !input.id_smt) {
+    throw new BusinessDataUnavailableError("Pilih semester terlebih dahulu.");
+  }
   const views = await repository.listViews();
   const view = requireView(views, catalogEntry.path);
   const resolved = await resolveListScope(catalogEntry, input, integration, repository);
@@ -155,11 +165,12 @@ export async function getBusinessRows(
     integrationId: integration,
     ...(resolved.idSdm ? { idSdm: resolved.idSdm } : {}),
     ...(resolved.key ? { scopeKey: resolved.key } : {}),
+    ...(!input.id_sdm && catalogEntry.kind === "sdm_list" ? { includeSdm: true, semester: input.id_smt } : {}),
   };
   const page = input.page ?? 1;
   const perPage = input.per_page ?? pageSizeDefault;
-  const listLimit = catalogEntry.kind === "sdm_object" ? 1 : perPage;
-  const listOffset = catalogEntry.kind === "sdm_object" ? 0 : (page - 1) * perPage;
+  const listLimit = catalogEntry.kind === "sdm_object" && catalogEntry.key !== "bidang_ilmu_sdm" ? 1 : perPage;
+  const listOffset = catalogEntry.kind === "sdm_object" && catalogEntry.key !== "bidang_ilmu_sdm" ? 0 : (page - 1) * perPage;
   const [columns, rows, total] = await Promise.all([
     repository.columns(view),
     repository.rows(view, filter, listLimit, listOffset, input.search),
@@ -257,7 +268,6 @@ export async function getBusinessDetail(
     const detailSource = await repository.scope(integration, catalogEntry.detailPath, detailKey);
     const detailFilter = {
       integrationId: integration,
-      ...(input.id_sdm && isSdmScoped ? { idSdm: input.id_sdm } : {}),
       parentId: input.id,
     };
     const [columns, records, detailTotal] = await Promise.all([
@@ -284,7 +294,6 @@ export async function getBusinessDetail(
       const field = child.comment!.slice(prefix.length).replace(/\[\] \(generated\)$/, "");
       const childFilter = {
         integrationId: integration,
-        ...(input.id_sdm && isSdmScoped ? { idSdm: input.id_sdm } : {}),
         parentId: input.id,
       };
       const [childColumns, childRows, childTotal] = await Promise.all([
@@ -327,7 +336,6 @@ export async function getBusinessDetail(
     const childSource = await repository.scope(integration, child.path, childScopeKey);
     const childFilter = {
       integrationId: integration,
-      ...(input.id_sdm && isSdmScoped ? { idSdm: input.id_sdm } : {}),
       parentId: sourceValue,
     };
     const [childColumns, childRows, childTotal] = await Promise.all([

@@ -1,4 +1,18 @@
 export const theme = {
+  sidebar: {
+    light: {
+      hover: "hsl(142 52% 94%)",
+      hoverText: "hsl(142 72% 23%)",
+      selected: "hsl(142 72% 23%)",
+      selectedText: "hsl(0 0% 100%)",
+    },
+    dark: {
+      hover: "hsl(142 40% 28%)",
+      hoverText: "hsl(140 30% 98%)",
+      selected: "hsl(142 60% 17%)",
+      selectedText: "hsl(140 30% 98%)",
+    },
+  },
   colors: {
     primary: "hsl(142 76% 30%)",
     primaryStrong: "hsl(142 72% 23%)",

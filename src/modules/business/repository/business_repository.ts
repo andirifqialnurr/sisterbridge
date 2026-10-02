@@ -8,6 +8,8 @@ type BusinessFilter = {
   parentId?: string;
   scopeKey?: string;
   itemKey?: string;
+  semester?: string;
+  includeSdm?: boolean;
 };
 
 type BusinessScope = {
@@ -27,7 +29,7 @@ function quoteIdent(name: string) {
 }
 
 function whereFor(filter: BusinessFilter) {
-  const conditions = ["r_integration_id = $1"];
+  const conditions = ["r_integration_id = $1::uuid"];
   const params: unknown[] = [filter.integrationId];
   for (const [column, value] of [
     ["r_id_sdm", filter.idSdm],
@@ -39,6 +41,10 @@ function whereFor(filter: BusinessFilter) {
       params.push(value);
       conditions.push(`${column} = $${params.length}`);
     }
+  }
+  if (filter.semester) {
+    params.push(filter.semester);
+    conditions.push(`r_payload->>'id_smt' = $${params.length}`);
   }
   return { conditions, params };
 }
@@ -79,8 +85,11 @@ export class PrismaBusinessRepository {
       }
     }
     params.push(limit, offset);
+    const owner = filter.includeSdm
+      ? ", (SELECT s.nama_sdm FROM replica.referensi_sdm s WHERE s.r_integration_id = r.r_integration_id AND s.id_sdm::text = r.r_id_sdm LIMIT 1) AS owner_name"
+      : "";
     return this.client.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT * FROM replica.${quoteIdent(view)} WHERE ${conditions.join(" AND ")} ORDER BY r_item_key LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      `SELECT r.*${owner} FROM replica.${quoteIdent(view)} r WHERE ${conditions.join(" AND ")} ORDER BY r_item_key, r_scope_key LIMIT $${params.length - 1} OFFSET $${params.length}`,
       ...params,
     );
   }
@@ -111,11 +120,27 @@ export class PrismaBusinessRepository {
               last_status AS "lastStatus", last_error_code AS "lastErrorCode",
               last_fetched_at AS "lastFetchedAt", last_success_at AS "lastSuccessAt"
          FROM public.sister_replica_scope
-        WHERE integration_id = $1 AND endpoint = $2 AND scope_key = $3
+        WHERE integration_id = $1::uuid AND endpoint = $2 AND scope_key = $3
         LIMIT 1`,
       integrationId,
       endpoint,
       scopeKey,
+    );
+    return rows[0] ?? null;
+  }
+
+  async scopeSummary(integrationId: string, endpoint: string, semester?: string) {
+    const rows = await this.client.$queryRawUnsafe<(BusinessScope & { scopeCount: number; failedScopeCount: number })[]>(
+      `SELECT $2::text AS endpoint, '-' AS "scopeKey", sum(item_count)::int AS "itemCount",
+              CASE WHEN bool_or(last_status = 200) THEN 200 ELSE max(last_status) END AS "lastStatus",
+              NULL::text AS "lastErrorCode", min(last_fetched_at) AS "lastFetchedAt",
+              min(last_success_at) AS "lastSuccessAt", count(*)::int AS "scopeCount",
+              count(*) FILTER (WHERE last_status <> 200)::int AS "failedScopeCount"
+         FROM public.sister_replica_scope
+        WHERE integration_id = $1::uuid AND endpoint = $2
+          AND ($3::text IS NULL OR split_part(scope_key, '&id_smt=', 2) = $3)
+       HAVING count(*) > 0`,
+      integrationId, endpoint, semester ?? null,
     );
     return rows[0] ?? null;
   }
@@ -126,7 +151,7 @@ export class PrismaBusinessRepository {
               last_status AS "lastStatus", last_error_code AS "lastErrorCode",
               last_fetched_at AS "lastFetchedAt", last_success_at AS "lastSuccessAt"
          FROM public.sister_replica_scope
-        WHERE integration_id = $1 AND endpoint = $2
+        WHERE integration_id = $1::uuid AND endpoint = $2
         ORDER BY last_fetched_at DESC
         LIMIT 1`,
       integrationId,

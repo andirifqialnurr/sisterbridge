@@ -1,6 +1,6 @@
 # Skema replika typed (`replica`)
 
-Dihasilkan oleh `bun run replica:views` pada 2026-09-29T05:25:39.738Z dari payload di
+Dihasilkan oleh `bun run replica:views` pada 2026-10-02T11:51:27.661Z dari payload di
 `sister_replica_record`. Jangan diedit manual; jalankan ulang generator setelah
 sync dengan data baru. Detail rancangan: [sister_replica.md](./sister_replica.md).
 
@@ -10,116 +10,119 @@ Setiap view memiliki kolom meta `r_integration_id`, `r_id_sdm`, `r_parent_id`,
 
 | View | Sumber | Sampel | Kolom |
 |---|---|---:|---:|
-| [`replica.anggota_profesi`](#replicaanggotaprofesi) | `/anggota_profesi/{id}` | 13 | 10 |
-| [`replica.anggota_profesi_dokumen`](#replicaanggotaprofesidokumen) | `/anggota_profesi/{id}` → `dokumen[]` | 12 | 8 |
-| [`replica.anggota_profesi_list`](#replicaanggotaprofesilist) | `/anggota_profesi` | 13 | 7 |
-| [`replica.bahan_ajar`](#replicabahanajar) | `/bahan_ajar/{id}` | 45 | 16 |
-| [`replica.bahan_ajar_dokumen`](#replicabahanajardokumen) | `/bahan_ajar/{id}` → `dokumen[]` | 51 | 8 |
-| [`replica.bahan_ajar_list`](#replicabahanajarlist) | `/bahan_ajar` | 46 | 7 |
-| [`replica.bahan_ajar_penulis`](#replicabahanajarpenulis) | `/bahan_ajar/{id}` → `penulis[]` | 126 | 9 |
-| [`replica.beasiswa`](#replicabeasiswa) | `/beasiswa/{id}` | 3 | 8 |
-| [`replica.beasiswa_list`](#replicabeasiswalist) | `/beasiswa` | 3 | 6 |
+| [`replica.anggota_profesi`](#replicaanggotaprofesi) | `/anggota_profesi/{id}` | 97 | 10 |
+| [`replica.anggota_profesi_dokumen`](#replicaanggotaprofesidokumen) | `/anggota_profesi/{id}` → `dokumen[]` | 109 | 8 |
+| [`replica.anggota_profesi_list`](#replicaanggotaprofesilist) | `/anggota_profesi` | 97 | 7 |
+| [`replica.bahan_ajar`](#replicabahanajar) | `/bahan_ajar/{id}` | 374 | 16 |
+| [`replica.bahan_ajar_dokumen`](#replicabahanajardokumen) | `/bahan_ajar/{id}` → `dokumen[]` | 511 | 8 |
+| [`replica.bahan_ajar_list`](#replicabahanajarlist) | `/bahan_ajar` | 533 | 7 |
+| [`replica.bahan_ajar_penulis`](#replicabahanajarpenulis) | `/bahan_ajar/{id}` → `penulis[]` | 675 | 9 |
+| [`replica.beasiswa`](#replicabeasiswa) | `/beasiswa/{id}` | 10 | 8 |
+| [`replica.beasiswa_list`](#replicabeasiswalist) | `/beasiswa` | 10 | 6 |
 | [`replica.bimbing_dosen`](#replicabimbingdosen) | `/bimbing_dosen/{id}` | 0 | 0 |
 | [`replica.bimbing_dosen_list`](#replicabimbingdosenlist) | `/bimbing_dosen` | 0 | 0 |
-| [`replica.bimbingan_mahasiswa`](#replicabimbinganmahasiswa) | `/bimbingan_mahasiswa/{id}` | 709 | 18 |
-| [`replica.bimbingan_mahasiswa_bidang_ilmu`](#replicabimbinganmahasiswabidangilmu) | `/bimbingan_mahasiswa/{id}/bidang_ilmu` | 0 | 0 |
-| [`replica.bimbingan_mahasiswa_dosen`](#replicabimbinganmahasiswadosen) | `/bimbingan_mahasiswa/{id}` → `dosen[]` | 1138 | 5 |
-| [`replica.bimbingan_mahasiswa_list`](#replicabimbinganmahasiswalist) | `/bimbingan_mahasiswa` | 712 | 9 |
-| [`replica.bimbingan_mahasiswa_mahasiswa`](#replicabimbinganmahasiswamahasiswa) | `/bimbingan_mahasiswa/{id}` → `mahasiswa[]` | 2454 | 5 |
-| [`replica.bkd_ajar`](#replicabkdajar) | `/bkd/ajar` | 1111 | 10 |
-| [`replica.bkd_laporan_akhir_bkd`](#replicabkdlaporanakhirbkd) | `/bkd/laporan_akhir_bkd` | 62 | 21 |
-| [`replica.bkd_pendidikan`](#replicabkdpendidikan) | `/bkd/pendidikan` | 2 | 10 |
-| [`replica.bkd_penelitian`](#replicabkdpenelitian) | `/bkd/penelitian` | 150 | 10 |
-| [`replica.bkd_pengmas`](#replicabkdpengmas) | `/bkd/pengmas` | 170 | 10 |
-| [`replica.bkd_tunjang`](#replicabkdtunjang) | `/bkd/tunjang` | 335 | 10 |
-| [`replica.data_pribadi_alamat`](#replicadatapribadialamat) | `/data_pribadi/alamat/{id_sdm}` | 12 | 11 |
-| [`replica.data_pribadi_bidang_ilmu`](#replicadatapribadibidangilmu) | `/data_pribadi/bidang_ilmu/{id_sdm}` | 11 | 3 |
-| [`replica.data_pribadi_keluarga`](#replicadatapribadikeluarga) | `/data_pribadi/keluarga/{id_sdm}` | 12 | 6 |
-| [`replica.data_pribadi_kepegawaian`](#replicadatapribadikepegawaian) | `/data_pribadi/kepegawaian/{id_sdm}` | 12 | 9 |
-| [`replica.data_pribadi_kependudukan`](#replicadatapribadikependudukan) | `/data_pribadi/kependudukan/{id_sdm}` | 12 | 5 |
-| [`replica.data_pribadi_lain`](#replicadatapribadilain) | `/data_pribadi/lain/{id_sdm}` | 12 | 2 |
-| [`replica.data_pribadi_profil`](#replicadatapribadiprofil) | `/data_pribadi/profil/{id_sdm}` | 12 | 4 |
-| [`replica.detasering`](#replicadetasering) | `/detasering/{id}` | 0 | 0 |
-| [`replica.detasering_list`](#replicadetaseringlist) | `/detasering` | 0 | 0 |
-| [`replica.diklat`](#replicadiklat) | `/diklat/{id}` | 23 | 19 |
-| [`replica.diklat_dokumen`](#replicadiklatdokumen) | `/diklat/{id}` → `dokumen[]` | 32 | 8 |
-| [`replica.diklat_list`](#replicadiklatlist) | `/diklat` | 23 | 8 |
-| [`replica.dokumen`](#replicadokumen) | `/dokumen/{id}` | 170 | 9 |
-| [`replica.dokumen_list`](#replicadokumenlist) | `/dokumen` | 170 | 10 |
-| [`replica.inpassing`](#replicainpassing) | `/inpassing/{id}` | 11 | 13 |
-| [`replica.inpassing_dokumen`](#replicainpassingdokumen) | `/inpassing/{id}` → `dokumen[]` | 10 | 8 |
-| [`replica.inpassing_list`](#replicainpassinglist) | `/inpassing` | 11 | 5 |
-| [`replica.jabatan_fungsional`](#replicajabatanfungsional) | `/jabatan_fungsional/{id}` | 17 | 12 |
-| [`replica.jabatan_fungsional_ajuan`](#replicajabatanfungsionalajuan) | `/jabatan_fungsional/ajuan/{id}` | 16 | 24 |
-| [`replica.jabatan_fungsional_ajuan_dokumen`](#replicajabatanfungsionalajuandokumen) | `/jabatan_fungsional/ajuan/{id}` → `dokumen[]` | 18 | 8 |
-| [`replica.jabatan_fungsional_ajuan_list`](#replicajabatanfungsionalajuanlist) | `/jabatan_fungsional/ajuan` | 16 | 9 |
-| [`replica.jabatan_fungsional_dokumen`](#replicajabatanfungsionaldokumen) | `/jabatan_fungsional/{id}` → `dokumen[]` | 18 | 8 |
-| [`replica.jabatan_fungsional_list`](#replicajabatanfungsionallist) | `/jabatan_fungsional` | 17 | 6 |
-| [`replica.jabatan_struktural`](#replicajabatanstruktural) | `/jabatan_struktural/{id}` | 0 | 0 |
-| [`replica.jabatan_struktural_list`](#replicajabatanstrukturallist) | `/jabatan_struktural` | 0 | 0 |
-| [`replica.kekayaan_intelektual`](#replicakekayaanintelektual) | `/kekayaan_intelektual/{id}` | 37 | 35 |
-| [`replica.kekayaan_intelektual_bidang_ilmu`](#replicakekayaanintelektualbidangilmu) | `/kekayaan_intelektual/{id}/bidang_ilmu` | 1 | 3 |
-| [`replica.kekayaan_intelektual_dokumen`](#replicakekayaanintelektualdokumen) | `/kekayaan_intelektual/{id}` → `dokumen[]` | 52 | 8 |
-| [`replica.kekayaan_intelektual_list`](#replicakekayaanintelektuallist) | `/kekayaan_intelektual` | 37 | 11 |
-| [`replica.kekayaan_intelektual_penulis`](#replicakekayaanintelektualpenulis) | `/kekayaan_intelektual/{id}` → `penulis[]` | 95 | 11 |
-| [`replica.kelas_kuliah_dokumen`](#replicakelaskuliahdokumen) | `/kelas_kuliah/{id}/dokumen` | 1576 | 8 |
-| [`replica.kepangkatan`](#replicakepangkatan) | `/kepangkatan/{id}` | 16 | 12 |
-| [`replica.kepangkatan_list`](#replicakepangkatanlist) | `/kepangkatan` | 16 | 4 |
-| [`replica.kesejahteraan`](#replicakesejahteraan) | `/kesejahteraan/{id}` | 1 | 8 |
-| [`replica.kesejahteraan_list`](#replicakesejahteraanlist) | `/kesejahteraan` | 1 | 6 |
-| [`replica.nilai_tes`](#replicanilaites) | `/nilai_tes/{id}` | 1 | 10 |
-| [`replica.nilai_tes_ajuan`](#replicanilaitesajuan) | `/nilai_tes/ajuan/{id}` | 0 | 0 |
-| [`replica.nilai_tes_ajuan_list`](#replicanilaitesajuanlist) | `/nilai_tes/ajuan` | 0 | 0 |
-| [`replica.nilai_tes_dokumen`](#replicanilaitesdokumen) | `/nilai_tes/{id}` → `dokumen[]` | 1 | 8 |
-| [`replica.nilai_tes_list`](#replicanilaiteslist) | `/nilai_tes` | 8 | 6 |
-| [`replica.orasi_ilmiah`](#replicaorasiilmiah) | `/orasi_ilmiah/{id}` | 3 | 20 |
-| [`replica.orasi_ilmiah_dokumen`](#replicaorasiilmiahdokumen) | `/orasi_ilmiah/{id}` → `dokumen[]` | 4 | 8 |
-| [`replica.orasi_ilmiah_list`](#replicaorasiilmiahlist) | `/orasi_ilmiah` | 3 | 7 |
-| [`replica.pembicara`](#replicapembicara) | `/pembicara/{id}` | 36 | 20 |
-| [`replica.pembicara_dokumen`](#replicapembicaradokumen) | `/pembicara/{id}` → `dokumen[]` | 58 | 8 |
-| [`replica.pembicara_list`](#replicapembicaralist) | `/pembicara` | 36 | 7 |
-| [`replica.pendidikan_formal`](#replicapendidikanformal) | `/pendidikan_formal/{id}` | 31 | 25 |
-| [`replica.pendidikan_formal_ajuan`](#replicapendidikanformalajuan) | `/pendidikan_formal/ajuan/{id}` | 12 | 40 |
-| [`replica.pendidikan_formal_ajuan_dokumen`](#replicapendidikanformalajuandokumen) | `/pendidikan_formal/ajuan/{id}` → `dokumen[]` | 20 | 8 |
-| [`replica.pendidikan_formal_ajuan_list`](#replicapendidikanformalajuanlist) | `/pendidikan_formal/ajuan` | 15 | 9 |
-| [`replica.pendidikan_formal_dokumen`](#replicapendidikanformaldokumen) | `/pendidikan_formal/{id}` → `dokumen[]` | 1 | 8 |
-| [`replica.pendidikan_formal_list`](#replicapendidikanformallist) | `/pendidikan_formal` | 31 | 7 |
-| [`replica.penelitian`](#replicapenelitian) | `/penelitian/{id}` | 28 | 26 |
-| [`replica.penelitian_anggota`](#replicapenelitiananggota) | `/penelitian/{id}` → `anggota[]` | 78 | 8 |
-| [`replica.penelitian_bidang_ilmu`](#replicapenelitianbidangilmu) | `/penelitian/{id}/bidang_ilmu` | 6 | 3 |
-| [`replica.penelitian_dokumen`](#replicapenelitiandokumen) | `/penelitian/{id}` → `dokumen[]` | 31 | 8 |
-| [`replica.penelitian_list`](#replicapenelitianlist) | `/penelitian` | 30 | 5 |
-| [`replica.pengabdian`](#replicapengabdian) | `/pengabdian/{id}` | 167 | 26 |
-| [`replica.pengabdian_anggota`](#replicapengabdiananggota) | `/pengabdian/{id}` → `anggota[]` | 833 | 8 |
-| [`replica.pengabdian_bidang_ilmu`](#replicapengabdianbidangilmu) | `/pengabdian/{id}/bidang_ilmu` | 11 | 3 |
-| [`replica.pengabdian_dokumen`](#replicapengabdiandokumen) | `/pengabdian/{id}` → `dokumen[]` | 486 | 8 |
-| [`replica.pengabdian_list`](#replicapengabdianlist) | `/pengabdian` | 197 | 5 |
-| [`replica.pengabdian_mitra_litabmas`](#replicapengabdianmitralitabmas) | `/pengabdian/{id}` → `mitra_litabmas[]` | 1 | 2 |
-| [`replica.pengajaran`](#replicapengajaran) | `/pengajaran/{id}` | 1480 | 23 |
-| [`replica.pengajaran_bidang_ilmu`](#replicapengajaranbidangilmu) | `/pengajaran/{id}/bidang_ilmu` | 68 | 3 |
-| [`replica.pengajaran_list`](#replicapengajaranlist) | `/pengajaran` | 1480 | 11 |
-| [`replica.pengelola_jurnal`](#replicapengelolajurnal) | `/pengelola_jurnal/{id}` | 3 | 12 |
-| [`replica.pengelola_jurnal_dokumen`](#replicapengelolajurnaldokumen) | `/pengelola_jurnal/{id}` → `dokumen[]` | 3 | 8 |
-| [`replica.pengelola_jurnal_list`](#replicapengelolajurnallist) | `/pengelola_jurnal` | 3 | 7 |
-| [`replica.penghargaan`](#replicapenghargaan) | `/penghargaan/{id}` | 5 | 12 |
-| [`replica.penghargaan_dokumen`](#replicapenghargaandokumen) | `/penghargaan/{id}` → `dokumen[]` | 8 | 8 |
-| [`replica.penghargaan_list`](#replicapenghargaanlist) | `/penghargaan` | 5 | 5 |
+| [`replica.bimbingan_mahasiswa`](#replicabimbinganmahasiswa) | `/bimbingan_mahasiswa/{id}` | 4756 | 18 |
+| [`replica.bimbingan_mahasiswa_bidang_ilmu`](#replicabimbinganmahasiswabidangilmu) | `/bimbingan_mahasiswa/{id}/bidang_ilmu` | 2 | 3 |
+| [`replica.bimbingan_mahasiswa_dosen`](#replicabimbinganmahasiswadosen) | `/bimbingan_mahasiswa/{id}` → `dosen[]` | 6581 | 5 |
+| [`replica.bimbingan_mahasiswa_list`](#replicabimbinganmahasiswalist) | `/bimbingan_mahasiswa` | 5647 | 9 |
+| [`replica.bimbingan_mahasiswa_mahasiswa`](#replicabimbinganmahasiswamahasiswa) | `/bimbingan_mahasiswa/{id}` → `mahasiswa[]` | 20444 | 5 |
+| [`replica.bkd_ajar`](#replicabkdajar) | `/bkd/ajar` | 8485 | 10 |
+| [`replica.bkd_laporan_akhir_bkd`](#replicabkdlaporanakhirbkd) | `/bkd/laporan_akhir_bkd` | 463 | 21 |
+| [`replica.bkd_pendidikan`](#replicabkdpendidikan) | `/bkd/pendidikan` | 33 | 10 |
+| [`replica.bkd_penelitian`](#replicabkdpenelitian) | `/bkd/penelitian` | 1153 | 10 |
+| [`replica.bkd_pengmas`](#replicabkdpengmas) | `/bkd/pengmas` | 1348 | 10 |
+| [`replica.bkd_tunjang`](#replicabkdtunjang) | `/bkd/tunjang` | 2080 | 10 |
+| [`replica.data_pribadi_alamat`](#replicadatapribadialamat) | `/data_pribadi/alamat/{id_sdm}` | 97 | 11 |
+| [`replica.data_pribadi_bidang_ilmu`](#replicadatapribadibidangilmu) | `/data_pribadi/bidang_ilmu/{id_sdm}` | 71 | 3 |
+| [`replica.data_pribadi_keluarga`](#replicadatapribadikeluarga) | `/data_pribadi/keluarga/{id_sdm}` | 97 | 6 |
+| [`replica.data_pribadi_kepegawaian`](#replicadatapribadikepegawaian) | `/data_pribadi/kepegawaian/{id_sdm}` | 97 | 9 |
+| [`replica.data_pribadi_kependudukan`](#replicadatapribadikependudukan) | `/data_pribadi/kependudukan/{id_sdm}` | 97 | 5 |
+| [`replica.data_pribadi_lain`](#replicadatapribadilain) | `/data_pribadi/lain/{id_sdm}` | 97 | 2 |
+| [`replica.data_pribadi_profil`](#replicadatapribadiprofil) | `/data_pribadi/profil/{id_sdm}` | 97 | 4 |
+| [`replica.detasering`](#replicadetasering) | `/detasering/{id}` | 1 | 14 |
+| [`replica.detasering_dokumen`](#replicadetaseringdokumen) | `/detasering/{id}` → `dokumen[]` | 1 | 8 |
+| [`replica.detasering_list`](#replicadetaseringlist) | `/detasering` | 1 | 7 |
+| [`replica.diklat`](#replicadiklat) | `/diklat/{id}` | 244 | 19 |
+| [`replica.diklat_dokumen`](#replicadiklatdokumen) | `/diklat/{id}` → `dokumen[]` | 336 | 8 |
+| [`replica.diklat_list`](#replicadiklatlist) | `/diklat` | 244 | 8 |
+| [`replica.dokumen`](#replicadokumen) | `/dokumen/{id}` | 1462 | 9 |
+| [`replica.dokumen_list`](#replicadokumenlist) | `/dokumen` | 1462 | 10 |
+| [`replica.inpassing`](#replicainpassing) | `/inpassing/{id}` | 127 | 13 |
+| [`replica.inpassing_dokumen`](#replicainpassingdokumen) | `/inpassing/{id}` → `dokumen[]` | 108 | 8 |
+| [`replica.inpassing_list`](#replicainpassinglist) | `/inpassing` | 127 | 5 |
+| [`replica.jabatan_fungsional`](#replicajabatanfungsional) | `/jabatan_fungsional/{id}` | 158 | 12 |
+| [`replica.jabatan_fungsional_ajuan`](#replicajabatanfungsionalajuan) | `/jabatan_fungsional/ajuan/{id}` | 150 | 24 |
+| [`replica.jabatan_fungsional_ajuan_dokumen`](#replicajabatanfungsionalajuandokumen) | `/jabatan_fungsional/ajuan/{id}` → `dokumen[]` | 171 | 8 |
+| [`replica.jabatan_fungsional_ajuan_list`](#replicajabatanfungsionalajuanlist) | `/jabatan_fungsional/ajuan` | 150 | 9 |
+| [`replica.jabatan_fungsional_dokumen`](#replicajabatanfungsionaldokumen) | `/jabatan_fungsional/{id}` → `dokumen[]` | 122 | 8 |
+| [`replica.jabatan_fungsional_list`](#replicajabatanfungsionallist) | `/jabatan_fungsional` | 158 | 6 |
+| [`replica.jabatan_struktural`](#replicajabatanstruktural) | `/jabatan_struktural/{id}` | 1 | 11 |
+| [`replica.jabatan_struktural_list`](#replicajabatanstrukturallist) | `/jabatan_struktural` | 1 | 5 |
+| [`replica.kekayaan_intelektual`](#replicakekayaanintelektual) | `/kekayaan_intelektual/{id}` | 311 | 35 |
+| [`replica.kekayaan_intelektual_bidang_ilmu`](#replicakekayaanintelektualbidangilmu) | `/kekayaan_intelektual/{id}/bidang_ilmu` | 3 | 3 |
+| [`replica.kekayaan_intelektual_dokumen`](#replicakekayaanintelektualdokumen) | `/kekayaan_intelektual/{id}` → `dokumen[]` | 435 | 8 |
+| [`replica.kekayaan_intelektual_list`](#replicakekayaanintelektuallist) | `/kekayaan_intelektual` | 460 | 11 |
+| [`replica.kekayaan_intelektual_penulis`](#replicakekayaanintelektualpenulis) | `/kekayaan_intelektual/{id}` → `penulis[]` | 899 | 11 |
+| [`replica.kelas_kuliah_dokumen`](#replicakelaskuliahdokumen) | `/kelas_kuliah/{id}/dokumen` | 5371 | 8 |
+| [`replica.kepangkatan`](#replicakepangkatan) | `/kepangkatan/{id}` | 142 | 12 |
+| [`replica.kepangkatan_dokumen`](#replicakepangkatandokumen) | `/kepangkatan/{id}` → `dokumen[]` | 14 | 8 |
+| [`replica.kepangkatan_list`](#replicakepangkatanlist) | `/kepangkatan` | 142 | 4 |
+| [`replica.kesejahteraan`](#replicakesejahteraan) | `/kesejahteraan/{id}` | 3 | 8 |
+| [`replica.kesejahteraan_list`](#replicakesejahteraanlist) | `/kesejahteraan` | 3 | 6 |
+| [`replica.nilai_tes`](#replicanilaites) | `/nilai_tes/{id}` | 12 | 10 |
+| [`replica.nilai_tes_ajuan`](#replicanilaitesajuan) | `/nilai_tes/ajuan/{id}` | 5 | 19 |
+| [`replica.nilai_tes_ajuan_dokumen`](#replicanilaitesajuandokumen) | `/nilai_tes/ajuan/{id}` → `dokumen[]` | 5 | 8 |
+| [`replica.nilai_tes_ajuan_list`](#replicanilaitesajuanlist) | `/nilai_tes/ajuan` | 5 | 9 |
+| [`replica.nilai_tes_dokumen`](#replicanilaitesdokumen) | `/nilai_tes/{id}` → `dokumen[]` | 11 | 8 |
+| [`replica.nilai_tes_list`](#replicanilaiteslist) | `/nilai_tes` | 133 | 6 |
+| [`replica.orasi_ilmiah`](#replicaorasiilmiah) | `/orasi_ilmiah/{id}` | 12 | 20 |
+| [`replica.orasi_ilmiah_dokumen`](#replicaorasiilmiahdokumen) | `/orasi_ilmiah/{id}` → `dokumen[]` | 16 | 8 |
+| [`replica.orasi_ilmiah_list`](#replicaorasiilmiahlist) | `/orasi_ilmiah` | 12 | 7 |
+| [`replica.pembicara`](#replicapembicara) | `/pembicara/{id}` | 180 | 20 |
+| [`replica.pembicara_dokumen`](#replicapembicaradokumen) | `/pembicara/{id}` → `dokumen[]` | 304 | 8 |
+| [`replica.pembicara_list`](#replicapembicaralist) | `/pembicara` | 180 | 7 |
+| [`replica.pendidikan_formal`](#replicapendidikanformal) | `/pendidikan_formal/{id}` | 258 | 25 |
+| [`replica.pendidikan_formal_ajuan`](#replicapendidikanformalajuan) | `/pendidikan_formal/ajuan/{id}` | 103 | 44 |
+| [`replica.pendidikan_formal_ajuan_dokumen`](#replicapendidikanformalajuandokumen) | `/pendidikan_formal/ajuan/{id}` → `dokumen[]` | 179 | 8 |
+| [`replica.pendidikan_formal_ajuan_list`](#replicapendidikanformalajuanlist) | `/pendidikan_formal/ajuan` | 112 | 9 |
+| [`replica.pendidikan_formal_dokumen`](#replicapendidikanformaldokumen) | `/pendidikan_formal/{id}` → `dokumen[]` | 10 | 8 |
+| [`replica.pendidikan_formal_list`](#replicapendidikanformallist) | `/pendidikan_formal` | 258 | 7 |
+| [`replica.penelitian`](#replicapenelitian) | `/penelitian/{id}` | 219 | 26 |
+| [`replica.penelitian_anggota`](#replicapenelitiananggota) | `/penelitian/{id}` → `anggota[]` | 503 | 8 |
+| [`replica.penelitian_bidang_ilmu`](#replicapenelitianbidangilmu) | `/penelitian/{id}/bidang_ilmu` | 38 | 3 |
+| [`replica.penelitian_dokumen`](#replicapenelitiandokumen) | `/penelitian/{id}` → `dokumen[]` | 266 | 8 |
+| [`replica.penelitian_list`](#replicapenelitianlist) | `/penelitian` | 372 | 5 |
+| [`replica.pengabdian`](#replicapengabdian) | `/pengabdian/{id}` | 732 | 26 |
+| [`replica.pengabdian_anggota`](#replicapengabdiananggota) | `/pengabdian/{id}` → `anggota[]` | 2379 | 8 |
+| [`replica.pengabdian_bidang_ilmu`](#replicapengabdianbidangilmu) | `/pengabdian/{id}/bidang_ilmu` | 44 | 3 |
+| [`replica.pengabdian_dokumen`](#replicapengabdiandokumen) | `/pengabdian/{id}` → `dokumen[]` | 1505 | 8 |
+| [`replica.pengabdian_list`](#replicapengabdianlist) | `/pengabdian` | 1833 | 5 |
+| [`replica.pengabdian_mitra_litabmas`](#replicapengabdianmitralitabmas) | `/pengabdian/{id}` → `mitra_litabmas[]` | 5 | 2 |
+| [`replica.pengajaran`](#replicapengajaran) | `/pengajaran/{id}` | 10842 | 23 |
+| [`replica.pengajaran_bidang_ilmu`](#replicapengajaranbidangilmu) | `/pengajaran/{id}/bidang_ilmu` | 873 | 3 |
+| [`replica.pengajaran_list`](#replicapengajaranlist) | `/pengajaran` | 10842 | 11 |
+| [`replica.pengelola_jurnal`](#replicapengelolajurnal) | `/pengelola_jurnal/{id}` | 52 | 12 |
+| [`replica.pengelola_jurnal_dokumen`](#replicapengelolajurnaldokumen) | `/pengelola_jurnal/{id}` → `dokumen[]` | 75 | 8 |
+| [`replica.pengelola_jurnal_list`](#replicapengelolajurnallist) | `/pengelola_jurnal` | 52 | 7 |
+| [`replica.penghargaan`](#replicapenghargaan) | `/penghargaan/{id}` | 135 | 12 |
+| [`replica.penghargaan_dokumen`](#replicapenghargaandokumen) | `/penghargaan/{id}` → `dokumen[]` | 171 | 8 |
+| [`replica.penghargaan_list`](#replicapenghargaanlist) | `/penghargaan` | 135 | 5 |
 | [`replica.pengujian_mahasiswa`](#replicapengujianmahasiswa) | `/pengujian_mahasiswa/{id}` | 0 | 0 |
 | [`replica.pengujian_mahasiswa_bidang_ilmu`](#replicapengujianmahasiswabidangilmu) | `/pengujian_mahasiswa/{id}/bidang_ilmu` | 0 | 0 |
 | [`replica.pengujian_mahasiswa_list`](#replicapengujianmahasiswalist) | `/pengujian_mahasiswa` | 0 | 0 |
-| [`replica.penugasan`](#replicapenugasan) | `/penugasan/{id}` | 33 | 20 |
-| [`replica.penugasan_dokumen`](#replicapenugasandokumen) | `/penugasan/{id}` → `dokumen[]` | 5 | 8 |
-| [`replica.penugasan_keaktifan`](#replicapenugasankeaktifan) | `/penugasan/{id}` → `keaktifan[]` | 176 | 2 |
-| [`replica.penugasan_list`](#replicapenugasanlist) | `/penugasan` | 33 | 9 |
-| [`replica.penunjang_lain`](#replicapenunjanglain) | `/penunjang_lain/{id}` | 366 | 13 |
-| [`replica.penunjang_lain_anggota_dosen`](#replicapenunjanglainanggotadosen) | `/penunjang_lain/{id}` → `anggota_dosen[]` | 647 | 3 |
-| [`replica.penunjang_lain_dokumen`](#replicapenunjanglaindokumen) | `/penunjang_lain/{id}` → `dokumen[]` | 511 | 8 |
-| [`replica.penunjang_lain_list`](#replicapenunjanglainlist) | `/penunjang_lain` | 399 | 8 |
-| [`replica.publikasi`](#replicapublikasi) | `/publikasi/{id}` | 272 | 35 |
-| [`replica.publikasi_bidang_ilmu`](#replicapublikasibidangilmu) | `/publikasi/{id}/bidang_ilmu` | 3 | 3 |
-| [`replica.publikasi_dokumen`](#replicapublikasidokumen) | `/publikasi/{id}` → `dokumen[]` | 479 | 8 |
-| [`replica.publikasi_list`](#replicapublikasilist) | `/publikasi` | 300 | 11 |
-| [`replica.publikasi_penulis`](#replicapublikasipenulis) | `/publikasi/{id}` → `penulis[]` | 865 | 11 |
+| [`replica.penugasan`](#replicapenugasan) | `/penugasan/{id}` | 220 | 20 |
+| [`replica.penugasan_dokumen`](#replicapenugasandokumen) | `/penugasan/{id}` → `dokumen[]` | 54 | 8 |
+| [`replica.penugasan_keaktifan`](#replicapenugasankeaktifan) | `/penugasan/{id}` → `keaktifan[]` | 1051 | 2 |
+| [`replica.penugasan_list`](#replicapenugasanlist) | `/penugasan` | 220 | 9 |
+| [`replica.penunjang_lain`](#replicapenunjanglain) | `/penunjang_lain/{id}` | 2362 | 13 |
+| [`replica.penunjang_lain_anggota_dosen`](#replicapenunjanglainanggotadosen) | `/penunjang_lain/{id}` → `anggota_dosen[]` | 3224 | 3 |
+| [`replica.penunjang_lain_dokumen`](#replicapenunjanglaindokumen) | `/penunjang_lain/{id}` → `dokumen[]` | 3249 | 8 |
+| [`replica.penunjang_lain_list`](#replicapenunjanglainlist) | `/penunjang_lain` | 2902 | 8 |
+| [`replica.publikasi`](#replicapublikasi) | `/publikasi/{id}` | 1755 | 35 |
+| [`replica.publikasi_bidang_ilmu`](#replicapublikasibidangilmu) | `/publikasi/{id}/bidang_ilmu` | 29 | 3 |
+| [`replica.publikasi_dokumen`](#replicapublikasidokumen) | `/publikasi/{id}` → `dokumen[]` | 2681 | 8 |
+| [`replica.publikasi_list`](#replicapublikasilist) | `/publikasi` | 2940 | 11 |
+| [`replica.publikasi_penulis`](#replicapublikasipenulis) | `/publikasi/{id}` → `penulis[]` | 4481 | 11 |
 | [`replica.referensi_agama`](#replicareferensiagama) | `/referensi/agama` | 9 | 2 |
 | [`replica.referensi_bidang_studi`](#replicareferensibidangstudi) | `/referensi/bidang_studi` | 596 | 2 |
 | [`replica.referensi_bidang_usaha`](#replicareferensibidangusaha) | `/referensi/bidang_usaha` | 21 | 2 |
@@ -162,29 +165,29 @@ Setiap view memiliki kolom meta `r_integration_id`, `r_id_sdm`, `r_parent_id`,
 | [`replica.referensi_tingkat_penghargaan`](#replicareferensitingkatpenghargaan) | `/referensi/tingkat_penghargaan` | 7 | 2 |
 | [`replica.referensi_unit_kerja`](#replicareferensiunitkerja) | `/referensi/unit_kerja` | 13 | 3 |
 | [`replica.referensi_wilayah`](#replicareferensiwilayah) | `/referensi/wilayah` | 7819 | 3 |
-| [`replica.riwayat_pekerjaan`](#replicariwayatpekerjaan) | `/riwayat_pekerjaan/{id}` | 3 | 14 |
-| [`replica.riwayat_pekerjaan_dokumen`](#replicariwayatpekerjaandokumen) | `/riwayat_pekerjaan/{id}` → `dokumen[]` | 3 | 8 |
-| [`replica.riwayat_pekerjaan_list`](#replicariwayatpekerjaanlist) | `/riwayat_pekerjaan` | 3 | 9 |
-| [`replica.sertifikasi_dosen`](#replicasertifikasidosen) | `/sertifikasi_dosen/{id}` | 4 | 16 |
-| [`replica.sertifikasi_dosen_ajuan`](#replicasertifikasidosenajuan) | `/sertifikasi_dosen/ajuan/{id}` | 2 | 12 |
-| [`replica.sertifikasi_dosen_ajuan_dokumen`](#replicasertifikasidosenajuandokumen) | `/sertifikasi_dosen/ajuan/{id}` → `dokumen[]` | 2 | 8 |
-| [`replica.sertifikasi_dosen_ajuan_list`](#replicasertifikasidosenajuanlist) | `/sertifikasi_dosen/ajuan` | 2 | 9 |
-| [`replica.sertifikasi_dosen_dokumen`](#replicasertifikasidosendokumen) | `/sertifikasi_dosen/{id}` → `dokumen[]` | 2 | 8 |
-| [`replica.sertifikasi_dosen_list`](#replicasertifikasidosenlist) | `/sertifikasi_dosen` | 4 | 10 |
-| [`replica.sertifikasi_profesi`](#replicasertifikasiprofesi) | `/sertifikasi_profesi/{id}` | 5 | 16 |
-| [`replica.sertifikasi_profesi_dokumen`](#replicasertifikasiprofesidokumen) | `/sertifikasi_profesi/{id}` → `dokumen[]` | 2 | 8 |
-| [`replica.sertifikasi_profesi_list`](#replicasertifikasiprofesilist) | `/sertifikasi_profesi` | 5 | 10 |
-| [`replica.tugas_tambahan`](#replicatugastambahan) | `/tugas_tambahan/{id}` | 14 | 15 |
-| [`replica.tugas_tambahan_dokumen`](#replicatugastambahandokumen) | `/tugas_tambahan/{id}` → `dokumen[]` | 17 | 8 |
-| [`replica.tugas_tambahan_list`](#replicatugastambahanlist) | `/tugas_tambahan` | 14 | 7 |
-| [`replica.tunjangan`](#replicatunjangan) | `/tunjangan/{id}` | 0 | 0 |
-| [`replica.tunjangan_list`](#replicatunjanganlist) | `/tunjangan` | 0 | 0 |
-| [`replica.visiting_scientist`](#replicavisitingscientist) | `/visiting_scientist/{id}` | 0 | 0 |
-| [`replica.visiting_scientist_list`](#replicavisitingscientistlist) | `/visiting_scientist` | 0 | 0 |
+| [`replica.riwayat_pekerjaan`](#replicariwayatpekerjaan) | `/riwayat_pekerjaan/{id}` | 19 | 14 |
+| [`replica.riwayat_pekerjaan_dokumen`](#replicariwayatpekerjaandokumen) | `/riwayat_pekerjaan/{id}` → `dokumen[]` | 21 | 8 |
+| [`replica.riwayat_pekerjaan_list`](#replicariwayatpekerjaanlist) | `/riwayat_pekerjaan` | 19 | 9 |
+| [`replica.sertifikasi_dosen`](#replicasertifikasidosen) | `/sertifikasi_dosen/{id}` | 45 | 16 |
+| [`replica.sertifikasi_dosen_ajuan`](#replicasertifikasidosenajuan) | `/sertifikasi_dosen/ajuan/{id}` | 9 | 16 |
+| [`replica.sertifikasi_dosen_ajuan_dokumen`](#replicasertifikasidosenajuandokumen) | `/sertifikasi_dosen/ajuan/{id}` → `dokumen[]` | 9 | 8 |
+| [`replica.sertifikasi_dosen_ajuan_list`](#replicasertifikasidosenajuanlist) | `/sertifikasi_dosen/ajuan` | 9 | 9 |
+| [`replica.sertifikasi_dosen_dokumen`](#replicasertifikasidosendokumen) | `/sertifikasi_dosen/{id}` → `dokumen[]` | 10 | 8 |
+| [`replica.sertifikasi_dosen_list`](#replicasertifikasidosenlist) | `/sertifikasi_dosen` | 45 | 10 |
+| [`replica.sertifikasi_profesi`](#replicasertifikasiprofesi) | `/sertifikasi_profesi/{id}` | 28 | 16 |
+| [`replica.sertifikasi_profesi_dokumen`](#replicasertifikasiprofesidokumen) | `/sertifikasi_profesi/{id}` → `dokumen[]` | 23 | 8 |
+| [`replica.sertifikasi_profesi_list`](#replicasertifikasiprofesilist) | `/sertifikasi_profesi` | 28 | 10 |
+| [`replica.tugas_tambahan`](#replicatugastambahan) | `/tugas_tambahan/{id}` | 78 | 15 |
+| [`replica.tugas_tambahan_dokumen`](#replicatugastambahandokumen) | `/tugas_tambahan/{id}` → `dokumen[]` | 80 | 8 |
+| [`replica.tugas_tambahan_list`](#replicatugastambahanlist) | `/tugas_tambahan` | 78 | 7 |
+| [`replica.tunjangan`](#replicatunjangan) | `/tunjangan/{id}` | 2 | 10 |
+| [`replica.tunjangan_list`](#replicatunjanganlist) | `/tunjangan` | 2 | 8 |
+| [`replica.visiting_scientist`](#replicavisitingscientist) | `/visiting_scientist/{id}` | 12 | 14 |
+| [`replica.visiting_scientist_list`](#replicavisitingscientistlist) | `/visiting_scientist` | 12 | 5 |
 
 ## replica.anggota_profesi
 
-Sumber: `GET /anggota_profesi/{id}`; 13 baris sampel.
+Sumber: `GET /anggota_profesi/{id}`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -193,96 +196,96 @@ Sumber: `GET /anggota_profesi/{id}`; 13 baris sampel.
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `nama_organisasi` | text | 0% |
-| `instansi_profesi` | text | 38% |
+| `instansi_profesi` | text | 40% |
 | `kategori_kegiatan` | text | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
 | `tanggal_mulai_keanggotaan` | date | 0% |
-| `tanggal_selesai_keanggotaan` | date | 46% |
+| `tanggal_selesai_keanggotaan` | date | 34% |
 
 ## replica.anggota_profesi_dokumen
 
-Sumber: `GET /anggota_profesi/{id}`, elemen `dokumen[]`; 12 baris sampel.
+Sumber: `GET /anggota_profesi/{id}`, elemen `dokumen[]`; 109 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 67% |
+| `tautan` | text | 55% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 75% |
+| `keterangan` | text | 87% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.anggota_profesi_list
 
-Sumber: `GET /anggota_profesi`; 13 baris sampel.
+Sumber: `GET /anggota_profesi`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `peran` | text | 0% |
 | `nama_organisasi` | text | 0% |
-| `instansi_profesi` | text | 38% |
+| `instansi_profesi` | text | 40% |
 | `id_kategori_kegiatan` | bigint | 0% |
 | `tanggal_mulai_keanggotaan` | date | 0% |
-| `tanggal_selesai_keanggotaan` | date | 46% |
+| `tanggal_selesai_keanggotaan` | date | 34% |
 
 ## replica.bahan_ajar
 
-Sumber: `GET /bahan_ajar/{id}`; 45 baris sampel.
+Sumber: `GET /bahan_ajar/{id}`; 374 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `isbn` | text | 73% |
+| `isbn` | text | 65% |
 | `judul` | text | 0% |
 | `dokumen` | jsonb | 0% |
 | `penulis` | jsonb | 0% |
 | `nama_jenis` | text | 0% |
-| `sk_penugasan` | text | 69% |
+| `sk_penugasan` | text | 68% |
 | `nama_penerbit` | text | 0% |
-| `judul_litabmas` | text | 100% |
+| `judul_litabmas` | text | 98% |
 | `tanggal_terbit` | date | 20% |
 | `id_jenis_bahan_ajar` | bigint | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
-| `tanggal_sk_penugasan` | date | 67% |
-| `kategori_capaian_luaran` | text | 36% |
-| `id_penelitian_pengabdian` | text | 100% |
-| `id_kategori_capaian_luaran` | text | 36% |
+| `tanggal_sk_penugasan` | date | 68% |
+| `kategori_capaian_luaran` | text | 34% |
+| `id_penelitian_pengabdian` | uuid | 98% |
+| `id_kategori_capaian_luaran` | text | 34% |
 
 ## replica.bahan_ajar_dokumen
 
-Sumber: `GET /bahan_ajar/{id}`, elemen `dokumen[]`; 51 baris sampel.
+Sumber: `GET /bahan_ajar/{id}`, elemen `dokumen[]`; 511 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 61% |
+| `tautan` | text | 40% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 84% |
+| `keterangan` | text | 81% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.bahan_ajar_list
 
-Sumber: `GET /bahan_ajar`; 46 baris sampel.
+Sumber: `GET /bahan_ajar`; 533 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `isbn` | text | 74% |
+| `isbn` | text | 60% |
 | `judul` | text | 0% |
 | `nama_jenis` | text | 0% |
 | `nama_penerbit` | text | 0% |
-| `tanggal_terbit` | date | 20% |
+| `tanggal_terbit` | date | 19% |
 | `id_kategori_kegiatan` | bigint | 0% |
 
 ## replica.bahan_ajar_penulis
 
-Sumber: `GET /bahan_ajar/{id}`, elemen `penulis[]`; 126 baris sampel.
+Sumber: `GET /bahan_ajar/{id}`, elemen `penulis[]`; 675 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -291,14 +294,14 @@ Sumber: `GET /bahan_ajar/{id}`, elemen `penulis[]`; 126 baris sampel.
 | `peran` | text | 0% |
 | `id_sdm` | uuid | 0% |
 | `urutan` | bigint | 0% |
-| `afiliasi` | text | 9% |
-| `id_orang` | text | 100% |
+| `afiliasi` | text | 16% |
+| `id_orang` | uuid | 100% |
 | `id_peserta_didik` | text | 100% |
 | `nomor_induk_peserta_didik` | text | 100% |
 
 ## replica.beasiswa
 
-Sumber: `GET /beasiswa/{id}`; 3 baris sampel.
+Sumber: `GET /beasiswa/{id}`; 10 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -313,7 +316,7 @@ Sumber: `GET /beasiswa/{id}`; 3 baris sampel.
 
 ## replica.beasiswa_list
 
-Sumber: `GET /beasiswa`; 3 baris sampel.
+Sumber: `GET /beasiswa`; 10 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -338,7 +341,7 @@ Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data 
 
 ## replica.bimbingan_mahasiswa
 
-Sumber: `GET /bimbingan_mahasiswa/{id}`; 709 baris sampel.
+Sumber: `GET /bimbingan_mahasiswa/{id}`; 4756 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -346,30 +349,34 @@ Sumber: `GET /bimbingan_mahasiswa/{id}`; 709 baris sampel.
 | `dosen` | jsonb | 0% |
 | `id_pt` | uuid | 0% |
 | `judul` | text | 0% |
-| `lokasi` | text | 63% |
+| `lokasi` | text | 52% |
 | `id_unit` | uuid | 0% |
 | `komunal` | boolean | 0% |
 | `flagship` | numeric | 0% |
 | `semester` | text | 0% |
 | `mahasiswa` | jsonb | 0% |
-| `keterangan` | text | 96% |
-| `sk_penugasan` | text | 35% |
+| `keterangan` | text | 93% |
+| `sk_penugasan` | text | 14% |
 | `program_studi` | text | 0% |
-| `tanggal_mulai` | date | 99% |
+| `tanggal_mulai` | date | 96% |
 | `jenis_bimbingan` | text | 0% |
-| `tanggal_selesai` | date | 99% |
-| `tanggal_sk_penugasan` | date | 36% |
+| `tanggal_selesai` | date | 96% |
+| `tanggal_sk_penugasan` | date | 14% |
 | `nama_perguruan_tinggi` | text | 0% |
 
 ## replica.bimbingan_mahasiswa_bidang_ilmu
 
-Sumber: `GET /bimbingan_mahasiswa/{id}/bidang_ilmu`; 0 baris sampel.
+Sumber: `GET /bimbingan_mahasiswa/{id}/bidang_ilmu`; 2 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `urutan` | numeric | 0% |
+| `kelompok_bidang` | text | 0% |
+| `id_kelompok_bidang` | uuid | 0% |
 
 ## replica.bimbingan_mahasiswa_dosen
 
-Sumber: `GET /bimbingan_mahasiswa/{id}`, elemen `dosen[]`; 1138 baris sampel.
+Sumber: `GET /bimbingan_mahasiswa/{id}`, elemen `dosen[]`; 6581 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -381,7 +388,7 @@ Sumber: `GET /bimbingan_mahasiswa/{id}`, elemen `dosen[]`; 1138 baris sampel.
 
 ## replica.bimbingan_mahasiswa_list
 
-Sumber: `GET /bimbingan_mahasiswa`; 712 baris sampel.
+Sumber: `GET /bimbingan_mahasiswa`; 5647 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -397,7 +404,7 @@ Sumber: `GET /bimbingan_mahasiswa`; 712 baris sampel.
 
 ## replica.bimbingan_mahasiswa_mahasiswa
 
-Sumber: `GET /bimbingan_mahasiswa/{id}`, elemen `mahasiswa[]`; 2454 baris sampel.
+Sumber: `GET /bimbingan_mahasiswa/{id}`, elemen `mahasiswa[]`; 20444 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -409,12 +416,12 @@ Sumber: `GET /bimbingan_mahasiswa/{id}`, elemen `mahasiswa[]`; 2454 baris sampel
 
 ## replica.bkd_ajar
 
-Sumber: `GET /bkd/ajar`; 1111 baris sampel.
+Sumber: `GET /bkd/ajar`; 8485 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
-| `nidn` | text | 11% |
-| `nilai` | numeric | 10% |
+| `nidn` | text | 7% |
+| `nilai` | numeric | 11% |
 | `nuptk` | text | 0% |
 | `unsur` | text | 0% |
 | `id_smt` | text | 0% |
@@ -426,7 +433,7 @@ Sumber: `GET /bkd/ajar`; 1111 baris sampel.
 
 ## replica.bkd_laporan_akhir_bkd
 
-Sumber: `GET /bkd/laporan_akhir_bkd`; 62 baris sampel.
+Sumber: `GET /bkd/laporan_akhir_bkd`; 463 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -434,14 +441,14 @@ Sumber: `GET /bkd/laporan_akhir_bkd`; 62 baris sampel.
 | `nuptk` | text | 0% |
 | `id_smt` | text | 0% |
 | `sks_lebih` | numeric | 0% |
-| `id_jabfung` | text | 19% |
+| `id_jabfung` | text | 14% |
 | `id_reg_ptk` | uuid | 0% |
 | `stat_tugas` | text | 0% |
 | `sks_kinerja` | numeric | 0% |
 | `stat_belajar` | text | 0% |
 | `sks_lebih_lit` | numeric | 0% |
 | `sks_lebih_ajar` | numeric | 0% |
-| `stat_kewajiban` | numeric | 21% |
+| `stat_kewajiban` | numeric | 15% |
 | `simpulan_asesor` | text | 0% |
 | `sks_kinerja_lit` | numeric | 0% |
 | `sks_lebih_didik` | numeric | 0% |
@@ -454,7 +461,7 @@ Sumber: `GET /bkd/laporan_akhir_bkd`; 62 baris sampel.
 
 ## replica.bkd_pendidikan
 
-Sumber: `GET /bkd/pendidikan`; 2 baris sampel.
+Sumber: `GET /bkd/pendidikan`; 33 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -471,7 +478,7 @@ Sumber: `GET /bkd/pendidikan`; 2 baris sampel.
 
 ## replica.bkd_penelitian
 
-Sumber: `GET /bkd/penelitian`; 150 baris sampel.
+Sumber: `GET /bkd/penelitian`; 1153 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -488,11 +495,11 @@ Sumber: `GET /bkd/penelitian`; 150 baris sampel.
 
 ## replica.bkd_pengmas
 
-Sumber: `GET /bkd/pengmas`; 170 baris sampel.
+Sumber: `GET /bkd/pengmas`; 1348 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
-| `nidn` | text | 5% |
+| `nidn` | text | 9% |
 | `nilai` | numeric | 0% |
 | `nuptk` | text | 0% |
 | `unsur` | text | 0% |
@@ -505,11 +512,11 @@ Sumber: `GET /bkd/pengmas`; 170 baris sampel.
 
 ## replica.bkd_tunjang
 
-Sumber: `GET /bkd/tunjang`; 335 baris sampel.
+Sumber: `GET /bkd/tunjang`; 2080 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
-| `nidn` | text | 2% |
+| `nidn` | text | 9% |
 | `nilai` | numeric | 0% |
 | `nuptk` | text | 0% |
 | `unsur` | text | 0% |
@@ -522,25 +529,25 @@ Sumber: `GET /bkd/tunjang`; 335 baris sampel.
 
 ## replica.data_pribadi_alamat
 
-Sumber: `GET /data_pribadi/alamat/{id_sdm}`; 12 baris sampel.
+Sumber: `GET /data_pribadi/alamat/{id_sdm}`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `rt` | bigint | 0% |
 | `rw` | bigint | 0% |
-| `dusun` | text | 75% |
-| `email` | text | 25% |
-| `alamat` | text | 0% |
-| `kode_pos` | text | 67% |
+| `dusun` | text | 86% |
+| `email` | text | 15% |
+| `alamat` | text | 2% |
+| `kode_pos` | text | 34% |
 | `kelurahan` | text | 0% |
-| `telepon_hp` | text | 25% |
-| `telepon_rumah` | text | 75% |
+| `telepon_hp` | text | 18% |
+| `telepon_rumah` | text | 79% |
 | `kota_kabupaten` | text | 0% |
 | `id_kota_kabupaten` | text | 0% |
 
 ## replica.data_pribadi_bidang_ilmu
 
-Sumber: `GET /data_pribadi/bidang_ilmu/{id_sdm}`; 11 baris sampel.
+Sumber: `GET /data_pribadi/bidang_ilmu/{id_sdm}`; 71 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -550,36 +557,36 @@ Sumber: `GET /data_pribadi/bidang_ilmu/{id_sdm}`; 11 baris sampel.
 
 ## replica.data_pribadi_keluarga
 
-Sumber: `GET /data_pribadi/keluarga/{id_sdm}`; 12 baris sampel.
+Sumber: `GET /data_pribadi/keluarga/{id_sdm}`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
-| `nip_pasangan` | text | 83% |
+| `nip_pasangan` | text | 85% |
 | `status_kawin` | text | 0% |
-| `nama_pasangan` | text | 50% |
+| `nama_pasangan` | text | 46% |
 | `id_status_kawin` | bigint | 0% |
-| `pekerjaan_pasangan` | text | 42% |
+| `pekerjaan_pasangan` | text | 44% |
 | `id_pekerjaan_pasangan` | bigint | 0% |
 
 ## replica.data_pribadi_kepegawaian
 
-Sumber: `GET /data_pribadi/kepegawaian/{id_sdm}`; 12 baris sampel.
+Sumber: `GET /data_pribadi/kepegawaian/{id_sdm}`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
-| `nip` | text | 92% |
-| `nidn` | text | 8% |
-| `tmmd` | date | 0% |
-| `nuptk` | text | 0% |
-| `sk_cpns` | text | 92% |
-| `sk_tmmd` | text | 8% |
+| `nip` | text | 94% |
+| `nidn` | text | 11% |
+| `tmmd` | date | 5% |
+| `nuptk` | text | 5% |
+| `sk_cpns` | text | 94% |
+| `sk_tmmd` | text | 15% |
 | `sumber_gaji` | text | 0% |
 | `id_sumber_gaji` | bigint | 0% |
-| `tanggal_sk_cpns` | date | 92% |
+| `tanggal_sk_cpns` | date | 95% |
 
 ## replica.data_pribadi_kependudukan
 
-Sumber: `GET /data_pribadi/kependudukan/{id_sdm}`; 12 baris sampel.
+Sumber: `GET /data_pribadi/kependudukan/{id_sdm}`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -591,16 +598,16 @@ Sumber: `GET /data_pribadi/kependudukan/{id_sdm}`; 12 baris sampel.
 
 ## replica.data_pribadi_lain
 
-Sumber: `GET /data_pribadi/lain/{id_sdm}`; 12 baris sampel.
+Sumber: `GET /data_pribadi/lain/{id_sdm}`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
-| `npwp` | text | 33% |
-| `nama_wp` | text | 33% |
+| `npwp` | text | 26% |
+| `nama_wp` | text | 27% |
 
 ## replica.data_pribadi_profil
 
-Sumber: `GET /data_pribadi/profil/{id_sdm}`; 12 baris sampel.
+Sumber: `GET /data_pribadi/profil/{id_sdm}`; 97 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -611,19 +618,57 @@ Sumber: `GET /data_pribadi/profil/{id_sdm}`; 12 baris sampel.
 
 ## replica.detasering
 
-Sumber: `GET /detasering/{id}`; 0 baris sampel.
+Sumber: `GET /detasering/{id}`; 1 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `id_sdm` | uuid | 0% |
+| `dokumen` | jsonb | 0% |
+| `bidang_tugas` | text | 0% |
+| `sk_penugasan` | text | 0% |
+| `tanggal_mulai` | date | 0% |
+| `tanggal_selesai` | date | 0% |
+| `perguruan_tinggi` | text | 0% |
+| `kategori_kegiatan` | text | 0% |
+| `deskripsi_kegiatan` | text | 0% |
+| `metode_pelaksanaan` | text | 0% |
+| `id_perguruan_tinggi` | uuid | 0% |
+| `id_kategori_kegiatan` | bigint | 0% |
+| `tanggal_sk_penugasan` | date | 0% |
+
+## replica.detasering_dokumen
+
+Sumber: `GET /detasering/{id}`, elemen `dokumen[]`; 1 baris sampel.
+
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `nama` | text | 0% |
+| `tautan` | text | 100% |
+| `nama_file` | text | 0% |
+| `jenis_file` | text | 0% |
+| `keterangan` | text | 100% |
+| `jenis_dokumen` | text | 0% |
+| `tanggal_upload` | timestamp | 0% |
 
 ## replica.detasering_list
 
-Sumber: `GET /detasering`; 0 baris sampel.
+Sumber: `GET /detasering`; 1 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `bidang_tugas` | text | 0% |
+| `sk_penugasan` | text | 0% |
+| `perguruan_tinggi` | text | 0% |
+| `kategori_kegiatan` | text | 0% |
+| `id_kategori_kegiatan` | bigint | 0% |
+| `tanggal_sk_penugasan` | date | 0% |
 
 ## replica.diklat
 
-Sumber: `GET /diklat/{id}`; 23 baris sampel.
+Sumber: `GET /diklat/{id}`; 244 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -632,39 +677,39 @@ Sumber: `GET /diklat/{id}`; 23 baris sampel.
 | `peran` | text | 4% |
 | `tahun` | numeric | 0% |
 | `id_sdm` | uuid | 0% |
-| `lokasi` | text | 52% |
+| `lokasi` | text | 39% |
 | `dokumen` | jsonb | 0% |
 | `tingkat` | text | 0% |
-| `jumlah_jam` | numeric | 9% |
+| `jumlah_jam` | numeric | 5% |
 | `jenis_diklat` | text | 0% |
-| `sk_penugasan` | text | 65% |
-| `no_sertifikat` | text | 9% |
+| `sk_penugasan` | text | 59% |
+| `no_sertifikat` | text | 6% |
 | `penyelenggara` | text | 0% |
 | `tanggal_mulai` | date | 0% |
 | `id_jenis_diklat` | bigint | 0% |
 | `tanggal_selesai` | date | 0% |
-| `tanggal_sertifikat` | date | 0% |
+| `tanggal_sertifikat` | date | 3% |
 | `id_kategori_kegiatan` | bigint | 0% |
-| `tanggal_sk_penugasan` | date | 65% |
+| `tanggal_sk_penugasan` | date | 63% |
 
 ## replica.diklat_dokumen
 
-Sumber: `GET /diklat/{id}`, elemen `dokumen[]`; 32 baris sampel.
+Sumber: `GET /diklat/{id}`, elemen `dokumen[]`; 336 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 0% |
-| `tautan` | text | 56% |
+| `nama` | text | 1% |
+| `tautan` | text | 60% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 69% |
+| `keterangan` | text | 82% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.diklat_list
 
-Sumber: `GET /diklat`; 23 baris sampel.
+Sumber: `GET /diklat`; 244 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -679,32 +724,32 @@ Sumber: `GET /diklat`; 23 baris sampel.
 
 ## replica.dokumen
 
-Sumber: `GET /dokumen/{id}`; 170 baris sampel.
+Sumber: `GET /dokumen/{id}`; 1462 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 52% |
-| `tautan` | text | 99% |
+| `tautan` | text | 94% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 90% |
+| `keterangan` | text | 87% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 | `id_jenis_dokumen` | bigint | 0% |
 
 ## replica.dokumen_list
 
-Sumber: `GET /dokumen`; 170 baris sampel.
+Sumber: `GET /dokumen`; 1462 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 52% |
-| `tautan` | text | 99% |
+| `tautan` | text | 94% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 90% |
+| `keterangan` | text | 87% |
 | `last_update` | timestamp | 0% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
@@ -712,7 +757,7 @@ Sumber: `GET /dokumen`; 170 baris sampel.
 
 ## replica.inpassing
 
-Sumber: `GET /inpassing/{id}`; 11 baris sampel.
+Sumber: `GET /inpassing/{id}`; 127 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -732,22 +777,22 @@ Sumber: `GET /inpassing/{id}`; 11 baris sampel.
 
 ## replica.inpassing_dokumen
 
-Sumber: `GET /inpassing/{id}`, elemen `dokumen[]`; 10 baris sampel.
+Sumber: `GET /inpassing/{id}`, elemen `dokumen[]`; 108 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 60% |
+| `tautan` | text | 49% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 80% |
+| `keterangan` | text | 75% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.inpassing_list
 
-Sumber: `GET /inpassing`; 11 baris sampel.
+Sumber: `GET /inpassing`; 127 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -759,7 +804,7 @@ Sumber: `GET /inpassing`; 11 baris sampel.
 
 ## replica.jabatan_fungsional
 
-Sumber: `GET /jabatan_fungsional/{id}`; 17 baris sampel.
+Sumber: `GET /jabatan_fungsional/{id}`; 158 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -770,15 +815,15 @@ Sumber: `GET /jabatan_fungsional/{id}`; 17 baris sampel.
 | `angka_kredit` | bigint | 0% |
 | `tanggal_mulai` | date | 0% |
 | `jabatan_fungsional` | text | 0% |
-| `kelebihan_penunjang` | bigint | 0% |
-| `kelebihan_penelitian` | bigint | 0% |
-| `kelebihan_pengabdian` | bigint | 0% |
+| `kelebihan_penunjang` | numeric | 0% |
+| `kelebihan_penelitian` | numeric | 0% |
+| `kelebihan_pengabdian` | numeric | 0% |
 | `kelebihan_pengajaran` | numeric | 0% |
 | `id_jabatan_fungsional` | bigint | 0% |
 
 ## replica.jabatan_fungsional_ajuan
 
-Sumber: `GET /jabatan_fungsional/ajuan/{id}`; 16 baris sampel.
+Sumber: `GET /jabatan_fungsional/ajuan/{id}`; 150 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -786,66 +831,66 @@ Sumber: `GET /jabatan_fungsional/ajuan/{id}`; 16 baris sampel.
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `jenis_ajuan` | text | 0% |
-| `id_data_master` | uuid | 44% |
+| `id_data_master` | uuid | 65% |
 | `detail_perubahan` | jsonb | 0% |
-| `detail_perubahan_sk_baru` | text | 44% |
-| `detail_perubahan_sk_lama` | text | 0% |
-| `detail_perubahan_jabfung_baru` | text | 44% |
-| `detail_perubahan_jabfung_lama` | text | 44% |
+| `detail_perubahan_sk_baru` | text | 27% |
+| `detail_perubahan_sk_lama` | text | 3% |
+| `detail_perubahan_jabfung_baru` | text | 31% |
+| `detail_perubahan_jabfung_lama` | text | 69% |
 | `detail_perubahan_lebihan_lit_baru` | numeric | 75% |
-| `detail_perubahan_lebihan_lit_lama` | numeric | 94% |
-| `detail_perubahan_angka_kredit_baru` | numeric | 44% |
-| `detail_perubahan_angka_kredit_lama` | numeric | 44% |
+| `detail_perubahan_lebihan_lit_lama` | numeric | 95% |
+| `detail_perubahan_angka_kredit_baru` | numeric | 31% |
+| `detail_perubahan_angka_kredit_lama` | numeric | 72% |
 | `detail_perubahan_lebihan_ajar_baru` | numeric | 75% |
-| `detail_perubahan_lebihan_ajar_lama` | numeric | 94% |
-| `detail_perubahan_tanggal_mulai_baru` | date | 56% |
-| `detail_perubahan_tanggal_mulai_lama` | date | 44% |
+| `detail_perubahan_lebihan_ajar_lama` | numeric | 95% |
+| `detail_perubahan_tanggal_mulai_baru` | date | 29% |
+| `detail_perubahan_tanggal_mulai_lama` | date | 66% |
 | `detail_perubahan_lebihan_pengmas_baru` | numeric | 75% |
-| `detail_perubahan_lebihan_pengmas_lama` | numeric | 94% |
+| `detail_perubahan_lebihan_pengmas_lama` | numeric | 95% |
 | `detail_perubahan_lebihan_tunjang_baru` | numeric | 75% |
-| `detail_perubahan_lebihan_tunjang_lama` | numeric | 94% |
-| `detail_perubahan_stat_pegawai_baru` | bigint | 56% |
-| `detail_perubahan_stat_pegawai_lama` | text | 100% |
+| `detail_perubahan_lebihan_tunjang_lama` | numeric | 95% |
+| `detail_perubahan_stat_pegawai_baru` | bigint | 79% |
+| `detail_perubahan_stat_pegawai_lama` | bigint | 99% |
 
 ## replica.jabatan_fungsional_ajuan_dokumen
 
-Sumber: `GET /jabatan_fungsional/ajuan/{id}`, elemen `dokumen[]`; 18 baris sampel.
+Sumber: `GET /jabatan_fungsional/ajuan/{id}`, elemen `dokumen[]`; 171 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 56% |
-| `tautan` | text | 100% |
+| `nama` | text | 39% |
+| `tautan` | text | 92% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 100% |
+| `keterangan` | text | 85% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.jabatan_fungsional_ajuan_list
 
-Sumber: `GET /jabatan_fungsional/ajuan`; 16 baris sampel.
+Sumber: `GET /jabatan_fungsional/ajuan`; 150 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `umur` | bigint | 0% |
+| `umur` | bigint | 3% |
 | `id_sdm` | uuid | 0% |
 | `status` | text | 0% |
-| `keterangan` | text | 0% |
+| `keterangan` | text | 14% |
 | `jenis_ajuan` | text | 0% |
 | `tanggal_ajuan` | timestamp | 0% |
-| `id_data_master` | uuid | 44% |
-| `tanggal_verifikasi` | timestamp | 0% |
+| `id_data_master` | uuid | 65% |
+| `tanggal_verifikasi` | timestamp | 3% |
 
 ## replica.jabatan_fungsional_dokumen
 
-Sumber: `GET /jabatan_fungsional/{id}`, elemen `dokumen[]`; 18 baris sampel.
+Sumber: `GET /jabatan_fungsional/{id}`, elemen `dokumen[]`; 122 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 94% |
+| `nama` | text | 91% |
 | `tautan` | text | 100% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
@@ -855,32 +900,50 @@ Sumber: `GET /jabatan_fungsional/{id}`, elemen `dokumen[]`; 18 baris sampel.
 
 ## replica.jabatan_fungsional_list
 
-Sumber: `GET /jabatan_fungsional`; 17 baris sampel.
+Sumber: `GET /jabatan_fungsional`; 158 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `sk` | text | 0% |
 | `tanggal_mulai` | date | 0% |
-| `id_stat_pegawai` | bigint | 29% |
-| `nm_stat_pegawai` | text | 29% |
+| `id_stat_pegawai` | bigint | 35% |
+| `nm_stat_pegawai` | text | 35% |
 | `jabatan_fungsional` | text | 0% |
 
 ## replica.jabatan_struktural
 
-Sumber: `GET /jabatan_struktural/{id}`; 0 baris sampel.
+Sumber: `GET /jabatan_struktural/{id}`; 1 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `id_sdm` | uuid | 0% |
+| `lokasi` | text | 0% |
+| `dokumen` | jsonb | 0% |
+| `jabatan` | text | 0% |
+| `sk_jabatan` | text | 0% |
+| `id_jabatan_negara` | bigint | 0% |
+| `kategori_kegiatan` | text | 0% |
+| `id_kategori_kegiatan` | bigint | 0% |
+| `tanggal_mulai_jabatan` | date | 0% |
+| `tanggal_selesai_jabatan` | text | 100% |
 
 ## replica.jabatan_struktural_list
 
-Sumber: `GET /jabatan_struktural`; 0 baris sampel.
+Sumber: `GET /jabatan_struktural`; 1 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `jabatan` | text | 0% |
+| `sk_jabatan` | text | 0% |
+| `tanggal_mulai_jabatan` | date | 0% |
+| `tanggal_selesai_jabatan` | text | 100% |
 
 ## replica.kekayaan_intelektual
 
-Sumber: `GET /kekayaan_intelektual/{id}`; 37 baris sampel.
+Sumber: `GET /kekayaan_intelektual/{id}`; 311 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -892,37 +955,37 @@ Sumber: `GET /kekayaan_intelektual/{id}`; 37 baris sampel.
 | `judul` | text | 0% |
 | `nomor` | bigint | 0% |
 | `e_issn` | text | 100% |
-| `tautan` | text | 46% |
+| `tautan` | text | 63% |
 | `volume` | bigint | 0% |
 | `dokumen` | jsonb | 0% |
 | `halaman` | text | 100% |
 | `penulis` | jsonb | 0% |
 | `seminar` | bigint | 0% |
 | `tanggal` | date | 0% |
-| `penerbit` | text | 43% |
+| `penerbit` | text | 39% |
 | `quartile` | bigint | 0% |
 | `asal_data` | text | 0% |
 | `prosiding` | bigint | 0% |
 | `judul_asli` | text | 100% |
-| `keterangan` | text | 92% |
-| `id_litabmas` | uuid | 95% |
+| `keterangan` | text | 91% |
+| `id_litabmas` | uuid | 97% |
 | `nama_jurnal` | text | 100% |
-| `nomor_paten` | text | 100% |
+| `nomor_paten` | text | 99% |
 | `judul_artikel` | text | 100% |
-| `pemberi_paten` | text | 100% |
-| `judul_litabmas` | text | 95% |
+| `pemberi_paten` | text | 99% |
+| `judul_litabmas` | text | 97% |
 | `jumlah_halaman` | bigint | 0% |
 | `bidang_keilmuan` | jsonb | 0% |
 | `jenis_publikasi` | text | 0% |
 | `kategori_kegiatan` | text | 0% |
 | `id_jenis_publikasi` | bigint | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
-| `kategori_capaian_luaran` | text | 32% |
+| `kategori_capaian_luaran` | text | 19% |
 | `id_kategori_capaian_luaran` | bigint | 0% |
 
 ## replica.kekayaan_intelektual_bidang_ilmu
 
-Sumber: `GET /kekayaan_intelektual/{id}/bidang_ilmu`; 1 baris sampel.
+Sumber: `GET /kekayaan_intelektual/{id}/bidang_ilmu`; 3 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -932,22 +995,22 @@ Sumber: `GET /kekayaan_intelektual/{id}/bidang_ilmu`; 1 baris sampel.
 
 ## replica.kekayaan_intelektual_dokumen
 
-Sumber: `GET /kekayaan_intelektual/{id}`, elemen `dokumen[]`; 52 baris sampel.
+Sumber: `GET /kekayaan_intelektual/{id}`, elemen `dokumen[]`; 435 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 23% |
+| `tautan` | text | 33% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 77% |
+| `keterangan` | text | 76% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.kekayaan_intelektual_list
 
-Sumber: `GET /kekayaan_intelektual`; 37 baris sampel.
+Sumber: `GET /kekayaan_intelektual`; 460 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -957,7 +1020,7 @@ Sumber: `GET /kekayaan_intelektual`; 37 baris sampel.
 | `quartile` | text | 100% |
 | `asal_data` | text | 0% |
 | `a_klaim_bkd` | numeric | 0% |
-| `wkt_klaim_bkd` | timestamp | 57% |
+| `wkt_klaim_bkd` | timestamp | 54% |
 | `bidang_keilmuan` | jsonb | 0% |
 | `jenis_publikasi` | text | 0% |
 | `kategori_kegiatan` | text | 0% |
@@ -965,25 +1028,25 @@ Sumber: `GET /kekayaan_intelektual`; 37 baris sampel.
 
 ## replica.kekayaan_intelektual_penulis
 
-Sumber: `GET /kekayaan_intelektual/{id}`, elemen `penulis[]`; 95 baris sampel.
+Sumber: `GET /kekayaan_intelektual/{id}`, elemen `penulis[]`; 899 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `nama` | text | 0% |
 | `jenis` | text | 0% |
 | `peran` | text | 0% |
-| `id_sdm` | uuid | 1% |
+| `id_sdm` | uuid | 11% |
 | `urutan` | bigint | 0% |
-| `afiliasi` | text | 9% |
-| `id_orang` | uuid | 99% |
+| `afiliasi` | text | 15% |
+| `id_orang` | uuid | 89% |
 | `id_penulis` | uuid | 0% |
-| `id_peserta_didik` | text | 100% |
+| `id_peserta_didik` | uuid | 100% |
 | `corresponding_author` | bigint | 0% |
 | `nomor_induk_peserta_didik` | text | 100% |
 
 ## replica.kelas_kuliah_dokumen
 
-Sumber: `GET /kelas_kuliah/{id}/dokumen`; 1576 baris sampel.
+Sumber: `GET /kelas_kuliah/{id}/dokumen`; 5371 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -998,7 +1061,7 @@ Sumber: `GET /kelas_kuliah/{id}/dokumen`; 1576 baris sampel.
 
 ## replica.kepangkatan
 
-Sumber: `GET /kepangkatan/{id}`; 16 baris sampel.
+Sumber: `GET /kepangkatan/{id}`; 142 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1015,9 +1078,24 @@ Sumber: `GET /kepangkatan/{id}`; 16 baris sampel.
 | `pangkat_golongan` | text | 0% |
 | `id_pangkat_golongan` | bigint | 0% |
 
+## replica.kepangkatan_dokumen
+
+Sumber: `GET /kepangkatan/{id}`, elemen `dokumen[]`; 14 baris sampel.
+
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `nama` | text | 36% |
+| `tautan` | text | 100% |
+| `nama_file` | text | 0% |
+| `jenis_file` | text | 0% |
+| `keterangan` | text | 79% |
+| `jenis_dokumen` | text | 0% |
+| `tanggal_upload` | timestamp | 0% |
+
 ## replica.kepangkatan_list
 
-Sumber: `GET /kepangkatan`; 16 baris sampel.
+Sumber: `GET /kepangkatan`; 142 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1028,7 +1106,7 @@ Sumber: `GET /kepangkatan`; 16 baris sampel.
 
 ## replica.kesejahteraan
 
-Sumber: `GET /kesejahteraan/{id}`; 1 baris sampel.
+Sumber: `GET /kesejahteraan/{id}`; 3 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1043,7 +1121,7 @@ Sumber: `GET /kesejahteraan/{id}`; 1 baris sampel.
 
 ## replica.kesejahteraan_list
 
-Sumber: `GET /kesejahteraan`; 1 baris sampel.
+Sumber: `GET /kesejahteraan`; 3 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1056,13 +1134,13 @@ Sumber: `GET /kesejahteraan`; 1 baris sampel.
 
 ## replica.nilai_tes
 
-Sumber: `GET /nilai_tes/{id}`; 1 baris sampel.
+Sumber: `GET /nilai_tes/{id}`; 12 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `skor` | bigint | 0% |
+| `skor` | numeric | 0% |
 | `tahun` | bigint | 0% |
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
@@ -1073,19 +1151,64 @@ Sumber: `GET /nilai_tes/{id}`; 1 baris sampel.
 
 ## replica.nilai_tes_ajuan
 
-Sumber: `GET /nilai_tes/ajuan/{id}`; 0 baris sampel.
+Sumber: `GET /nilai_tes/ajuan/{id}`; 5 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `id_sdm` | uuid | 0% |
+| `dokumen` | jsonb | 0% |
+| `jenis_ajuan` | text | 0% |
+| `id_data_master` | uuid | 0% |
+| `detail_perubahan` | jsonb | 0% |
+| `detail_perubahan_nama_baru` | text | 0% |
+| `detail_perubahan_nama_lama` | text | 100% |
+| `detail_perubahan_skor_baru` | numeric | 0% |
+| `detail_perubahan_skor_lama` | text | 100% |
+| `detail_perubahan_tahun_baru` | numeric | 0% |
+| `detail_perubahan_tahun_lama` | text | 100% |
+| `detail_perubahan_tanggal_baru` | date | 0% |
+| `detail_perubahan_tanggal_lama` | text | 100% |
+| `detail_perubahan_jenis_tes_baru` | text | 0% |
+| `detail_perubahan_id_jenis_tes_baru` | text | 0% |
+| `detail_perubahan_id_jenis_tes_lama` | text | 100% |
+| `detail_perubahan_penyelenggara_baru` | text | 0% |
+| `detail_perubahan_penyelenggara_lama` | text | 100% |
+
+## replica.nilai_tes_ajuan_dokumen
+
+Sumber: `GET /nilai_tes/ajuan/{id}`, elemen `dokumen[]`; 5 baris sampel.
+
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `nama` | text | 0% |
+| `tautan` | text | 80% |
+| `nama_file` | text | 0% |
+| `jenis_file` | text | 0% |
+| `keterangan` | text | 100% |
+| `jenis_dokumen` | text | 0% |
+| `tanggal_upload` | timestamp | 0% |
 
 ## replica.nilai_tes_ajuan_list
 
-Sumber: `GET /nilai_tes/ajuan`; 0 baris sampel.
+Sumber: `GET /nilai_tes/ajuan`; 5 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `umur` | bigint | 60% |
+| `id_sdm` | uuid | 0% |
+| `status` | text | 0% |
+| `keterangan` | text | 100% |
+| `jenis_ajuan` | text | 0% |
+| `tanggal_ajuan` | timestamp | 0% |
+| `id_data_master` | uuid | 0% |
+| `tanggal_verifikasi` | text | 100% |
 
 ## replica.nilai_tes_dokumen
 
-Sumber: `GET /nilai_tes/{id}`, elemen `dokumen[]`; 1 baris sampel.
+Sumber: `GET /nilai_tes/{id}`, elemen `dokumen[]`; 11 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1094,37 +1217,37 @@ Sumber: `GET /nilai_tes/{id}`, elemen `dokumen[]`; 1 baris sampel.
 | `tautan` | text | 100% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 0% |
+| `keterangan` | text | 91% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.nilai_tes_list
 
-Sumber: `GET /nilai_tes`; 8 baris sampel.
+Sumber: `GET /nilai_tes`; 133 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `skor` | bigint | 0% |
+| `skor` | numeric | 0% |
 | `tahun` | bigint | 0% |
 | `jenis_tes` | text | 0% |
 | `penyelenggara` | text | 0% |
 
 ## replica.orasi_ilmiah
 
-Sumber: `GET /orasi_ilmiah/{id}`; 3 baris sampel.
+Sumber: `GET /orasi_ilmiah/{id}`; 12 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `bahasa` | text | 67% |
+| `bahasa` | text | 33% |
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
-| `sk_penugasan` | text | 67% |
+| `sk_penugasan` | text | 83% |
 | `judul_makalah` | text | 0% |
 | `penyelenggara` | text | 0% |
-| `judul_litabmas` | text | 100% |
+| `judul_litabmas` | text | 92% |
 | `nama_pertemuan` | text | 0% |
 | `kategori_kegiatan` | text | 0% |
 | `tingkat_pertemuan` | text | 0% |
@@ -1132,30 +1255,30 @@ Sumber: `GET /orasi_ilmiah/{id}`; 3 baris sampel.
 | `tanggal_pelaksanaan` | date | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
 | `id_tingkat_pertemuan` | text | 0% |
-| `tanggal_sk_penugasan` | date | 67% |
+| `tanggal_sk_penugasan` | date | 83% |
 | `id_kategori_pembicara` | bigint | 0% |
 | `kategori_capaian_luaran` | text | 0% |
-| `id_penelitian_pengabdian` | text | 100% |
+| `id_penelitian_pengabdian` | uuid | 92% |
 | `id_kategori_capaian_luaran` | bigint | 0% |
 
 ## replica.orasi_ilmiah_dokumen
 
-Sumber: `GET /orasi_ilmiah/{id}`, elemen `dokumen[]`; 4 baris sampel.
+Sumber: `GET /orasi_ilmiah/{id}`, elemen `dokumen[]`; 16 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 50% |
+| `tautan` | text | 88% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 100% |
+| `keterangan` | text | 88% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.orasi_ilmiah_list
 
-Sumber: `GET /orasi_ilmiah`; 3 baris sampel.
+Sumber: `GET /orasi_ilmiah`; 12 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1169,49 +1292,49 @@ Sumber: `GET /orasi_ilmiah`; 3 baris sampel.
 
 ## replica.pembicara
 
-Sumber: `GET /pembicara/{id}`; 36 baris sampel.
+Sumber: `GET /pembicara/{id}`; 180 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `bahasa` | text | 61% |
+| `bahasa` | text | 29% |
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
-| `sk_penugasan` | text | 25% |
+| `sk_penugasan` | text | 26% |
 | `judul_makalah` | text | 0% |
 | `penyelenggara` | text | 0% |
-| `judul_litabmas` | text | 94% |
+| `judul_litabmas` | text | 96% |
 | `nama_pertemuan` | text | 0% |
 | `kategori_kegiatan` | text | 0% |
-| `tingkat_pertemuan` | text | 25% |
+| `tingkat_pertemuan` | text | 15% |
 | `kategori_pembicara` | text | 0% |
 | `tanggal_pelaksanaan` | date | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
-| `id_tingkat_pertemuan` | text | 22% |
-| `tanggal_sk_penugasan` | date | 39% |
+| `id_tingkat_pertemuan` | text | 12% |
+| `tanggal_sk_penugasan` | date | 31% |
 | `id_kategori_pembicara` | bigint | 0% |
-| `kategori_capaian_luaran` | text | 11% |
-| `id_penelitian_pengabdian` | uuid | 94% |
+| `kategori_capaian_luaran` | text | 21% |
+| `id_penelitian_pengabdian` | uuid | 96% |
 | `id_kategori_capaian_luaran` | bigint | 0% |
 
 ## replica.pembicara_dokumen
 
-Sumber: `GET /pembicara/{id}`, elemen `dokumen[]`; 58 baris sampel.
+Sumber: `GET /pembicara/{id}`, elemen `dokumen[]`; 304 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 33% |
+| `tautan` | text | 42% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 69% |
+| `keterangan` | text | 74% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.pembicara_list
 
-Sumber: `GET /pembicara`; 36 baris sampel.
+Sumber: `GET /pembicara`; 180 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1225,7 +1348,7 @@ Sumber: `GET /pembicara`; 36 baris sampel.
 
 ## replica.pendidikan_formal
 
-Sumber: `GET /pendidikan_formal/{id}`; 31 baris sampel.
+Sumber: `GET /pendidikan_formal/{id}`; 258 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1234,30 +1357,30 @@ Sumber: `GET /pendidikan_formal/{id}`; 31 baris sampel.
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `jumlah_sks` | bigint | 0% |
-| `jenis_ajuan` | text | 42% |
+| `jenis_ajuan` | text | 58% |
 | `nomor_induk` | text | 0% |
 | `tahun_lulus` | bigint | 0% |
 | `tahun_masuk` | bigint | 0% |
 | `bidang_studi` | text | 0% |
-| `nomor_ijazah` | text | 32% |
-| `tanggal_lulus` | date | 39% |
+| `nomor_ijazah` | text | 45% |
+| `tanggal_lulus` | date | 45% |
 | `gelar_akademik` | text | 0% |
-| `sk_penyetaraan` | text | 100% |
+| `sk_penyetaraan` | text | 98% |
 | `id_bidang_studi` | bigint | 0% |
 | `jumlah_semester` | bigint | 0% |
-| `id_program_studi` | uuid | 0% |
+| `id_program_studi` | uuid | 8% |
 | `id_gelar_akademik` | bigint | 0% |
-| `judul_tugas_akhir` | text | 52% |
+| `judul_tugas_akhir` | text | 62% |
 | `kategori_kegiatan` | text | 0% |
 | `jenjang_pendidikan` | text | 0% |
-| `nama_program_studi` | text | 0% |
+| `nama_program_studi` | text | 3% |
 | `id_jenjang_pendidikan` | bigint | 0% |
 | `nama_perguruan_tinggi` | text | 0% |
-| `tanggal_sk_penyetaraan` | text | 100% |
+| `tanggal_sk_penyetaraan` | date | 99% |
 
 ## replica.pendidikan_formal_ajuan
 
-Sumber: `GET /pendidikan_formal/ajuan/{id}`; 12 baris sampel.
+Sumber: `GET /pendidikan_formal/ajuan/{id}`; 103 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1265,77 +1388,81 @@ Sumber: `GET /pendidikan_formal/ajuan/{id}`; 12 baris sampel.
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `jenis_ajuan` | text | 0% |
-| `id_data_master` | uuid | 25% |
+| `id_data_master` | uuid | 30% |
 | `detail_perubahan` | jsonb | 0% |
-| `detail_perubahan_ipk_baru` | numeric | 8% |
-| `detail_perubahan_ipk_lama` | numeric | 25% |
-| `detail_perubahan_gelar_akad_baru` | text | 67% |
-| `detail_perubahan_gelar_akad_lama` | text | 42% |
-| `detail_perubahan_jenj_didik_baru` | text | 75% |
-| `detail_perubahan_jenj_didik_lama` | text | 58% |
-| `detail_perubahan_jumlah_sks_baru` | numeric | 17% |
-| `detail_perubahan_jumlah_sks_lama` | numeric | 42% |
-| `detail_perubahan_nomor_induk_baru` | text | 50% |
-| `detail_perubahan_nomor_induk_lama` | text | 33% |
-| `detail_perubahan_tahun_lulus_baru` | numeric | 67% |
-| `detail_perubahan_tahun_lulus_lama` | numeric | 50% |
-| `detail_perubahan_tahun_masuk_baru` | numeric | 67% |
-| `detail_perubahan_tahun_masuk_lama` | numeric | 25% |
-| `detail_perubahan_bidang_studi_baru` | text | 67% |
-| `detail_perubahan_bidang_studi_lama` | text | 25% |
-| `detail_perubahan_tanggal_lulus_baru` | date | 33% |
-| `detail_perubahan_tanggal_lulus_lama` | date | 92% |
-| `detail_perubahan_judul_tugas_akhir_baru` | text | 50% |
-| `detail_perubahan_judul_tugas_akhir_lama` | text | 92% |
-| `detail_perubahan_nama_perguruan_tinggi_baru` | text | 67% |
-| `detail_perubahan_nama_perguruan_tinggi_lama` | text | 25% |
-| `detail_perubahan_nomor_ijazah_baru` | text | 33% |
-| `detail_perubahan_nomor_ijazah_lama` | boolean | 92% |
-| `detail_perubahan_fak_baru` | text | 58% |
-| `detail_perubahan_fak_lama` | text | 92% |
-| `detail_perubahan_sms_baru` | text | 75% |
-| `detail_perubahan_sms_lama` | text | 100% |
-| `detail_perubahan_tahun_baru` | numeric | 75% |
+| `detail_perubahan_fak_baru` | text | 69% |
+| `detail_perubahan_fak_lama` | text | 94% |
+| `detail_perubahan_ipk_baru` | numeric | 24% |
+| `detail_perubahan_ipk_lama` | numeric | 33% |
+| `detail_perubahan_tahun_baru` | numeric | 70% |
 | `detail_perubahan_tahun_lama` | text | 100% |
-| `detail_perubahan_stat_kul_baru` | text | 67% |
-| `detail_perubahan_stat_kul_lama` | numeric | 92% |
-| `detail_perubahan_jumlah_semester_baru` | numeric | 67% |
-| `detail_perubahan_jumlah_semester_lama` | numeric | 92% |
+| `detail_perubahan_stat_kul_baru` | text | 52% |
+| `detail_perubahan_stat_kul_lama` | numeric | 75% |
+| `detail_perubahan_gelar_akad_baru` | text | 56% |
+| `detail_perubahan_gelar_akad_lama` | text | 43% |
+| `detail_perubahan_jenj_didik_baru` | text | 68% |
+| `detail_perubahan_jenj_didik_lama` | text | 46% |
+| `detail_perubahan_nomor_induk_baru` | text | 50% |
+| `detail_perubahan_nomor_induk_lama` | text | 39% |
+| `detail_perubahan_tahun_lulus_baru` | numeric | 56% |
+| `detail_perubahan_tahun_lulus_lama` | numeric | 54% |
+| `detail_perubahan_tahun_masuk_baru` | numeric | 62% |
+| `detail_perubahan_tahun_masuk_lama` | numeric | 38% |
+| `detail_perubahan_bidang_studi_baru` | text | 56% |
+| `detail_perubahan_bidang_studi_lama` | text | 38% |
+| `detail_perubahan_nomor_ijazah_baru` | text | 33% |
+| `detail_perubahan_nomor_ijazah_lama` | text | 71% |
+| `detail_perubahan_tanggal_lulus_baru` | date | 29% |
+| `detail_perubahan_tanggal_lulus_lama` | date | 93% |
+| `detail_perubahan_sk_penyetaraan_baru` | text | 90% |
+| `detail_perubahan_sk_penyetaraan_lama` | text | 100% |
+| `detail_perubahan_jumlah_semester_baru` | numeric | 71% |
+| `detail_perubahan_jumlah_semester_lama` | numeric | 80% |
+| `detail_perubahan_judul_tugas_akhir_baru` | text | 47% |
+| `detail_perubahan_judul_tugas_akhir_lama` | text | 93% |
+| `detail_perubahan_nama_perguruan_tinggi_baru` | text | 58% |
+| `detail_perubahan_nama_perguruan_tinggi_lama` | text | 38% |
+| `detail_perubahan_tanggal_sk_penyetaraan_baru` | date | 94% |
+| `detail_perubahan_tanggal_sk_penyetaraan_lama` | date | 99% |
+| `detail_perubahan_jumlah_sks_baru` | numeric | 39% |
+| `detail_perubahan_jumlah_sks_lama` | numeric | 58% |
+| `detail_perubahan_sms_baru` | text | 78% |
+| `detail_perubahan_sms_lama` | text | 100% |
 
 ## replica.pendidikan_formal_ajuan_dokumen
 
-Sumber: `GET /pendidikan_formal/ajuan/{id}`, elemen `dokumen[]`; 20 baris sampel.
+Sumber: `GET /pendidikan_formal/ajuan/{id}`, elemen `dokumen[]`; 179 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 15% |
-| `tautan` | text | 100% |
+| `nama` | text | 28% |
+| `tautan` | text | 89% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 100% |
+| `keterangan` | text | 75% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.pendidikan_formal_ajuan_list
 
-Sumber: `GET /pendidikan_formal/ajuan`; 15 baris sampel.
+Sumber: `GET /pendidikan_formal/ajuan`; 112 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `umur` | bigint | 0% |
+| `umur` | bigint | 1% |
 | `id_sdm` | uuid | 0% |
 | `status` | text | 0% |
-| `keterangan` | text | 27% |
+| `keterangan` | text | 26% |
 | `jenis_ajuan` | text | 0% |
 | `tanggal_ajuan` | timestamp | 0% |
-| `id_data_master` | uuid | 20% |
-| `tanggal_verifikasi` | timestamp | 0% |
+| `id_data_master` | uuid | 28% |
+| `tanggal_verifikasi` | timestamp | 1% |
 
 ## replica.pendidikan_formal_dokumen
 
-Sumber: `GET /pendidikan_formal/{id}`, elemen `dokumen[]`; 1 baris sampel.
+Sumber: `GET /pendidikan_formal/{id}`, elemen `dokumen[]`; 10 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1350,69 +1477,69 @@ Sumber: `GET /pendidikan_formal/{id}`, elemen `dokumen[]`; 1 baris sampel.
 
 ## replica.pendidikan_formal_list
 
-Sumber: `GET /pendidikan_formal`; 31 baris sampel.
+Sumber: `GET /pendidikan_formal`; 258 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `jenis_ajuan` | text | 42% |
+| `jenis_ajuan` | text | 58% |
 | `tahun_lulus` | bigint | 0% |
 | `bidang_studi` | text | 0% |
-| `gelar_akademik` | text | 0% |
+| `gelar_akademik` | text | 1% |
 | `jenjang_pendidikan` | text | 0% |
 | `nama_perguruan_tinggi` | text | 0% |
 
 ## replica.penelitian
 
-Sumber: `GET /penelitian/{id}`; 28 baris sampel.
+Sumber: `GET /penelitian/{id}`; 219 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `judul` | text | 0% |
-| `lokasi` | text | 61% |
+| `lokasi` | text | 51% |
 | `anggota` | jsonb | 0% |
 | `dokumen` | jsonb | 0% |
-| `in_kind` | text | 96% |
+| `in_kind` | text | 97% |
 | `afiliasi` | text | 0% |
 | `dana_dikti` | numeric | 0% |
-| `jenis_skim` | text | 54% |
+| `jenis_skim` | text | 57% |
 | `id_afiliasi` | uuid | 0% |
-| `sk_penugasan` | text | 57% |
+| `sk_penugasan` | text | 51% |
 | `tahun_usulan` | bigint | 0% |
-| `id_jenis_skim` | uuid | 54% |
+| `id_jenis_skim` | uuid | 57% |
 | `lama_kegiatan` | bigint | 0% |
 | `mitra_litabmas` | jsonb | 0% |
 | `tahun_kegiatan` | bigint | 0% |
-| `kelompok_bidang` | text | 29% |
+| `kelompok_bidang` | text | 32% |
 | `tahun_pelaksanaan` | bigint | 0% |
-| `id_kelompok_bidang` | uuid | 29% |
+| `id_kelompok_bidang` | uuid | 32% |
 | `dana_institusi_lain` | numeric | 0% |
-| `litabmas_sebelumnya` | text | 89% |
+| `litabmas_sebelumnya` | text | 88% |
 | `id_kategori_kegiatan` | bigint | 0% |
 | `tahun_pelaksanaan_ke` | bigint | 0% |
-| `tanggal_sk_penugasan` | date | 61% |
-| `dana_perguruan_tinggi` | bigint | 0% |
-| `id_litabmas_sebelumnya` | uuid | 89% |
+| `tanggal_sk_penugasan` | date | 54% |
+| `dana_perguruan_tinggi` | numeric | 0% |
+| `id_litabmas_sebelumnya` | uuid | 88% |
 
 ## replica.penelitian_anggota
 
-Sumber: `GET /penelitian/{id}`, elemen `anggota[]`; 78 baris sampel.
+Sumber: `GET /penelitian/{id}`, elemen `anggota[]`; 503 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `nama` | text | 0% |
-| `nipd` | text | 99% |
-| `id_pd` | uuid | 99% |
+| `nipd` | text | 97% |
+| `id_pd` | uuid | 97% |
 | `jenis` | text | 0% |
 | `peran` | text | 0% |
-| `id_sdm` | uuid | 1% |
+| `id_sdm` | uuid | 3% |
 | `id_orang` | text | 100% |
 | `stat_aktif` | boolean | 0% |
 
 ## replica.penelitian_bidang_ilmu
 
-Sumber: `GET /penelitian/{id}/bidang_ilmu`; 6 baris sampel.
+Sumber: `GET /penelitian/{id}/bidang_ilmu`; 38 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1422,13 +1549,13 @@ Sumber: `GET /penelitian/{id}/bidang_ilmu`; 6 baris sampel.
 
 ## replica.penelitian_dokumen
 
-Sumber: `GET /penelitian/{id}`, elemen `dokumen[]`; 31 baris sampel.
+Sumber: `GET /penelitian/{id}`, elemen `dokumen[]`; 266 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 71% |
+| `tautan` | text | 54% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
 | `keterangan` | text | 84% |
@@ -1437,7 +1564,7 @@ Sumber: `GET /penelitian/{id}`, elemen `dokumen[]`; 31 baris sampel.
 
 ## replica.penelitian_list
 
-Sumber: `GET /penelitian`; 30 baris sampel.
+Sumber: `GET /penelitian`; 372 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1449,55 +1576,55 @@ Sumber: `GET /penelitian`; 30 baris sampel.
 
 ## replica.pengabdian
 
-Sumber: `GET /pengabdian/{id}`; 167 baris sampel.
+Sumber: `GET /pengabdian/{id}`; 732 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `judul` | text | 0% |
-| `lokasi` | text | 47% |
+| `lokasi` | text | 40% |
 | `anggota` | jsonb | 0% |
 | `dokumen` | jsonb | 0% |
-| `in_kind` | numeric | 97% |
+| `in_kind` | text | 97% |
 | `afiliasi` | text | 0% |
 | `dana_dikti` | numeric | 0% |
 | `jenis_skim` | text | 81% |
 | `id_afiliasi` | uuid | 0% |
-| `sk_penugasan` | text | 4% |
+| `sk_penugasan` | text | 8% |
 | `tahun_usulan` | bigint | 0% |
 | `id_jenis_skim` | uuid | 81% |
 | `lama_kegiatan` | bigint | 0% |
 | `mitra_litabmas` | jsonb | 0% |
 | `tahun_kegiatan` | bigint | 0% |
-| `kelompok_bidang` | text | 44% |
+| `kelompok_bidang` | text | 42% |
 | `tahun_pelaksanaan` | bigint | 0% |
-| `id_kelompok_bidang` | uuid | 44% |
+| `id_kelompok_bidang` | uuid | 42% |
 | `dana_institusi_lain` | numeric | 0% |
-| `litabmas_sebelumnya` | text | 96% |
+| `litabmas_sebelumnya` | text | 95% |
 | `id_kategori_kegiatan` | bigint | 0% |
 | `tahun_pelaksanaan_ke` | bigint | 0% |
-| `tanggal_sk_penugasan` | date | 5% |
+| `tanggal_sk_penugasan` | date | 9% |
 | `dana_perguruan_tinggi` | numeric | 0% |
-| `id_litabmas_sebelumnya` | uuid | 96% |
+| `id_litabmas_sebelumnya` | uuid | 95% |
 
 ## replica.pengabdian_anggota
 
-Sumber: `GET /pengabdian/{id}`, elemen `anggota[]`; 833 baris sampel.
+Sumber: `GET /pengabdian/{id}`, elemen `anggota[]`; 2379 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `nama` | text | 0% |
-| `nipd` | text | 99% |
-| `id_pd` | uuid | 99% |
+| `nipd` | text | 97% |
+| `id_pd` | uuid | 97% |
 | `jenis` | text | 0% |
 | `peran` | text | 0% |
-| `id_sdm` | uuid | 1% |
-| `id_orang` | uuid | 100% |
+| `id_sdm` | uuid | 4% |
+| `id_orang` | uuid | 99% |
 | `stat_aktif` | boolean | 0% |
 
 ## replica.pengabdian_bidang_ilmu
 
-Sumber: `GET /pengabdian/{id}/bidang_ilmu`; 11 baris sampel.
+Sumber: `GET /pengabdian/{id}/bidang_ilmu`; 44 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1507,13 +1634,13 @@ Sumber: `GET /pengabdian/{id}/bidang_ilmu`; 11 baris sampel.
 
 ## replica.pengabdian_dokumen
 
-Sumber: `GET /pengabdian/{id}`, elemen `dokumen[]`; 486 baris sampel.
+Sumber: `GET /pengabdian/{id}`, elemen `dokumen[]`; 1505 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 0% |
-| `tautan` | text | 33% |
+| `nama` | text | 1% |
+| `tautan` | text | 40% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
 | `keterangan` | text | 83% |
@@ -1522,7 +1649,7 @@ Sumber: `GET /pengabdian/{id}`, elemen `dokumen[]`; 486 baris sampel.
 
 ## replica.pengabdian_list
 
-Sumber: `GET /pengabdian`; 197 baris sampel.
+Sumber: `GET /pengabdian`; 1833 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1534,7 +1661,7 @@ Sumber: `GET /pengabdian`; 197 baris sampel.
 
 ## replica.pengabdian_mitra_litabmas
 
-Sumber: `GET /pengabdian/{id}`, elemen `mitra_litabmas[]`; 1 baris sampel.
+Sumber: `GET /pengabdian/{id}`, elemen `mitra_litabmas[]`; 5 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1543,7 +1670,7 @@ Sumber: `GET /pengabdian/{id}`, elemen `mitra_litabmas[]`; 1 baris sampel.
 
 ## replica.pengajaran
 
-Sumber: `GET /pengajaran/{id}`; 1480 baris sampel.
+Sumber: `GET /pengajaran/{id}`; 10842 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1573,7 +1700,7 @@ Sumber: `GET /pengajaran/{id}`; 1480 baris sampel.
 
 ## replica.pengajaran_bidang_ilmu
 
-Sumber: `GET /pengajaran/{id}/bidang_ilmu`; 68 baris sampel.
+Sumber: `GET /pengajaran/{id}/bidang_ilmu`; 873 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1583,14 +1710,14 @@ Sumber: `GET /pengajaran/{id}/bidang_ilmu`; 68 baris sampel.
 
 ## replica.pengajaran_list
 
-Sumber: `GET /pengajaran`; 1480 baris sampel.
+Sumber: `GET /pengajaran`; 10842 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `sks` | numeric | 0% |
 | `kelas` | text | 0% |
-| `jns_mk` | text | 6% |
+| `jns_mk` | text | 7% |
 | `semester` | text | 0% |
 | `id_katgiat` | bigint | 0% |
 | `mata_kuliah` | text | 0% |
@@ -1601,7 +1728,7 @@ Sumber: `GET /pengajaran`; 1480 baris sampel.
 
 ## replica.pengelola_jurnal
 
-Sumber: `GET /pengelola_jurnal/{id}`; 3 baris sampel.
+Sumber: `GET /pengelola_jurnal/{id}`; 52 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1613,29 +1740,29 @@ Sumber: `GET /pengelola_jurnal/{id}`; 3 baris sampel.
 | `sk_penugasan` | text | 0% |
 | `tanggal_mulai` | date | 0% |
 | `media_publikasi` | text | 0% |
-| `tanggal_selesai` | date | 67% |
+| `tanggal_selesai` | date | 52% |
 | `kategori_kegiatan` | text | 0% |
 | `id_media_publikasi` | uuid | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
 
 ## replica.pengelola_jurnal_dokumen
 
-Sumber: `GET /pengelola_jurnal/{id}`, elemen `dokumen[]`; 3 baris sampel.
+Sumber: `GET /pengelola_jurnal/{id}`, elemen `dokumen[]`; 75 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 0% |
+| `tautan` | text | 56% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 100% |
+| `keterangan` | text | 88% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.pengelola_jurnal_list
 
-Sumber: `GET /pengelola_jurnal`; 3 baris sampel.
+Sumber: `GET /pengelola_jurnal`; 52 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1645,11 +1772,11 @@ Sumber: `GET /pengelola_jurnal`; 3 baris sampel.
 | `sk_penugasan` | text | 0% |
 | `tanggal_mulai` | date | 0% |
 | `media_publikasi` | text | 0% |
-| `tanggal_selesai` | date | 67% |
+| `tanggal_selesai` | date | 52% |
 
 ## replica.penghargaan
 
-Sumber: `GET /penghargaan/{id}`; 5 baris sampel.
+Sumber: `GET /penghargaan/{id}`; 135 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1668,22 +1795,22 @@ Sumber: `GET /penghargaan/{id}`; 5 baris sampel.
 
 ## replica.penghargaan_dokumen
 
-Sumber: `GET /penghargaan/{id}`, elemen `dokumen[]`; 8 baris sampel.
+Sumber: `GET /penghargaan/{id}`, elemen `dokumen[]`; 171 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 63% |
+| `tautan` | text | 56% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 75% |
+| `keterangan` | text | 84% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.penghargaan_list
 
-Sumber: `GET /penghargaan`; 5 baris sampel.
+Sumber: `GET /penghargaan`; 135 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1713,7 +1840,7 @@ Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data 
 
 ## replica.penugasan
 
-Sumber: `GET /penugasan/{id}`; 33 baris sampel.
+Sumber: `GET /penugasan/{id}`; 220 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1722,17 +1849,17 @@ Sumber: `GET /penugasan/{id}`; 33 baris sampel.
 | `dokumen` | jsonb | 0% |
 | `keaktifan` | jsonb | 0% |
 | `id_updater` | uuid | 0% |
-| `unit_kerja` | text | 33% |
-| `surat_tugas` | text | 3% |
+| `unit_kerja` | text | 10% |
+| `surat_tugas` | text | 9% |
 | `ikatan_kerja` | text | 0% |
-| `jenis_keluar` | text | 70% |
-| `id_unit_kerja` | uuid | 33% |
+| `jenis_keluar` | text | 61% |
+| `id_unit_kerja` | uuid | 10% |
 | `tanggal_mulai` | date | 0% |
-| `tanggal_keluar` | date | 70% |
+| `tanggal_keluar` | date | 62% |
 | `id_ikatan_kerja` | text | 0% |
-| `id_jenis_keluar` | text | 70% |
+| `id_jenis_keluar` | text | 61% |
 | `perguruan_tinggi` | text | 0% |
-| `jenjang_pendidikan` | text | 33% |
+| `jenjang_pendidikan` | text | 10% |
 | `status_kepegawaian` | text | 0% |
 | `id_perguruan_tinggi` | uuid | 0% |
 | `tanggal_surat_tugas` | date | 0% |
@@ -1740,12 +1867,12 @@ Sumber: `GET /penugasan/{id}`; 33 baris sampel.
 
 ## replica.penugasan_dokumen
 
-Sumber: `GET /penugasan/{id}`, elemen `dokumen[]`; 5 baris sampel.
+Sumber: `GET /penugasan/{id}`, elemen `dokumen[]`; 54 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 80% |
+| `nama` | text | 56% |
 | `tautan` | text | 100% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
@@ -1755,7 +1882,7 @@ Sumber: `GET /penugasan/{id}`, elemen `dokumen[]`; 5 baris sampel.
 
 ## replica.penugasan_keaktifan
 
-Sumber: `GET /penugasan/{id}`, elemen `keaktifan[]`; 176 baris sampel.
+Sumber: `GET /penugasan/{id}`, elemen `keaktifan[]`; 1051 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1764,23 +1891,23 @@ Sumber: `GET /penugasan/{id}`, elemen `keaktifan[]`; 176 baris sampel.
 
 ## replica.penugasan_list
 
-Sumber: `GET /penugasan`; 33 baris sampel.
+Sumber: `GET /penugasan`; 220 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `unit_kerja` | text | 33% |
+| `unit_kerja` | text | 10% |
 | `ikatan_kerja` | text | 0% |
 | `tanggal_mulai` | date | 0% |
-| `tanggal_keluar` | date | 70% |
+| `tanggal_keluar` | date | 62% |
 | `perguruan_tinggi` | text | 0% |
-| `jenjang_pendidikan` | text | 33% |
+| `jenjang_pendidikan` | text | 10% |
 | `status_kepegawaian` | text | 0% |
 | `apakah_penugasan_homebase` | text | 0% |
 
 ## replica.penunjang_lain
 
-Sumber: `GET /penunjang_lain/{id}`; 366 baris sampel.
+Sumber: `GET /penunjang_lain/{id}`; 2362 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1792,7 +1919,7 @@ Sumber: `GET /penunjang_lain/{id}`; 366 baris sampel.
 | `sk_penugasan` | text | 0% |
 | `anggota_dosen` | jsonb | 0% |
 | `tanggal_mulai` | date | 0% |
-| `tanggal_selesai` | date | 45% |
+| `tanggal_selesai` | date | 24% |
 | `jenis_kepanitiaan` | text | 0% |
 | `kategori_kegiatan` | text | 0% |
 | `id_jenis_kepanitiaan` | bigint | 0% |
@@ -1800,7 +1927,7 @@ Sumber: `GET /penunjang_lain/{id}`; 366 baris sampel.
 
 ## replica.penunjang_lain_anggota_dosen
 
-Sumber: `GET /penunjang_lain/{id}`, elemen `anggota_dosen[]`; 647 baris sampel.
+Sumber: `GET /penunjang_lain/{id}`, elemen `anggota_dosen[]`; 3224 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1810,22 +1937,22 @@ Sumber: `GET /penunjang_lain/{id}`, elemen `anggota_dosen[]`; 647 baris sampel.
 
 ## replica.penunjang_lain_dokumen
 
-Sumber: `GET /penunjang_lain/{id}`, elemen `dokumen[]`; 511 baris sampel.
+Sumber: `GET /penunjang_lain/{id}`, elemen `dokumen[]`; 3249 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 0% |
-| `tautan` | text | 34% |
+| `nama` | text | 1% |
+| `tautan` | text | 41% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 84% |
+| `keterangan` | text | 82% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.penunjang_lain_list
 
-Sumber: `GET /penunjang_lain`; 399 baris sampel.
+Sumber: `GET /penunjang_lain`; 2902 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1835,40 +1962,40 @@ Sumber: `GET /penunjang_lain`; 399 baris sampel.
 | `instansi` | text | 0% |
 | `sk_penugasan` | text | 0% |
 | `tanggal_mulai` | date | 0% |
-| `tanggal_selesai` | date | 43% |
+| `tanggal_selesai` | date | 22% |
 | `id_kategori_kegiatan` | bigint | 0% |
 
 ## replica.publikasi
 
-Sumber: `GET /publikasi/{id}`; 272 baris sampel.
+Sumber: `GET /publikasi/{id}`; 1755 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `doi` | text | 64% |
-| `isbn` | text | 77% |
-| `issn` | text | 68% |
+| `doi` | text | 67% |
+| `isbn` | text | 76% |
+| `issn` | text | 66% |
 | `edisi` | text | 100% |
 | `judul` | text | 0% |
 | `nomor` | bigint | 0% |
-| `e_issn` | text | 100% |
-| `tautan` | text | 60% |
+| `e_issn` | text | 99% |
+| `tautan` | text | 58% |
 | `volume` | bigint | 0% |
 | `dokumen` | jsonb | 0% |
-| `halaman` | text | 62% |
+| `halaman` | text | 61% |
 | `penulis` | jsonb | 0% |
 | `seminar` | bigint | 0% |
 | `tanggal` | date | 9% |
-| `penerbit` | text | 44% |
+| `penerbit` | text | 41% |
 | `quartile` | bigint | 0% |
 | `asal_data` | text | 0% |
 | `prosiding` | bigint | 0% |
 | `judul_asli` | text | 99% |
-| `keterangan` | text | 97% |
+| `keterangan` | text | 95% |
 | `id_litabmas` | uuid | 97% |
-| `nama_jurnal` | text | 26% |
+| `nama_jurnal` | text | 27% |
 | `nomor_paten` | text | 100% |
-| `judul_artikel` | text | 96% |
+| `judul_artikel` | text | 95% |
 | `pemberi_paten` | text | 100% |
 | `judul_litabmas` | text | 97% |
 | `jumlah_halaman` | bigint | 0% |
@@ -1877,12 +2004,12 @@ Sumber: `GET /publikasi/{id}`; 272 baris sampel.
 | `kategori_kegiatan` | text | 0% |
 | `id_jenis_publikasi` | bigint | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
-| `kategori_capaian_luaran` | text | 40% |
+| `kategori_capaian_luaran` | text | 38% |
 | `id_kategori_capaian_luaran` | bigint | 0% |
 
 ## replica.publikasi_bidang_ilmu
 
-Sumber: `GET /publikasi/{id}/bidang_ilmu`; 3 baris sampel.
+Sumber: `GET /publikasi/{id}/bidang_ilmu`; 29 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1892,32 +2019,32 @@ Sumber: `GET /publikasi/{id}/bidang_ilmu`; 3 baris sampel.
 
 ## replica.publikasi_dokumen
 
-Sumber: `GET /publikasi/{id}`, elemen `dokumen[]`; 479 baris sampel.
+Sumber: `GET /publikasi/{id}`, elemen `dokumen[]`; 2681 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 1% |
-| `tautan` | text | 34% |
+| `tautan` | text | 35% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 82% |
+| `keterangan` | text | 81% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.publikasi_list
 
-Sumber: `GET /publikasi`; 300 baris sampel.
+Sumber: `GET /publikasi`; 2940 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `judul` | text | 0% |
-| `tanggal` | date | 8% |
-| `quartile` | numeric | 95% |
+| `tanggal` | date | 6% |
+| `quartile` | numeric | 96% |
 | `asal_data` | text | 0% |
 | `a_klaim_bkd` | numeric | 0% |
-| `wkt_klaim_bkd` | timestamp | 62% |
+| `wkt_klaim_bkd` | timestamp | 69% |
 | `bidang_keilmuan` | jsonb | 0% |
 | `jenis_publikasi` | text | 0% |
 | `kategori_kegiatan` | text | 0% |
@@ -1925,7 +2052,7 @@ Sumber: `GET /publikasi`; 300 baris sampel.
 
 ## replica.publikasi_penulis
 
-Sumber: `GET /publikasi/{id}`, elemen `penulis[]`; 865 baris sampel.
+Sumber: `GET /publikasi/{id}`, elemen `penulis[]`; 4481 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -1934,12 +2061,12 @@ Sumber: `GET /publikasi/{id}`, elemen `penulis[]`; 865 baris sampel.
 | `peran` | text | 0% |
 | `id_sdm` | uuid | 5% |
 | `urutan` | bigint | 0% |
-| `afiliasi` | text | 21% |
-| `id_orang` | uuid | 99% |
+| `afiliasi` | text | 22% |
+| `id_orang` | uuid | 97% |
 | `id_penulis` | uuid | 0% |
-| `id_peserta_didik` | uuid | 97% |
+| `id_peserta_didik` | uuid | 98% |
 | `corresponding_author` | bigint | 0% |
-| `nomor_induk_peserta_didik` | text | 97% |
+| `nomor_induk_peserta_didik` | text | 98% |
 
 ## replica.referensi_agama
 
@@ -2344,12 +2471,12 @@ Sumber: `GET /referensi/wilayah`; 7819 baris sampel.
 
 ## replica.riwayat_pekerjaan
 
-Sumber: `GET /riwayat_pekerjaan/{id}`; 3 baris sampel.
+Sumber: `GET /riwayat_pekerjaan/{id}`; 19 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `divisi` | text | 33% |
+| `divisi` | text | 79% |
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `instansi` | text | 0% |
@@ -2357,46 +2484,46 @@ Sumber: `GET /riwayat_pekerjaan/{id}`; 3 baris sampel.
 | `bidang_usaha` | text | 0% |
 | `nama_jabatan` | text | 0% |
 | `mulai_bekerja` | date | 0% |
-| `deskripsi_kerja` | text | 100% |
+| `deskripsi_kerja` | text | 37% |
 | `id_bidang_usaha` | bigint | 0% |
 | `jenis_pekerjaan` | text | 0% |
-| `selesai_bekerja` | date | 33% |
+| `selesai_bekerja` | date | 53% |
 | `id_jenis_pekerjaan` | bigint | 0% |
 
 ## replica.riwayat_pekerjaan_dokumen
 
-Sumber: `GET /riwayat_pekerjaan/{id}`, elemen `dokumen[]`; 3 baris sampel.
+Sumber: `GET /riwayat_pekerjaan/{id}`, elemen `dokumen[]`; 21 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 100% |
+| `tautan` | text | 67% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 100% |
+| `keterangan` | text | 71% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.riwayat_pekerjaan_list
 
-Sumber: `GET /riwayat_pekerjaan`; 3 baris sampel.
+Sumber: `GET /riwayat_pekerjaan`; 19 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `divisi` | text | 33% |
+| `divisi` | text | 79% |
 | `instansi` | text | 0% |
 | `luar_negeri` | boolean | 0% |
 | `bidang_usaha` | text | 0% |
 | `nama_jabatan` | text | 0% |
 | `mulai_bekerja` | date | 0% |
 | `jenis_pekerjaan` | text | 0% |
-| `selesai_bekerja` | date | 33% |
+| `selesai_bekerja` | date | 53% |
 
 ## replica.sertifikasi_dosen
 
-Sumber: `GET /sertifikasi_dosen/{id}`; 4 baris sampel.
+Sumber: `GET /sertifikasi_dosen/{id}`; 45 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -2409,17 +2536,17 @@ Sumber: `GET /sertifikasi_dosen/{id}`; 4 baris sampel.
 | `id_lemb_sert` | text | 100% |
 | `nm_lemb_sert` | text | 100% |
 | `nomor_peserta` | text | 0% |
-| `id_sumber_data` | text | 100% |
-| `nm_sumber_data` | text | 100% |
+| `id_sumber_data` | text | 73% |
+| `nm_sumber_data` | text | 73% |
 | `sk_sertifikasi` | text | 0% |
 | `id_bidang_studi` | bigint | 0% |
-| `nomor_registrasi` | text | 0% |
+| `nomor_registrasi` | text | 2% |
 | `jenis_sertifikasi` | text | 0% |
 | `tahun_sertifikasi` | bigint | 0% |
 
 ## replica.sertifikasi_dosen_ajuan
 
-Sumber: `GET /sertifikasi_dosen/ajuan/{id}`; 2 baris sampel.
+Sumber: `GET /sertifikasi_dosen/ajuan/{id}`; 9 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -2427,33 +2554,37 @@ Sumber: `GET /sertifikasi_dosen/ajuan/{id}`; 2 baris sampel.
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `jenis_ajuan` | text | 0% |
-| `id_data_master` | uuid | 50% |
+| `id_data_master` | uuid | 33% |
 | `detail_perubahan` | jsonb | 0% |
-| `detail_perubahan_bidang_studi_baru` | text | 50% |
-| `detail_perubahan_bidang_studi_lama` | text | 50% |
-| `detail_perubahan_sk_sertifikasi_baru` | text | 50% |
-| `detail_perubahan_sk_sertifikasi_lama` | boolean | 50% |
-| `detail_perubahan_tahun_sertifikasi_baru` | numeric | 50% |
-| `detail_perubahan_tahun_sertifikasi_lama` | text | 100% |
+| `detail_perubahan_bidang_studi_baru` | text | 56% |
+| `detail_perubahan_bidang_studi_lama` | text | 44% |
+| `detail_perubahan_nomor_peserta_baru` | text | 67% |
+| `detail_perubahan_nomor_peserta_lama` | text | 56% |
+| `detail_perubahan_sk_sertifikasi_baru` | text | 56% |
+| `detail_perubahan_sk_sertifikasi_lama` | text | 33% |
+| `detail_perubahan_tahun_sertifikasi_baru` | numeric | 67% |
+| `detail_perubahan_tahun_sertifikasi_lama` | numeric | 78% |
+| `detail_perubahan_nomor_registrasi_baru` | text | 78% |
+| `detail_perubahan_nomor_registrasi_lama` | text | 67% |
 
 ## replica.sertifikasi_dosen_ajuan_dokumen
 
-Sumber: `GET /sertifikasi_dosen/ajuan/{id}`, elemen `dokumen[]`; 2 baris sampel.
+Sumber: `GET /sertifikasi_dosen/ajuan/{id}`, elemen `dokumen[]`; 9 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 50% |
+| `nama` | text | 44% |
 | `tautan` | text | 100% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 50% |
+| `keterangan` | text | 89% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.sertifikasi_dosen_ajuan_list
 
-Sumber: `GET /sertifikasi_dosen/ajuan`; 2 baris sampel.
+Sumber: `GET /sertifikasi_dosen/ajuan`; 9 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -2461,30 +2592,30 @@ Sumber: `GET /sertifikasi_dosen/ajuan`; 2 baris sampel.
 | `umur` | bigint | 0% |
 | `id_sdm` | uuid | 0% |
 | `status` | text | 0% |
-| `keterangan` | text | 0% |
+| `keterangan` | text | 11% |
 | `jenis_ajuan` | text | 0% |
 | `tanggal_ajuan` | timestamp | 0% |
-| `id_data_master` | uuid | 50% |
+| `id_data_master` | uuid | 33% |
 | `tanggal_verifikasi` | timestamp | 0% |
 
 ## replica.sertifikasi_dosen_dokumen
 
-Sumber: `GET /sertifikasi_dosen/{id}`, elemen `dokumen[]`; 2 baris sampel.
+Sumber: `GET /sertifikasi_dosen/{id}`, elemen `dokumen[]`; 10 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 50% |
+| `nama` | text | 60% |
 | `tautan` | text | 100% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 50% |
+| `keterangan` | text | 90% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.sertifikasi_dosen_list
 
-Sumber: `GET /sertifikasi_dosen`; 4 baris sampel.
+Sumber: `GET /sertifikasi_dosen`; 45 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -2495,13 +2626,13 @@ Sumber: `GET /sertifikasi_dosen`; 4 baris sampel.
 | `id_lemb_sert` | text | 100% |
 | `nm_lemb_sert` | text | 100% |
 | `sk_sertifikasi` | text | 0% |
-| `nomor_registrasi` | text | 0% |
+| `nomor_registrasi` | text | 2% |
 | `jenis_sertifikasi` | text | 0% |
 | `tahun_sertifikasi` | bigint | 0% |
 
 ## replica.sertifikasi_profesi
 
-Sumber: `GET /sertifikasi_profesi/{id}`; 5 baris sampel.
+Sumber: `GET /sertifikasi_profesi/{id}`; 28 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -2509,54 +2640,54 @@ Sumber: `GET /sertifikasi_profesi/{id}`; 5 baris sampel.
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `bidang_studi` | text | 0% |
-| `id_sumber_data` | text | 60% |
-| `nm_sumber_data` | text | 60% |
+| `id_sumber_data` | text | 79% |
+| `nm_sumber_data` | text | 79% |
 | `sk_sertifikasi` | text | 0% |
 | `id_bidang_studi` | bigint | 0% |
-| `nomor_registrasi` | text | 60% |
+| `nomor_registrasi` | text | 79% |
 | `jenis_sertifikasi` | text | 0% |
 | `tahun_sertifikasi` | bigint | 0% |
 | `id_jenis_sertifikasi` | bigint | 0% |
-| `id_lembaga_sertifikasi` | text | 80% |
-| `terhitung_mulai_tanggal` | date | 60% |
-| `nama_lembaga_sertifikasi` | text | 80% |
-| `terhitung_sampai_tanggal` | date | 60% |
+| `id_lembaga_sertifikasi` | text | 86% |
+| `terhitung_mulai_tanggal` | date | 79% |
+| `nama_lembaga_sertifikasi` | text | 86% |
+| `terhitung_sampai_tanggal` | date | 89% |
 
 ## replica.sertifikasi_profesi_dokumen
 
-Sumber: `GET /sertifikasi_profesi/{id}`, elemen `dokumen[]`; 2 baris sampel.
+Sumber: `GET /sertifikasi_profesi/{id}`, elemen `dokumen[]`; 23 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `nama` | text | 0% |
-| `tautan` | text | 100% |
+| `tautan` | text | 74% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 100% |
+| `keterangan` | text | 74% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.sertifikasi_profesi_list
 
-Sumber: `GET /sertifikasi_profesi`; 5 baris sampel.
+Sumber: `GET /sertifikasi_profesi`; 28 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
 | `bidang_studi` | text | 0% |
 | `sk_sertifikasi` | text | 0% |
-| `nomor_registrasi` | text | 60% |
+| `nomor_registrasi` | text | 79% |
 | `jenis_sertifikasi` | text | 0% |
 | `tahun_sertifikasi` | bigint | 0% |
-| `id_lembaga_sertifikasi` | text | 80% |
-| `terhitung_mulai_tanggal` | date | 60% |
-| `nama_lembaga_sertifikasi` | text | 80% |
-| `terhitung_sampai_tanggal` | date | 60% |
+| `id_lembaga_sertifikasi` | text | 86% |
+| `terhitung_mulai_tanggal` | date | 79% |
+| `nama_lembaga_sertifikasi` | text | 86% |
+| `terhitung_sampai_tanggal` | date | 89% |
 
 ## replica.tugas_tambahan
 
-Sumber: `GET /tugas_tambahan/{id}`; 14 baris sampel.
+Sumber: `GET /tugas_tambahan/{id}`; 78 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
@@ -2564,67 +2695,108 @@ Sumber: `GET /tugas_tambahan/{id}`; 14 baris sampel.
 | `id_sdm` | uuid | 0% |
 | `dokumen` | jsonb | 0% |
 | `jumlah_jam` | bigint | 0% |
-| `unit_kerja` | text | 21% |
+| `unit_kerja` | text | 27% |
 | `jenis_tugas` | text | 0% |
 | `sk_penugasan` | text | 0% |
-| `id_unit_kerja` | uuid | 21% |
+| `id_unit_kerja` | uuid | 27% |
 | `id_jenis_tugas` | bigint | 0% |
 | `perguruan_tinggi` | text | 0% |
 | `kategori_kegiatan` | text | 0% |
 | `id_perguruan_tinggi` | uuid | 0% |
 | `tanggal_mulai_tugas` | date | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
-| `tanggal_selesai_tugas` | date | 7% |
+| `tanggal_selesai_tugas` | date | 21% |
 
 ## replica.tugas_tambahan_dokumen
 
-Sumber: `GET /tugas_tambahan/{id}`, elemen `dokumen[]`; 17 baris sampel.
+Sumber: `GET /tugas_tambahan/{id}`, elemen `dokumen[]`; 80 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `nama` | text | 0% |
-| `tautan` | text | 47% |
+| `nama` | text | 1% |
+| `tautan` | text | 55% |
 | `nama_file` | text | 0% |
 | `jenis_file` | text | 0% |
-| `keterangan` | text | 65% |
+| `keterangan` | text | 74% |
 | `jenis_dokumen` | text | 0% |
 | `tanggal_upload` | timestamp | 0% |
 
 ## replica.tugas_tambahan_list
 
-Sumber: `GET /tugas_tambahan`; 14 baris sampel.
+Sumber: `GET /tugas_tambahan`; 78 baris sampel.
 
 | Kolom | Tipe | Null/kosong |
 |---|---|---:|
 | `id` | uuid | 0% |
-| `unit_kerja` | text | 21% |
+| `unit_kerja` | text | 27% |
 | `jenis_tugas` | text | 0% |
 | `perguruan_tinggi` | text | 0% |
 | `tanggal_mulai_tugas` | date | 0% |
 | `id_kategori_kegiatan` | bigint | 0% |
-| `tanggal_selesai_tugas` | date | 7% |
+| `tanggal_selesai_tugas` | date | 21% |
 
 ## replica.tunjangan
 
-Sumber: `GET /tunjangan/{id}`; 0 baris sampel.
+Sumber: `GET /tunjangan/{id}`; 2 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `nama` | text | 0% |
+| `id_sdm` | uuid | 0% |
+| `nominal` | bigint | 0% |
+| `sumber_dana` | text | 0% |
+| `tahun_mulai` | bigint | 0% |
+| `tahun_selesai` | bigint | 0% |
+| `jenis_tunjangan` | text | 0% |
+| `instansi_pemberi` | text | 0% |
+| `id_jenis_tunjangan` | bigint | 0% |
 
 ## replica.tunjangan_list
 
-Sumber: `GET /tunjangan`; 0 baris sampel.
+Sumber: `GET /tunjangan`; 2 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `nama` | text | 0% |
+| `nominal` | bigint | 0% |
+| `sumber_dana` | text | 0% |
+| `tahun_mulai` | bigint | 0% |
+| `tahun_selesai` | bigint | 0% |
+| `jenis_tunjangan` | text | 0% |
+| `instansi_pemberi` | text | 0% |
 
 ## replica.visiting_scientist
 
-Sumber: `GET /visiting_scientist/{id}`; 0 baris sampel.
+Sumber: `GET /visiting_scientist/{id}`; 12 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `id_sdm` | uuid | 0% |
+| `tanggal` | date | 0% |
+| `sk_penugasan` | text | 58% |
+| `lama_kegiatan` | text | 0% |
+| `judul_litabmas` | text | 100% |
+| `kegiatan_penting` | text | 50% |
+| `perguruan_tinggi` | text | 17% |
+| `id_perguruan_tinggi` | uuid | 50% |
+| `id_kategori_kegiatan` | bigint | 0% |
+| `tanggal_sk_penugasan` | date | 58% |
+| `kategori_capaian_luaran` | text | 33% |
+| `id_penelitian_pengabdian` | text | 100% |
+| `id_kategori_capaian_luaran` | bigint | 0% |
 
 ## replica.visiting_scientist_list
 
-Sumber: `GET /visiting_scientist`; 0 baris sampel.
+Sumber: `GET /visiting_scientist`; 12 baris sampel.
 
-Belum ada sampel; hanya kolom meta dan `r_payload`. Generate ulang setelah data tersedia.
+| Kolom | Tipe | Null/kosong |
+|---|---|---:|
+| `id` | uuid | 0% |
+| `tanggal` | date | 0% |
+| `lama_kegiatan` | text | 0% |
+| `perguruan_tinggi` | text | 17% |
+| `id_kategori_kegiatan` | bigint | 0% |
