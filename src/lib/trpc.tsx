@@ -6,6 +6,7 @@ import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { useState, type ReactNode } from "react";
 
 import type { AppRouter } from "@/server/trpc/router";
+import { SessionCacheBoundary } from "@/component/session_cache_boundary";
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
@@ -37,6 +38,7 @@ export function TrpcProvider({ children }: { children: ReactNode }) {
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
+          fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }),
           url: `${
             typeof window === "undefined"
               ? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
@@ -50,7 +52,7 @@ export function TrpcProvider({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        {children}
+        <SessionCacheBoundary>{children}</SessionCacheBoundary>
       </TRPCProvider>
     </QueryClientProvider>
   );

@@ -8,7 +8,14 @@ export const businessSdmInputSchema = z.object({
   per_page: z.number().int().min(1).max(100).default(25),
 });
 
+export const businessWarningsInputSchema = businessSdmInputSchema.pick({ page: true, per_page: true });
+export const businessSemestersInputSchema = z.object({ id_sdm: z.string().uuid().optional() });
+
+const sectionPagesSchema = z.record(z.string().max(128), z.number().int().min(1).max(1_000_000))
+  .refine((pages) => Object.keys(pages).length <= 100).optional();
+
 export const businessRowsInputSchema = z.object({
+  section_pages: sectionPagesSchema,
   module: jelajahModuleKeySchema,
   id_sdm: z.string().uuid().optional(),
   id_smt: z.string().trim().min(1).max(32).optional(),
@@ -18,6 +25,7 @@ export const businessRowsInputSchema = z.object({
 });
 
 export const businessDetailInputSchema = z.object({
+  section_pages: sectionPagesSchema,
   module: jelajahModuleKeySchema,
   id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,128}$/),
   id_sdm: z.string().uuid().optional(),

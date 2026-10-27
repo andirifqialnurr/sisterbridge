@@ -10,6 +10,7 @@ type BusinessFilter = {
   itemKey?: string;
   semester?: string;
   includeSdm?: boolean;
+  unitKind?: string;
 };
 
 type BusinessScope = {
@@ -41,6 +42,10 @@ function whereFor(filter: BusinessFilter) {
       params.push(value);
       conditions.push(`${column} = $${params.length}`);
     }
+  }
+  if (filter.unitKind !== undefined) {
+    params.push(filter.unitKind);
+    conditions.push(`r_payload->>'id_jenis_unit' = $${params.length}`);
   }
   if (filter.semester) {
     params.push(filter.semester);
@@ -114,7 +119,16 @@ export class PrismaBusinessRepository {
     return Number(result[0]?.count ?? 0);
   }
 
-  async scope(integrationId: string, endpoint: string, scopeKey: string) {
+  async semesters(integrationId: string, idSdm?: string) {
+    return this.client.$queryRawUnsafe<{ id_smt: string }[]>(
+      `SELECT DISTINCT id_smt FROM replica.bkd_laporan_akhir_bkd
+        WHERE r_integration_id = $1::uuid AND ($2::text IS NULL OR r_id_sdm = $2)
+          AND id_smt IS NOT NULL AND id_smt <> '' ORDER BY id_smt DESC`,
+      integrationId, idSdm ?? null,
+    );
+  }
+
+  async scope(integrationId: string, endpoint: string, scopeKey: string): Promise<BusinessScope | null> {
     const rows = await this.client.$queryRawUnsafe<BusinessScope[]>(
       `SELECT endpoint, scope_key AS "scopeKey", item_count AS "itemCount",
               last_status AS "lastStatus", last_error_code AS "lastErrorCode",
@@ -145,7 +159,7 @@ export class PrismaBusinessRepository {
     return rows[0] ?? null;
   }
 
-  async latestScope(integrationId: string, endpoint: string) {
+  async latestScope(integrationId: string, endpoint: string): Promise<BusinessScope | null> {
     const rows = await this.client.$queryRawUnsafe<BusinessScope[]>(
       `SELECT endpoint, scope_key AS "scopeKey", item_count AS "itemCount",
               last_status AS "lastStatus", last_error_code AS "lastErrorCode",

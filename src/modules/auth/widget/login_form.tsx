@@ -1,24 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/component/ui/button";
 import { authClient } from "@/lib/auth_client";
+import { clearSessionQueryCache } from "@/lib/session_cache";
+import { safeNextPath } from "@/lib/safe_next_path";
+export { safeNextPath } from "@/lib/safe_next_path";
 
 const inputClassName =
-  "h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-white px-3 text-sm text-[hsl(var(--color-text))] outline-none transition-colors placeholder:text-[hsl(var(--color-muted))] focus:border-[hsl(var(--color-primary))] focus:ring-2 focus:ring-[hsl(var(--color-primary-soft))]";
-
-// Only same-site relative paths are accepted as the post-login target.
-export function safeNextPath(value: string | null) {
-  return value && value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\")
-    ? value
-    : "/";
-}
+  "h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm text-[hsl(var(--color-text))] outline-none transition-colors placeholder:text-[hsl(var(--color-muted))] focus:border-[hsl(var(--color-primary))] focus:ring-2 focus:ring-[hsl(var(--color-primary-soft))]";
 
 export function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const session = authClient.useSession();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,20 +31,26 @@ export function LoginForm() {
         event.preventDefault();
         setIsSubmitting(true);
         setError(null);
-        const result = await authClient.signIn.email({ email: email.trim(), password });
-        setIsSubmitting(false);
-
-        if (result.error) {
-          setError(
-            result.error.status === 429
-              ? "Terlalu banyak percobaan. Coba lagi dalam satu menit."
-              : "Email atau password salah, atau akun tidak aktif.",
-          );
-          return;
+        try {
+          const result = await authClient.signIn.email({ email: email.trim(), password });
+          if (result.error) {
+            setError(
+              result.error.status === 429
+                ? "Terlalu banyak percobaan. Coba lagi dalam satu menit."
+                : "Email atau password salah, atau akun tidak aktif.",
+            );
+            return;
+          }
+          await session.refetch();
+          await clearSessionQueryCache(queryClient);
+          setPassword("");
+          router.replace(safeNextPath(searchParams.get("next")));
+          router.refresh();
+        } catch {
+          setError("Layanan login belum dapat dihubungi. Coba lagi.");
+        } finally {
+          setIsSubmitting(false);
         }
-
-        router.replace(safeNextPath(searchParams.get("next")));
-        router.refresh();
       }}
     >
       <label className="block space-y-1.5" htmlFor="login-email">

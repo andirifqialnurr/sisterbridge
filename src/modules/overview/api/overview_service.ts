@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { prisma } from "@/server/db/prisma";
+import { findOverviewIntegration } from "../repository/overview_repository";
 
 const integrationIdSchema = z.string().uuid();
 
@@ -13,10 +13,7 @@ export async function getSisterIntegrationStatus() {
     return { configured: true, registered: false, enabled: false, expected_role: null, last_health_at: null, database_available: false };
   }
   try {
-    const record = await prisma.sisterIntegration.findUnique({
-      where: { id: integrationId.data },
-      select: { isEnabled: true, expectedRole: true, lastHealthAt: true },
-    });
+    const record = await findOverviewIntegration(integrationId.data);
     return {
       configured: true,
       registered: Boolean(record),

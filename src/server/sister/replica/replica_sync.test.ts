@@ -239,6 +239,20 @@ describe("runReplicaSync", () => {
     expect(fourth.calls).toContain(`/penelitian/${idPenelitian2}`);
   });
 
+  it("keeps a shared detail when only one SDM stops referencing the activity", async () => {
+    const store = new MemoryReplicaStore();
+    const deps = { store, authorize: async () => ({ role: "r" }) };
+    const responses = baseResponses();
+    responses["/referensi/sdm"] = [{ id_sdm: idSdm }, { id_sdm: "second-sdm" }];
+    responses["/penelitian?id_sdm=second-sdm&per_page=100&page=1"] = [{ id: idPenelitian, judul: "A" }];
+    await runReplicaSync({ ...deps, fetcher: fakeFetcher(responses).fetcher }, options);
+    responses[`/penelitian?id_sdm=${idSdm}&per_page=100&page=1`] = [];
+    await runReplicaSync({ ...deps, fetcher: fakeFetcher(responses).fetcher }, options);
+    expect(store.liveRecords("/penelitian")).toHaveLength(1);
+    expect(store.liveRecords("/penelitian/{id}")).toHaveLength(1);
+    expect(store.liveRecords("/penelitian/{id}/bidang_ilmu")).toHaveLength(1);
+  });
+
   it("follows pagination until a short page", async () => {
     const store = new MemoryReplicaStore();
     const responses = baseResponses();
@@ -255,6 +269,70 @@ describe("runReplicaSync", () => {
 
     expect(calls.filter((call) => call.startsWith("/publikasi?"))).toHaveLength(2);
     expect(store.liveRecords("/publikasi")).toHaveLength(101);
+  });
+
+  it("retries failed follow scopes from cached details even when the parent is unchanged", async () => {
+    const store = new MemoryReplicaStore();
+    const deps = { store, authorize: async () => ({ role: "r" }) };
+    const responses = baseResponses();
+    responses["/kelas_kuliah/kelas-1/dokumen"] = {
+      ok: false, status: 500, code: "SISTER_HTTP_500", message: "unavailable",
+    };
+    await runReplicaSync({ ...deps, fetcher: fakeFetcher(responses).fetcher }, options);
+    const retry = fakeFetcher(baseResponses());
+    const result = await runReplicaSync({ ...deps, fetcher: retry.fetcher }, options);
+    expect(result.status).toBe("SUCCEEDED");
+    expect(retry.calls).not.toContain("/pengajaran/ajar-1");
+    expect(retry.calls).toContain("/kelas_kuliah/kelas-1/dokumen");
+    expect(retry.calls).not.toContain("/kelas_kuliah/kelas-lain/dokumen");
+    expect(store.liveRecords("/kelas_kuliah/{id}/dokumen")).toHaveLength(1);
+  });
+
+  it("retries a detail whose latest fetch failed after a previous success", async () => {
+    const store = new MemoryReplicaStore();
+    const deps = { store, authorize: async () => ({ role: "r" }) };
+    await runReplicaSync({ ...deps, fetcher: fakeFetcher(baseResponses()).fetcher }, options);
+    const responses = baseResponses();
+    responses[`/penelitian/${idPenelitian}`] = {
+      ok: false, status: 500, code: "SISTER_HTTP_500", message: "unavailable",
+    };
+    await runReplicaSync({ ...deps, fetcher: fakeFetcher(responses).fetcher }, { ...options, refreshChildren: true });
+    const retry = fakeFetcher(baseResponses());
+    await runReplicaSync({ ...deps, fetcher: retry.fetcher }, options);
+    expect(retry.calls).toContain(`/penelitian/${idPenelitian}`);
+  });
+
+  it("repairs a scope marked successful whose cached detail was retired", async () => {
+    const store = new MemoryReplicaStore();
+    const deps = { store, authorize: async () => ({ role: "r" }) };
+    await runReplicaSync({ ...deps, fetcher: fakeFetcher(baseResponses()).fetcher }, options);
+    store.liveRecords("/penelitian/{id}")[0].deleted = true;
+    const retry = fakeFetcher(baseResponses());
+    await runReplicaSync({ ...deps, fetcher: retry.fetcher }, options);
+    expect(retry.calls).toContain(`/penelitian/${idPenelitian}`);
+    expect(store.liveRecords("/penelitian/{id}")).toHaveLength(1);
+  });
+
+  it("does not request class documents when the owning PT is unknown", async () => {
+    const responses = baseResponses();
+    responses["/referensi/profil_pt"] = {};
+    const { fetcher, calls } = fakeFetcher(responses);
+    await runReplicaSync({ fetcher, store: new MemoryReplicaStore(), authorize: async () => ({ role: "r" }) }, options);
+    expect(calls.some((call) => call.startsWith("/kelas_kuliah/"))).toBe(false);
+  });
+
+  it("keeps prior rows and marks pagination exhaustion as PARTIAL", async () => {
+    const store = new MemoryReplicaStore();
+    const deps = { store, authorize: async () => ({ role: "r" }) };
+    await runReplicaSync({ ...deps, fetcher: fakeFetcher(baseResponses()).fetcher }, options);
+    const base = fakeFetcher(baseResponses());
+    const fullPage = Array.from({ length: 100 }, (_, index) => ({ id: `truncated-${index}` }));
+    const fetcher: ReplicaFetcher = (path, query) => path === "/penelitian"
+      ? Promise.resolve({ ok: true, payload: fullPage }) : base.fetcher(path, query);
+    const result = await runReplicaSync({ ...deps, fetcher }, { ...options, includeChildren: false });
+    expect(result.status).toBe("PARTIAL");
+    expect(result.errors).toContainEqual(expect.objectContaining({ endpoint: "/penelitian", code: "PAGINATION_LIMIT" }));
+    expect(store.liveRecords("/penelitian").map((row) => row.itemKey)).toEqual([idPenelitian]);
   });
 
   it("marks the run FAILED without requests when authorization fails", async () => {

@@ -80,6 +80,8 @@ export type ReplicaStore = {
   // Returns only scope keys whose latest fetch succeeded. A scope that had a
   // previous success but later failed must be retried on the next sync.
   fetchedScopeKeys(integrationId: string, endpoint: string, scopeKeys: string[]): Promise<Set<string>>;
+  // Cached detail payloads let follow endpoints retry independently of parents.
+  scopeItems(integrationId: string, endpoint: string, scopeKeys: string[]): Promise<Map<string, unknown[]>>;
 };
 
 // Postgres allows 65535 bind parameters per statement; large reference scopes
@@ -277,10 +279,19 @@ export class PrismaReplicaStore implements ReplicaStore {
           where: { ...scopeWhere, itemKey: { in: batch }, deletedAt: null },
           data: { deletedAt: now, lastSyncRunId: runId },
         });
-        const orphaned = await tx.sisterReplicaRecord.updateMany({
-          where: { integrationId, parentId: { in: batch }, deletedAt: null },
-          data: { deletedAt: now, lastSyncRunId: runId },
+        // One activity may appear in several SDM lists. Removing it from
+        // this scope must not retire the shared detail while another parent
+        // scope still references it.
+        const surviving = await tx.sisterReplicaRecord.findMany({
+          where: { integrationId, endpoint: scope.endpoint, itemKey: { in: batch }, deletedAt: null },
+          select: { itemKey: true },
         });
+        const referenced = new Set(surviving.map((row) => row.itemKey));
+        const orphanKeys = batch.filter((key) => !referenced.has(key));
+        const orphaned = orphanKeys.length ? await tx.sisterReplicaRecord.updateMany({
+          where: { integrationId, parentId: { in: orphanKeys }, deletedAt: null },
+          data: { deletedAt: now, lastSyncRunId: runId },
+        }) : { count: 0 };
         deleted += removed.count + orphaned.count;
       }
 
@@ -351,6 +362,22 @@ export class PrismaReplicaStore implements ReplicaStore {
     });
   }
 
+  async scopeItems(integrationId: string, endpoint: string, scopeKeys: string[]) {
+    const items = new Map<string, unknown[]>();
+    for (const batch of chunk(scopeKeys)) {
+      const rows = await this.client.sisterReplicaRecord.findMany({
+        where: { integrationId, endpoint, scopeKey: { in: batch }, deletedAt: null },
+        select: { scopeKey: true, payloadJson: true },
+      });
+      for (const row of rows) {
+        const values = items.get(row.scopeKey) ?? [];
+        values.push(row.payloadJson);
+        items.set(row.scopeKey, values);
+      }
+    }
+    return items;
+  }
+
   async fetchedScopeKeys(integrationId: string, endpoint: string, scopeKeys: string[]) {
     if (scopeKeys.length === 0) {
       return new Set<string>();
@@ -362,8 +389,19 @@ export class PrismaReplicaStore implements ReplicaStore {
         scopeKey: { in: scopeKeys },
         lastStatus: { in: [200, 404] },
       },
-      select: { scopeKey: true },
+      select: { scopeKey: true, lastStatus: true, itemCount: true },
     });
-    return new Set(rows.map((row) => row.scopeKey));
+    const positive = rows.filter((row) => row.lastStatus === 200 && row.itemCount > 0).map((row) => row.scopeKey);
+    const present = new Set<string>();
+    for (const batch of chunk(positive)) {
+      const records = await this.client.sisterReplicaRecord.findMany({
+        where: { integrationId, endpoint, scopeKey: { in: batch }, deletedAt: null },
+        select: { scopeKey: true }, distinct: ["scopeKey"],
+      });
+      records.forEach((record) => present.add(record.scopeKey));
+    }
+    // A previous orphan cleanup (or interrupted repair) may have retired
+    // rows without updating scope metadata. Such a scope is not cached.
+    return new Set(rows.filter((row) => row.lastStatus === 404 || row.itemCount === 0 || present.has(row.scopeKey)).map((row) => row.scopeKey));
   }
 }

@@ -33,6 +33,7 @@ type DataExplorerViewProps = {
   sourceLabel?: string;
   // Renders a per-row action (e.g. "Detail") in list mode.
   rowAction?: (row: Record<string, unknown>) => ReactNode;
+  pagination?: { page: number; pageCount: number; total: number; onPageChange: (page: number) => void; disabled?: boolean };
 };
 
 function formatCell(value: unknown) {
@@ -77,7 +78,7 @@ function isScalar(value: unknown) {
   return value === null || ["string", "number", "boolean"].includes(typeof value);
 }
 
-export function DataExplorerView({ result, rowAction, sourceLabel, title }: DataExplorerViewProps) {
+export function DataExplorerView({ result, rowAction, sourceLabel, title, pagination }: DataExplorerViewProps) {
   const [tab, setTab] = useState("data");
   const [page, setPage] = useState(1);
   const rows = useMemo(() => toRows(result.data) as Record<string, unknown>[], [result.data]);
@@ -88,7 +89,8 @@ export function DataExplorerView({ result, rowAction, sourceLabel, title }: Data
     .slice(0, maxColumns)
     .map((field) => field.field);
   const pageCount = Math.ceil(rows.length / rowsPerPage);
-  const pageRows = rows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const safePage = Math.min(page, Math.max(1, pageCount));
+  const pageRows = pagination ? rows : rows.slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage);
   const isSingleObject = result.shape === "object";
 
   return (
@@ -165,9 +167,12 @@ export function DataExplorerView({ result, rowAction, sourceLabel, title }: Data
                   Struktur data dan JSON.
                 </p>
               )}
-              <Pagination onPageChange={setPage} page={page} pageCount={pageCount} />
             </div>
           )}
+          {tab === "data" && !isSingleObject && <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs text-[hsl(var(--color-muted))]">{(pagination?.total ?? rows.length).toLocaleString("id-ID")} data</span>
+            <Pagination onPageChange={pagination?.onPageChange ?? setPage} page={pagination?.page ?? safePage} pageCount={pagination?.pageCount ?? pageCount} disabled={pagination?.disabled} />
+          </div>}
 
           {tab === "struktur" && <StructureTable analysis={analysis} title={title} />}
 

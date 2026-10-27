@@ -31,7 +31,7 @@ export class PrismaReplikaDashboardRepository implements ReplikaDashboardReposit
   sdmComposition(integrationId: string) {
     return this.count<SdmCompositionRow>(
       `SELECT btrim(jenis_sdm) AS jenis_sdm, btrim(nama_status_aktif) AS status_aktif, count(*) AS total
-         FROM replica.referensi_sdm WHERE r_integration_id = $1 GROUP BY 1, 2`,
+         FROM replica.referensi_sdm WHERE r_integration_id = $1::uuid GROUP BY 1, 2`,
       integrationId,
     );
   }
@@ -39,7 +39,7 @@ export class PrismaReplikaDashboardRepository implements ReplikaDashboardReposit
   async syncedSdmCount(integrationId: string) {
     const rows = await this.count<{ total: number }>(
       `SELECT count(DISTINCT id_sdm) AS total FROM public.sister_replica_scope
-        WHERE integration_id = $1 AND endpoint = '/data_pribadi/profil/{id_sdm}' AND last_success_at IS NOT NULL`,
+        WHERE integration_id = $1::uuid AND endpoint = '/data_pribadi/profil/{id_sdm}' AND last_success_at IS NOT NULL`,
       integrationId,
     );
     return rows[0]?.total ?? 0;
@@ -48,7 +48,7 @@ export class PrismaReplikaDashboardRepository implements ReplikaDashboardReposit
   publikasiPerTahun(integrationId: string) {
     return this.count<YearCountRow>(
       `SELECT extract(year FROM tanggal)::int AS tahun, count(DISTINCT id) AS total
-         FROM replica.publikasi_list WHERE r_integration_id = $1 AND tanggal IS NOT NULL GROUP BY 1`,
+         FROM replica.publikasi_list WHERE r_integration_id = $1::uuid AND tanggal IS NOT NULL GROUP BY 1`,
       integrationId,
     );
   }
@@ -56,7 +56,7 @@ export class PrismaReplikaDashboardRepository implements ReplikaDashboardReposit
   penelitianPerTahun(integrationId: string) {
     return this.count<YearCountRow>(
       `SELECT tahun_pelaksanaan::int AS tahun, count(DISTINCT id) AS total
-         FROM replica.penelitian_list WHERE r_integration_id = $1 AND tahun_pelaksanaan IS NOT NULL GROUP BY 1`,
+         FROM replica.penelitian_list WHERE r_integration_id = $1::uuid AND tahun_pelaksanaan IS NOT NULL GROUP BY 1`,
       integrationId,
     );
   }
@@ -64,7 +64,7 @@ export class PrismaReplikaDashboardRepository implements ReplikaDashboardReposit
   pengabdianPerTahun(integrationId: string) {
     return this.count<YearCountRow>(
       `SELECT tahun_pelaksanaan::int AS tahun, count(DISTINCT id) AS total
-         FROM replica.pengabdian_list WHERE r_integration_id = $1 AND tahun_pelaksanaan IS NOT NULL GROUP BY 1`,
+         FROM replica.pengabdian_list WHERE r_integration_id = $1::uuid AND tahun_pelaksanaan IS NOT NULL GROUP BY 1`,
       integrationId,
     );
   }
@@ -72,7 +72,7 @@ export class PrismaReplikaDashboardRepository implements ReplikaDashboardReposit
   bkdPerSemester(integrationId: string) {
     return this.count<BkdSemesterRow>(
       `SELECT id_smt, simpulan_asesor AS simpulan, count(DISTINCT r_id_sdm) AS total
-         FROM replica.bkd_laporan_akhir_bkd WHERE r_integration_id = $1 AND id_smt IS NOT NULL GROUP BY 1, 2`,
+         FROM replica.bkd_laporan_akhir_bkd WHERE r_integration_id = $1::uuid AND id_smt IS NOT NULL GROUP BY 1, 2`,
       integrationId,
     );
   }

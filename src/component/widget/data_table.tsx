@@ -88,9 +88,9 @@ export function DataTable<Row>({
               </tbody>
             </table>
           </div>
-          {pagination}
         </>
       )}
+      {!loading && !error && pagination}
     </section>
   );
 }

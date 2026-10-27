@@ -1024,6 +1024,43 @@ Satu fitur SISTER dianggap selesai apabila:
 - analytics yang membutuhkan data yang tidak diberikan API.
 
 
+## Audit progres aktual (2026-10-26)
+
+Bukti dan prioritas terbaru: [progress_audit.md](./progress_audit.md).
+Typecheck/lint lulus; suite Node 210 lulus dan 5 gagal. Semua 14 scope
+500 diuji ulang terbatas ke sandbox dan masih 500; database tidak diubah.
+
+- [x] AUDIT-ROUTE Benahi empat URL Ajuan yang bertabrakan dengan route
+  detail, termasuk prioritas route statis Next.js pendidikan formal.
+  Literal list didahulukan oleh resolver bersama dan route Ajuan pendidikan
+  formal eksplisit; regression test mencakup seluruh URL katalog.
+- [x] AUDIT-VIEWS Review/terapkan migration view tertunda dan verifikasi
+  kolom bisnis lima modul yang payload-nya sudah ada. Migration lokal selesai;
+  schema replica kini mempunyai 174 view, tanpa menghapus tabel payload.
+- [ ] AUDIT-SYNC Verifikasi retry child/follow independen dari perubahan
+  parent; jangan menandai batas pagination upstream sebagai fetch lengkap.
+- [ ] AUDIT-PAGING Hapus batas tersembunyi 5.000 record explorer; lengkapi
+  pagination peringatan/pencarian/picker serta daftar semester BKD.
+- [ ] AUDIT-UI Verifikasi keyboard/fokus Select, DatePicker, dark mode,
+  state kosong dan navigasi pagination; jalankan QA browser.
+- [x] AUDIT-QUALITY Selaraskan test lama dengan guard tenant/role yang
+  berlaku, pulihkan boundary repository overview dan runner test.
+  `bun run test` memakai Vitest/Node melalui Bun runner; 356 test lulus.
+
+Pada audit awal belum ada perubahan aplikasi/database. Tindak lanjut kini
+menerapkan migration view dan memulai full sync sandbox. Acceptance seluruh
+GET/UI tetap terbuka; bukti akhir dicatat di progress_audit.md. Jalankan
+`bun run sister:coverage` untuk status database terbaru tanpa mencetak PII.
+
+Implementasi pagination lokal mencakup SQL explorer tanpa cap 5.000, warning
+scope ber-total, hasil pencarian live, picker SDM, distinct semester BKD dan
+state halaman per section detail. Navigasi URL mengikuti Next search params
+agar link sidebar, tab dan Back/Forward tidak mempertahankan state lama.
+Sidebar memakai accordion, focus/scroll management mobile dan tema hijau;
+Select mendukung keyboard/typeahead dan surface dark mode. DatePicker masih
+input tanggal bertema, belum kalender custom. Bukti browser live/auth/file
+seluruh modul dan acceptance global tetap belum dinyatakan selesai.
+
 ## Progress implementasi UI (2026-10-01)
 
 Route katalog kini membuka halaman bisnis berbasis replika untuk modul, direktori

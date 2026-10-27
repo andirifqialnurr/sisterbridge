@@ -29,7 +29,20 @@ it.each(["/jabatan_fungsional", "/referensi/jabatan_fungsional"])("selects only 
   const links = html.match(/<a[^>]*aria-current="page"[^>]*>/g) ?? [];
   expect(links).toHaveLength(1);
   expect(links[0]).toContain(`href="${pathname}"`);
-  expect(html).toMatch(/<details open=""><summary[^>]*data-active="true"/);
+  expect(html).toMatch(/<details[^>]*open=""[^>]*><summary[^>]*data-active="true"/);
+});
+
+it.each([
+  ["/jabatan_fungsional/ajuan", "Ajuan jabatan fungsional"],
+  ["/pendidikan_formal/ajuan", "Ajuan pendidikan formal"],
+  ["/sertifikasi_dosen/ajuan", "Ajuan sertifikasi dosen"],
+  ["/nilai_tes/ajuan", "Ajuan nilai tes"],
+])("selects the Ajuan list, not the parent detail at %s", (pathname, label) => {
+  state.pathname = pathname;
+  const html = renderToStaticMarkup(<Sidebar activeLabel={label} />);
+  const links = html.match(/<a[^>]*aria-current="page"[^>]*>/g) ?? [];
+  expect(links).toHaveLength(1);
+  expect(links[0]).toContain(`href="${pathname}"`);
 });
 
 it("keeps restricted menus hidden for an operator or pending session", () => {

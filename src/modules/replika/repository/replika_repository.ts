@@ -17,15 +17,20 @@ export type ReplicaRowFilter = {
   idSdm?: string;
   parentId?: string;
   scopeKey?: string;
+  itemKey?: string;
+  search?: string;
 };
 
 export type ReplikaRepository = {
   listViews(): Promise<ReplicaViewInfo[]>;
   columns(view: string): Promise<ReplicaColumnInfo[]>;
-  rows(view: string, filter: ReplicaRowFilter, limit: number): Promise<Record<string, unknown>[]>;
+  rows(view: string, filter: ReplicaRowFilter, limit: number, offset?: number): Promise<Record<string, unknown>[]>;
+  count(view: string, filter: ReplicaRowFilter): Promise<number>;
   countByEndpointForSdm(idSdm: string, integrationId?: string): Promise<{ endpoint: string; count: number }[]>;
-  syncRuns(limit: number, integrationId?: string): Promise<SyncRunRow[]>;
-  failingScopes(limit: number, integrationId?: string): Promise<FailingScopeRow[]>;
+  syncRuns(limit: number, integrationId: string, offset?: number): Promise<SyncRunRow[]>;
+  countSyncRuns(integrationId: string): Promise<number>;
+  failingScopes(limit: number, integrationId: string, offset?: number): Promise<FailingScopeRow[]>;
+  countFailingScopeGroups(integrationId: string): Promise<number>;
 };
 
 export type SyncRunRow = {
@@ -81,12 +86,12 @@ export class PrismaReplikaRepository implements ReplikaRepository {
     );
   }
 
-  async rows(view: string, filter: ReplicaRowFilter, limit: number) {
+  private async where(view: string, filter: ReplicaRowFilter) {
     const conditions: string[] = [];
     const params: unknown[] = [];
     if (filter.integrationId) {
       params.push(filter.integrationId);
-      conditions.push(`r_integration_id = $${params.length}`);
+      conditions.push(`r_integration_id = $${params.length}::uuid`);
     }
     if (filter.idSdm) {
       params.push(filter.idSdm);
@@ -100,12 +105,36 @@ export class PrismaReplikaRepository implements ReplikaRepository {
       params.push(filter.scopeKey);
       conditions.push(`r_scope_key = $${params.length}`);
     }
-    params.push(limit);
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    if (filter.itemKey) {
+      params.push(filter.itemKey);
+      conditions.push(`r_item_key = $${params.length}`);
+    }
+    if (filter.search) {
+      const columns = (await this.columns(view)).map((column) => column.name).filter((name) => !name.startsWith("r_"));
+      if (columns.length) {
+        const escaped = filter.search.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+        params.push(`%${escaped}%`);
+        conditions.push(`concat_ws(' ', ${columns.map((name) => `COALESCE(${quoteIdent(name)}::text, '')`).join(", ")}) ILIKE $${params.length} ESCAPE '\\'`);
+      }
+    }
+    return { sql: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "", params };
+  }
+
+  async rows(view: string, filter: ReplicaRowFilter, limit: number, offset = 0) {
+    const { sql, params } = await this.where(view, filter);
+    params.push(limit, offset);
     return this.client.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT * FROM replica.${quoteIdent(view)} ${where} ORDER BY r_item_key LIMIT $${params.length}`,
+      `SELECT * FROM replica.${quoteIdent(view)} ${sql} ORDER BY r_item_key, r_scope_key LIMIT $${params.length - 1} OFFSET $${params.length}`,
       ...params,
     );
+  }
+
+  async count(view: string, filter: ReplicaRowFilter) {
+    const { sql, params } = await this.where(view, filter);
+    const rows = await this.client.$queryRawUnsafe<{ count: bigint }[]>(
+      `SELECT count(*) AS count FROM replica.${quoteIdent(view)} ${sql}`, ...params,
+    );
+    return Number(rows[0]?.count ?? 0);
   }
 
   async countByEndpointForSdm(idSdm: string, integrationId?: string) {
@@ -118,7 +147,7 @@ export class PrismaReplikaRepository implements ReplikaRepository {
     return rows.map((row) => ({ endpoint: row.endpoint, count: Number(row.count) }));
   }
 
-  async syncRuns(limit: number, integrationId?: string) {
+  async syncRuns(limit: number, integrationId: string, offset = 0) {
     return this.client.$queryRawUnsafe<SyncRunRow[]>(
       `SELECT id, scope, status::text AS status, base_url AS "baseUrl",
               request_count AS "requestCount", record_count AS "recordCount",
@@ -126,28 +155,48 @@ export class PrismaReplikaRepository implements ReplikaRepository {
               error_count AS "errorCount", started_at AS "startedAt",
               finished_at AS "finishedAt", heartbeat_at AS "heartbeatAt"
          FROM public.sister_sync_run
-        WHERE ($2::uuid IS NULL OR integration_id = $2)
-        ORDER BY started_at DESC
-        LIMIT $1`,
+        WHERE integration_id = $2::uuid
+        ORDER BY started_at DESC, id DESC
+        LIMIT $1 OFFSET $3`,
       limit,
-      integrationId ?? null,
+      integrationId,
+      offset,
     );
   }
-  async failingScopes(limit: number, integrationId?: string) {
+  async countSyncRuns(integrationId: string) {
+    const rows = await this.client.$queryRawUnsafe<{ count: bigint }[]>(
+      `SELECT count(*) AS count FROM public.sister_sync_run WHERE integration_id = $1::uuid`, integrationId,
+    );
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  async failingScopes(limit: number, integrationId: string, offset = 0) {
     const rows = await this.client.$queryRawUnsafe<
       { endpoint: string; lastStatus: number; lastErrorCode: string | null; scopes: bigint; lastFetchedAt: Date }[]
     >(
       `SELECT endpoint, last_status AS "lastStatus", last_error_code AS "lastErrorCode",
               count(*) AS scopes, max(last_fetched_at) AS "lastFetchedAt"
          FROM public.sister_replica_scope
-        WHERE last_status <> 200 AND ($2::uuid IS NULL OR integration_id = $2)
+        WHERE last_status <> 200 AND integration_id = $2::uuid
         GROUP BY endpoint, last_status, last_error_code
-        ORDER BY count(*) DESC
-        LIMIT $1`,
+        ORDER BY count(*) DESC, endpoint, last_status, last_error_code NULLS FIRST
+        LIMIT $1 OFFSET $3`,
       limit,
-      integrationId ?? null,
+      integrationId,
+      offset,
     );
     return rows.map((row) => ({ ...row, scopes: Number(row.scopes) }));
+  }
+
+  async countFailingScopeGroups(integrationId: string) {
+    const rows = await this.client.$queryRawUnsafe<{ count: bigint }[]>(
+      `SELECT count(*) AS count FROM (
+        SELECT 1 FROM public.sister_replica_scope
+         WHERE integration_id = $1::uuid AND last_status <> 200
+         GROUP BY endpoint, last_status, last_error_code
+       ) grouped`, integrationId,
+    );
+    return Number(rows[0]?.count ?? 0);
   }
 }
 

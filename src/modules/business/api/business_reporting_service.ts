@@ -111,13 +111,14 @@ function endpointHref(endpoint: string, idSdm?: string | null, scopeKey?: string
   return path + (query ? "?" + query : "");
 }
 
-export async function getBusinessWarnings(repository = new PrismaBusinessReportingRepository()) {
+export async function getBusinessWarnings(input: { page: number; per_page: number }, repository = new PrismaBusinessReportingRepository()) {
   const integration = integrationId();
-  const [groups, issues, runs, bkdGroups] = await Promise.all([
+  const [groups, issues, runs, bkdGroups, issueTotal] = await Promise.all([
     repository.scopeGroups(integration),
-    repository.scopeIssues(integration),
+    repository.scopeIssues(integration, input.per_page, (input.page - 1) * input.per_page),
     repository.latestSyncRuns(integration),
     repository.bkdGroups(integration),
+    repository.countScopeIssues(integration),
   ]);
   const byEndpoint = new Map(groups.map((row) => [row.endpoint, row]));
   const endpoints = replicaEndpointTemplates().map((endpoint) => {
@@ -138,8 +139,11 @@ export async function getBusinessWarnings(repository = new PrismaBusinessReporti
   });
   return {
     endpoints,
-    issues_truncated: issues.length > 200,
-    issues: issues.slice(0, 200).map((issue) => ({
+    issues_truncated: false,
+    issues_total: issueTotal,
+    page: input.page,
+    per_page: input.per_page,
+    issues: issues.map((issue) => ({
       ...issue,
       fetched_at: issue.last_fetched_at.toISOString(),
       last_success_at: issue.last_success_at?.toISOString() ?? null,

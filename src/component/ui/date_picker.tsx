@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { CalendarDays } from "lucide-react";
 
@@ -18,6 +18,7 @@ export function DatePicker({
   value,
 }: DatePickerProps) {
   const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
 
   return (
     <label className="relative inline-flex h-10 min-w-[160px] items-center">
@@ -28,7 +29,7 @@ export function DatePicker({
       />
       <span className="sr-only">{ariaLabel}</span>
       <input
-        className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-white pl-9 pr-3 text-sm text-[hsl(var(--color-text))] outline-none transition-colors placeholder:text-[hsl(var(--color-muted))] focus:border-[hsl(var(--color-primary))] focus:ring-2 focus:ring-[hsl(var(--color-primary-soft))]"
+        className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] pl-9 pr-3 text-sm text-[hsl(var(--color-text))] outline-none transition-colors placeholder:text-[hsl(var(--color-muted))] focus:border-[hsl(var(--color-primary))] focus:ring-2 focus:ring-[hsl(var(--color-primary-soft))]"
         inputMode="numeric"
         onBlur={() => onValueChange(draft)}
         onChange={(event) => setDraft(event.target.value)}

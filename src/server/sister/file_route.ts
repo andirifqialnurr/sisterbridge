@@ -7,6 +7,7 @@ import { getSafeRequestId } from "@/server/security/request_policy";
 
 import { SisterApiError, SisterContractError } from "./errors";
 import { sisterGetFile, type SisterFile } from "./http_client";
+import { hasSisterFileAccess } from "./replica/file_access_repository";
 
 export type SisterFileKind = "foto" | "dokumen";
 
@@ -17,6 +18,7 @@ type FileRouteOptions = {
   // Injectable for tests.
   loadUser?: (headers: Headers) => Promise<AppSessionUser | null>;
   loadFile?: (path: string) => Promise<SisterFile>;
+  checkAccess?: (kind: SisterFileKind, id: string) => Promise<boolean>;
 };
 
 const allowedRoles: Record<SisterFileKind, readonly AppRole[]> = {
@@ -48,6 +50,7 @@ export async function handleSisterFileRequest({
   kind,
   loadFile = sisterGetFile,
   loadUser = getCurrentUser,
+  checkAccess = hasSisterFileAccess,
   request,
 }: FileRouteOptions): Promise<Response> {
   const requestId = getSafeRequestId(request);
@@ -72,6 +75,26 @@ export async function handleSisterFileRequest({
   }
   if (!checkRateLimit(`sister-file:${user.id}`, rateLimit).allowed) {
     return json(429, "Terlalu banyak permintaan file; coba lagi sebentar", requestId);
+  }
+
+  let permitted: boolean;
+  try {
+    permitted = await checkAccess(kind, id);
+  } catch {
+    return json(503, "Kepemilikan file belum dapat diverifikasi; coba lagi sebentar", requestId);
+  }
+  if (!permitted) {
+    void recordSecurityAuditEvent({
+      event_type: "authorization_denied",
+      severity: "MEDIUM",
+      outcome: "DENIED",
+      actor_user_id: user.id,
+      request_id: requestId,
+      route_or_procedure: `api.sister.file.${kind}`,
+      metadata: { reason: "resource_not_in_active_integration" },
+    });
+    // Do not disclose whether the ID exists in another integration.
+    return json(404, "File tidak tersedia pada integrasi aktif", requestId);
   }
 
   let file: SisterFile;

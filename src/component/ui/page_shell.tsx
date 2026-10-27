@@ -30,9 +30,9 @@ export function PageShell({
           className="min-w-0 space-y-6 px-[30px] py-6"
           style={{ maxWidth }}
         >
-          <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
             <PageBreadcrumb detailLabel={detailLabel} items={breadcrumb} />
-            {actions && <div className="flex shrink-0 items-center justify-end gap-2">{actions}</div>}
+            {actions && <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-end gap-2 md:ml-auto md:w-auto">{actions}</div>}
           </div>
           {children}
         </main>

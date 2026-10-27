@@ -4,6 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { PageShell } from "@/component/ui/page_shell";
 import { State } from "@/component/ui/state";
+import { Button } from "@/component/ui/button";
+import { Select } from "@/component/ui/select";
+import { Pagination } from "@/component/ui/pagination";
+import { useUrlState } from "@/hook/use-url-state";
+import { parsePageParam } from "@/lib/pagination";
 import { DataTable } from "@/component/widget/data_table";
 import { useTRPC } from "@/lib/trpc";
 import { cn } from "@/lib/cn";
@@ -30,25 +35,34 @@ function duration(start: string, end: string | null) {
 
 export function ReplikaStatusPage() {
   const trpc = useTRPC();
-  const statusQuery = useQuery(trpc.replika.sync_status.queryOptions());
+  const state = useUrlState();
+  const runPage = parsePageParam(state.values.page_run);
+  const scopePage = parsePageParam(state.values.page_scope);
+  const requestedSize = Number(state.values.per_page);
+  const perPage = [10, 20, 50, 100].includes(requestedSize) ? requestedSize : 20;
+  const statusQuery = useQuery({
+    ...trpc.replika.sync_status.queryOptions({ run_page: runPage, scope_page: scopePage, per_page: perPage }),
+    enabled: state.ready,
+  });
   const data = statusQuery.data;
 
   return (
     <PageShell
       activeLabel="Status Sinkronisasi"
+      actions={<><Select ariaLabel="Baris status per halaman" value={String(perPage)} options={[10, 20, 50, 100].map(value => ({ value: String(value), label: `${value} baris` }))} onValueChange={value => state.set({ per_page: value, page_run: "1", page_scope: "1" })} /><Button disabled={statusQuery.isFetching} onClick={() => statusQuery.refetch()} size="sm" variant="secondary">Perbarui</Button></>}
       breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: "Status Sinkronisasi" }]}
     >
       <div className="space-y-2">
-        <h1 className="text-lg font-bold text-[hsl(var(--color-text))]">Status sinkronisasi replika</h1>
+        <h1 className="sr-only">Status sinkronisasi replika</h1>
         <p className="text-sm text-[hsl(var(--color-muted))]">
-          Riwayat <code>bun run sister:sync</code>. Status PARTIAL wajar selama beberapa endpoint SISTER
-          masih menjawab 500.
+          Riwayat <code>bun run sister:sync</code>. Status PARTIAL berarti belum semua scope berhasil;
+          periksa rincian sumber sebelum menganggap data lengkap.
         </p>
       </div>
 
       {statusQuery.isPending && <State title="Memuat status..." tone="loading" />}
       {statusQuery.isError && (
-        <State description={statusQuery.error.message} title="Status belum dapat dimuat" tone="forbidden" />
+        <State description={statusQuery.error.message} title="Status belum dapat dimuat" tone={statusQuery.error.data?.code === "FORBIDDEN" || statusQuery.error.data?.code === "UNAUTHORIZED" ? "forbidden" : "error"} />
       )}
 
       {data && (
@@ -83,12 +97,13 @@ export function ReplikaStatusPage() {
             empty="Belum pernah ada sinkronisasi."
             getRowKey={(run) => run.id}
             rows={data.runs}
+            pagination={<div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{data.run_total.toLocaleString("id-ID")} run</span><Pagination ariaLabel="Halaman riwayat sinkronisasi" page={runPage} pageCount={Math.ceil(data.run_total / data.per_page)} onPageChange={next => state.set({ page_run: String(next) })} disabled={statusQuery.isFetching} /></div>}
           />
 
           <section className="space-y-2">
-            <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">Scope yang gagal pada pengambilan terakhir</h2>
+            <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">Status scope selain HTTP 200</h2>
             <DataTable
-              caption="Scope gagal"
+              caption="Ringkasan status scope"
               columns={[
                 { key: "endpoint", header: "Endpoint", render: (row) => <code className="text-xs">{row.endpoint}</code> },
                 { key: "status", header: "HTTP", render: (row) => row.status || "jaringan" },
@@ -96,9 +111,10 @@ export function ReplikaStatusPage() {
                 { key: "scopes", header: "Jumlah scope", render: (row) => row.scopes },
                 { key: "last", header: "Terakhir", render: (row) => formatDateTime(row.last_fetched_at) },
               ]}
-              empty="Tidak ada scope yang gagal."
+              empty="Tidak ada scope dengan status selain HTTP 200."
               getRowKey={(row) => `${row.endpoint}-${row.status}-${row.code}`}
               rows={data.failing_scopes}
+              pagination={<div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{data.scope_group_total.toLocaleString("id-ID")} kelompok endpoint/status</span><Pagination ariaLabel="Halaman kelompok status scope" page={scopePage} pageCount={Math.ceil(data.scope_group_total / data.per_page)} onPageChange={next => state.set({ page_scope: String(next) })} disabled={statusQuery.isFetching} /></div>}
             />
           </section>
         </>

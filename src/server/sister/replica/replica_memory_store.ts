@@ -18,6 +18,7 @@ export class MemoryReplicaStore implements ReplicaStore {
   readonly fetchedScopes = new Set<string>();
   readonly failedScopes = new Map<string, number>();
   readonly scopeStatuses = new Map<string, number>();
+  readonly scopeCounts = new Map<string, number>();
 
   async ensureIntegration() {}
 
@@ -77,8 +78,9 @@ export class MemoryReplicaStore implements ReplicaStore {
         result.deleted += 1;
       }
     }
+    const orphanIds = removedIds.filter((id) => !this.liveRecords(scope.endpoint).some((record) => record.itemKey === id));
     for (const record of this.records.values()) {
-      if (record.parentId && removedIds.includes(record.parentId) && !record.deleted) {
+      if (record.parentId && orphanIds.includes(record.parentId) && !record.deleted) {
         record.deleted = true;
         result.deleted += 1;
       }
@@ -87,6 +89,7 @@ export class MemoryReplicaStore implements ReplicaStore {
     this.fetchedScopes.add(`${scope.endpoint}|${scope.scopeKey}`);
     this.failedScopes.delete(`${scope.endpoint}|${scope.scopeKey}`);
     this.scopeStatuses.set(`${scope.endpoint}|${scope.scopeKey}`, responseStatus);
+    this.scopeCounts.set(`${scope.endpoint}|${scope.scopeKey}`, items.length);
     return result;
   }
 
@@ -97,10 +100,26 @@ export class MemoryReplicaStore implements ReplicaStore {
     failure: { status: number },
   ) {
     this.failedScopes.set(`${scope.endpoint}|${scope.scopeKey}`, failure.status);
+    this.scopeStatuses.set(`${scope.endpoint}|${scope.scopeKey}`, failure.status);
   }
 
   async fetchedScopeKeys(_integrationId: string, endpoint: string, scopeKeys: string[]) {
-    return new Set(scopeKeys.filter((key) => this.fetchedScopes.has(`${endpoint}|${key}`)));
+    return new Set(scopeKeys.filter((key) => {
+      const status = this.scopeStatuses.get(`${endpoint}|${key}`);
+      return status === 404 || (status === 200 && (this.scopeCounts.get(`${endpoint}|${key}`) === 0 || this.liveRecords(endpoint).some((record) => record.scopeKey === key)));
+    }));
+  }
+
+  async scopeItems(_integrationId: string, endpoint: string, scopeKeys: string[]) {
+    const wanted = new Set(scopeKeys);
+    const items = new Map<string, unknown[]>();
+    for (const record of this.liveRecords(endpoint)) {
+      if (!wanted.has(record.scopeKey)) continue;
+      const values = items.get(record.scopeKey) ?? [];
+      values.push(record.payload);
+      items.set(record.scopeKey, values);
+    }
+    return items;
   }
 
   liveRecords(endpoint?: string) {

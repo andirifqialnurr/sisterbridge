@@ -8,6 +8,7 @@ type PaginationProps = {
   onPageChange: (page: number) => void;
   disabled?: boolean;
   className?: string;
+  ariaLabel?: string;
 };
 
 function getPageItems(page: number, pageCount: number) {
@@ -32,9 +33,10 @@ export function Pagination({
   onPageChange,
   disabled = false,
   className,
+  ariaLabel = "Pagination",
 }: PaginationProps) {
   if (pageCount <= 1) {
-    return null;
+    return page > 1 ? <button className="rounded-lg border border-[hsl(var(--color-border))] px-3 py-2 text-sm text-[hsl(var(--color-primary))] focus-visible:outline-2 focus-visible:outline-[hsl(var(--color-primary))]" disabled={disabled} onClick={() => onPageChange(1)} type="button">Kembali ke halaman pertama</button> : null;
   }
 
   const safePage = Math.min(Math.max(page, 1), pageCount);
@@ -43,7 +45,7 @@ export function Pagination({
     "inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[hsl(var(--color-border))] px-2 text-xs font-semibold text-[hsl(var(--color-muted))] transition-colors hover:bg-[hsl(var(--color-primary-soft))] hover:text-[hsl(var(--color-primary-strong))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--color-primary))] disabled:pointer-events-none disabled:opacity-50";
 
   return (
-    <nav aria-label="Pagination" className={cn("flex items-center justify-end gap-1", className)}>
+    <nav aria-label={ariaLabel} className={cn("flex max-w-full flex-wrap items-center justify-end gap-1", className)}>
       <button
         aria-label="Halaman sebelumnya"
         className={buttonClass}

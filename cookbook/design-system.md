@@ -410,6 +410,32 @@ section: heading/toolbar -> content -> pagination
   40px dan mobile 44px. Label panjang boleh wrap; submenu tidak memakai ikon.
 - Sidebar desktop 224px sticky setinggi viewport, navigasi scroll internal;
   mobile memakai panel dengan tombol buka/tutup. Aturan sama pada kedua tema.
+- Project Profile SisterBridge: grup sidebar memakai accordion (satu grup
+  terbuka) agar daftar referensi tidak membuat navigasi terlalu panjang.
+  Mobile mengunci scroll latar, menjaga fokus di panel, mendukung Escape,
+  mengembalikan fokus saat ditutup, dan menutup panel ketika pindah ke desktop.
+- Perubahan tab/query melalui link sidebar harus memperbarui isi halaman
+  sekaligus selected state, termasuk Back/Forward; jangan hanya membaca URL
+  sekali ketika component pertama kali mount.
+
+### Pagination data besar (2026-10-26)
+
+- Daftar replika menggunakan pagination database dengan total dan urutan
+  stabil. Jangan mengambil ribuan record lalu memotongnya sebagai satu-satunya
+  jalur akses; tidak ada batas tersembunyi 5.000 record.
+- Filter baru mengembalikan halaman daftar ke halaman pertama. Tabel kosong
+  tetap menampilkan navigasi pemulihan jika pengguna berada di halaman lain.
+- Setiap section detail memiliki state halaman tersendiri. Mengganti halaman
+  dokumen tidak boleh memindahkan halaman anggota atau bidang ilmu.
+- Picker SDM dan daftar peringatan harus bisa menjangkau semua hasil melalui
+  pencarian/pagination. Pilihan semester BKD berasal dari distinct semester
+  seluruh scope terkait, bukan hanya satu halaman laporan.
+- Pagination hasil pencarian live di browser hanya membagi hasil yang sudah
+  dikembalikan upstream; jangan mengartikannya sebagai enumerasi seluruh
+  populasi SISTER. Label sumber dan status kosong/error tetap eksplisit.
+- Select custom memakai token surface pada kedua tema, menghubungkan trigger
+  dengan listbox, mendukung Arrow/Home/End/Enter/Escape/Tab/typeahead, serta
+  mengembalikan fokus ke trigger setelah pilihan ditetapkan.
 
 ### Breadcrumb Dan Page Actions
 

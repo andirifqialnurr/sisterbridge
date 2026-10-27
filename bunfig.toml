@@ -1,4 +1,5 @@
 [run]
-# Force package executables with a Node shebang to run on Bun.
-bun = true
+# Keep Bun as package/script runner, but respect Node shebangs for tools
+# such as Vitest and Prisma; forcing them onto Bun breaks module mocks.
+bun = false
 shell = "bun"

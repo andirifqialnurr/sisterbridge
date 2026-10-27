@@ -113,6 +113,31 @@ describe("jelajah service", () => {
     expect(calls.filter((call) => call.startsWith("/publikasi"))).toHaveLength(2);
   });
 
+  it("rejects incomplete results when every page up to the live limit is full", async () => {
+    const fetcher = vi.fn<JelajahFetcher>(async () =>
+      Array.from({ length: 100 }, (_, id) => ({ id })),
+    );
+
+    await expect(
+      getJelajahList({ module: "publikasi", id_sdm: idSdm }, fetcher),
+    ).rejects.toThrow("hasil belum lengkap");
+    expect(fetcher).toHaveBeenCalledTimes(20);
+    expect(fetcher).toHaveBeenLastCalledWith("/publikasi", {
+      id_sdm: idSdm, per_page: "100", page: "20",
+    });
+  });
+
+  it("accepts a short final page at the live limit", async () => {
+    const fetcher = vi.fn<JelajahFetcher>(async (_path, query) =>
+      Array.from({ length: query?.page === "20" ? 1 : 100 }, (_, id) => ({ id })),
+    );
+
+    await expect(
+      getJelajahList({ module: "publikasi", id_sdm: idSdm }, fetcher),
+    ).resolves.toMatchObject({ item_count: 1901 });
+    expect(fetcher).toHaveBeenCalledTimes(20);
+  });
+
   it("reads details and children, and maps a missing detail to not found", async () => {
     const { fetcher, calls } = recordingFetcher({
       "/pengajaran/a-1": { id: "a-1", id_kelas: "k-1" },
@@ -139,10 +164,40 @@ describe("jelajah service", () => {
     expect(calls).toContain("/referensi/detail_unit_kerja?id_unit_kerja=u-1");
   });
 
+  it.each([[], {}, [{ id: "prodi", id_jenis_unit: 1 }], [{ id: "other", id_jenis_unit: 3 }]])("rejects unverified or non-program units before student search: %j", async (units) => {
+    const { fetcher, calls } = recordingFetcher({
+      "/referensi/profil_pt": { id: idPt },
+      [`/referensi/unit_kerja?id_perguruan_tinggi=${idPt}`]: units,
+    });
+    await expect(getJelajahList({ module: "mahasiswa_pddikti", search: { keyword: "synthetic", id_program_studi: "prodi" } }, fetcher)).rejects.toThrow("Program studi tidak ditemukan");
+    expect(calls.some(call => call.startsWith("/referensi/mahasiswa_pddikti"))).toBe(false);
+  });
+
+  it.each([3, "3"])("accepts an owned program with unit kind %s", async (kind) => {
+    const { fetcher, calls } = recordingFetcher({
+      "/referensi/profil_pt": { id: idPt },
+      [`/referensi/unit_kerja?id_perguruan_tinggi=${idPt}`]: [{ id: "prodi", id_jenis_unit: kind }],
+    });
+    await getJelajahList({ module: "mahasiswa_pddikti", search: { keyword: "synthetic", id_program_studi: "prodi" } }, fetcher);
+    expect(calls.at(-1)).toBe(`/referensi/mahasiswa_pddikti?id_program_studi=prodi&keyword=synthetic&id_perguruan_tinggi=${idPt}`);
+  });
+
+  it("does not reuse the owning PT cache after integration or target changes", async () => {
+    getSisterConfigMock.mockReturnValue({ fixture_mode: false, integration_id: "first", base_url: "https://first.test" });
+    const first = recordingFetcher({ "/referensi/profil_pt": { id: idPt } });
+    await getJelajahList({ module: "ref_unit_kerja" }, first.fetcher);
+    getSisterConfigMock.mockReturnValue({ fixture_mode: false, integration_id: "second", base_url: "https://second.test" });
+    const secondPt = "44444444-4444-4444-8444-444444444444";
+    const second = recordingFetcher({ "/referensi/profil_pt": { id: secondPt } });
+    await getJelajahList({ module: "ref_unit_kerja" }, second.fetcher);
+    expect(second.calls).toEqual(["/referensi/profil_pt", `/referensi/unit_kerja?id_perguruan_tinggi=${secondPt}`]);
+  });
+
   it("forwards only declared search fields and enforces required inputs", async () => {
     const { fetcher, calls } = recordingFetcher({
       "/kolaborator_eksternal?nama=Budi": [{ id: "k-1", nama: "Budi" }],
       "/referensi/profil_pt": { id_perguruan_tinggi: idPt },
+      [`/referensi/unit_kerja?id_perguruan_tinggi=${idPt}`]: [{ id: "33333333-3333-4333-8333-333333333333", id_jenis_unit: 3 }],
     });
 
     const kolaborator = await getJelajahList({ module: "kolaborator_eksternal", search: { nama: "Budi" } }, fetcher);

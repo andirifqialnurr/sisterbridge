@@ -1,6 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 import { recordSecurityAuditEvent } from "@/server/security/audit";
+import { withPrivateResponsePolicy } from "@/server/security/private_response";
 import {
   makePolicyResponse,
   prepareTrpcRequest,
@@ -30,12 +31,13 @@ const handler = async (request: Request) => {
     );
   }
 
-  return fetchRequestHandler({
+  const response = await fetchRequestHandler({
     endpoint: "/api/trpc",
     req: prepared.request,
     router: appRouter,
     createContext: createTRPCContext,
   });
+  return withPrivateResponsePolicy(response, prepared.request_id);
 };
 
 export { handler as GET, handler as POST };

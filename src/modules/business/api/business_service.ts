@@ -117,6 +117,34 @@ async function requireKnownSdm(idSdm: string, integration: string, repository: P
   if (row.length === 0) throw new SisterNotFoundError("SDM tidak ditemukan pada replika PT ini.");
 }
 
+export async function getBusinessSemesters(
+  input: { id_sdm?: string }, repository = new PrismaBusinessRepository(),
+) {
+  const integration = integrationId();
+  if (input.id_sdm) await requireKnownSdm(input.id_sdm, integration, repository);
+  return repository.semesters(integration, input.id_sdm);
+}
+
+export async function searchBusinessPrograms(
+  input: BusinessSdmInput,
+  repository = new PrismaBusinessRepository(),
+) {
+  const integration = integrationId();
+  const views = await repository.listViews();
+  const view = requireView(views, "/referensi/unit_kerja");
+  const meta = await repository.latestScope(integration, "/referensi/unit_kerja");
+  if (!meta) return { options: [], total: 0, page: input.page, per_page: input.per_page, source: null };
+  const filter = { integrationId: integration, scopeKey: meta.scopeKey, unitKind: "3" };
+  const [rows, total] = await Promise.all([
+    repository.rows(view, filter, input.per_page, (input.page - 1) * input.per_page, input.search),
+    repository.count(view, filter, input.search),
+  ]);
+  return {
+    options: rows.map((row) => ({ value: String(row.id), label: String(row.nama ?? row.id) })),
+    total, page: input.page, per_page: input.per_page, source: presentScope(meta),
+  };
+}
+
 export async function searchBusinessSdm(
   input: BusinessSdmInput,
   repository = new PrismaBusinessRepository(),
@@ -187,9 +215,10 @@ export async function getBusinessRows(
           parentId: idSdm,
           ...(resolved.key ? { scopeKey: resolved.key } : {}),
         };
+        const childPage = input.section_pages?.[candidate.name] ?? 1;
         const [childColumns, childRows, childTotal] = await Promise.all([
           repository.columns(candidate.name),
-          repository.rows(candidate.name, childFilter, perPage, (page - 1) * perPage),
+          repository.rows(candidate.name, childFilter, perPage, (childPage - 1) * perPage),
           repository.count(candidate.name, childFilter),
         ]);
         return {
@@ -198,7 +227,7 @@ export async function getBusinessRows(
           columns: childColumns.filter((column) => !column.name.startsWith("r_")).map((column) => ({ key: column.name, type: column.dataType })),
           rows: presentRows(childRows, childColumns),
           total: childTotal,
-          page,
+          page: childPage,
           per_page: perPage,
           source: presentScopeCount(resolved.meta, childTotal),
         };
@@ -220,7 +249,7 @@ export async function getBusinessRows(
 
 
 export async function getBusinessDetail(
-  input: { module: string; id: string; id_sdm?: string; page?: number; per_page?: number },
+  input: { module: string; id: string; id_sdm?: string; page?: number; per_page?: number; section_pages?: Record<string, number> },
   repository = new PrismaBusinessRepository(),
 ) {
   const catalogEntry = requireModule(input.module);
@@ -231,9 +260,7 @@ export async function getBusinessDetail(
     if (!input.id_sdm) throw new BusinessDataUnavailableError("Pilih SDM terlebih dahulu.");
     await requireKnownSdm(input.id_sdm, integration, repository);
   }
-  const page = input.page ?? 1;
   const perPage = input.per_page ?? pageSizeDefault;
-  const offset = (page - 1) * perPage;
   const views = await repository.listViews();
   const listView = requireView(views, catalogEntry.path);
   const listScope = await resolveListScope(catalogEntry, { id_sdm: input.id_sdm }, integration, repository);
@@ -296,9 +323,10 @@ export async function getBusinessDetail(
         integrationId: integration,
         parentId: input.id,
       };
+      const childPage = input.section_pages?.[child.name] ?? 1;
       const [childColumns, childRows, childTotal] = await Promise.all([
         repository.columns(child.name),
-        repository.rows(child.name, childFilter, perPage, offset),
+        repository.rows(child.name, childFilter, perPage, (childPage - 1) * perPage),
         repository.count(child.name, childFilter),
       ]);
       sections.push({
@@ -309,7 +337,7 @@ export async function getBusinessDetail(
         rows: presentRows(childRows, childColumns),
         source: presentScopeCount(detailSource, childTotal),
         total: childTotal,
-        page,
+        page: childPage,
         per_page: perPage,
       });
     }
@@ -338,9 +366,10 @@ export async function getBusinessDetail(
       integrationId: integration,
       parentId: sourceValue,
     };
+    const childPage = input.section_pages?.[child.key] ?? 1;
     const [childColumns, childRows, childTotal] = await Promise.all([
       repository.columns(childView),
-      repository.rows(childView, childFilter, perPage, offset),
+      repository.rows(childView, childFilter, perPage, (childPage - 1) * perPage),
       repository.count(childView, childFilter),
     ]);
     sections.push({
@@ -351,7 +380,7 @@ export async function getBusinessDetail(
       rows: presentRows(childRows, childColumns),
       source: presentScope(childSource),
       total: childTotal,
-      page,
+      page: childPage,
       per_page: perPage,
     });
   }

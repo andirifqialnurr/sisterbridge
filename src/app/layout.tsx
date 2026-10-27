@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { ThemeProvider } from "@/component/theme-provider";
 import { TrpcProvider } from "@/lib/trpc";
@@ -19,7 +20,7 @@ export default function RootLayout({
     <html lang="id">
       <body>
         <ThemeProvider>
-          <TrpcProvider>{children}</TrpcProvider>
+          <TrpcProvider><Suspense fallback={<p className="p-[30px] text-sm" role="status">Memuat aplikasi...</p>}>{children}</Suspense></TrpcProvider>
         </ThemeProvider>
       </body>
     </html>

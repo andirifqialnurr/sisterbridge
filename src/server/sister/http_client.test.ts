@@ -278,6 +278,59 @@ describe("sisterGetFile", () => {
     await expect(sisterGetFile("/data_pribadi/foto/abc")).rejects.toBeInstanceOf(SisterContractError);
   });
 
+  it.each([undefined, "1"])("stops oversized streams even with Content-Length %s", async (declaredLength) => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok" });
+    const cancel = vi.fn();
+    const chunk = new Uint8Array(1024 * 1024);
+    let produced = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        produced += 1;
+        controller.enqueue(chunk);
+        if (produced === 100) controller.close();
+      },
+      cancel,
+    });
+    const headers: Record<string, string> = { "content-type": "application/pdf" };
+    if (declaredLength) headers["content-length"] = declaredLength;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(stream, { headers })));
+    await expect(sisterGetFile("/dokumen/abc/download")).rejects.toBeInstanceOf(SisterContractError);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(produced).toBeLessThanOrEqual(27);
+  });
+
+  it("accepts a streamed file exactly at the size cap", async () => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array(sisterFileMaxBytes), { headers: { "content-type": "application/pdf" } })));
+    expect((await sisterGetFile("/dokumen/abc/download")).body.byteLength).toBe(sisterFileMaxBytes);
+  });
+
+  it("reassembles multiple stream chunks without changing file bytes", async () => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok" });
+    const stream = new ReadableStream<Uint8Array>({ start(controller) {
+      controller.enqueue(new Uint8Array([37, 80]));
+      controller.enqueue(new Uint8Array([68, 70]));
+      controller.close();
+    } });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(stream, { headers: { "content-type": "application/pdf" } })));
+    expect([...new Uint8Array((await sisterGetFile("/dokumen/abc/download")).body)]).toEqual([37, 80, 68, 70]);
+  });
+
+  it("cancels rejected response bodies without reading them", async () => {
+    getSisterConfigMock.mockReturnValue(liveConfig);
+    getSisterTokenMock.mockResolvedValue({ token: "tok" });
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({ cancel });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(stream, {
+      headers: { "content-type": "application/pdf", "content-length": String(sisterFileMaxBytes + 1) },
+    })));
+    await expect(sisterGetFile("/dokumen/abc/download")).rejects.toBeInstanceOf(SisterContractError);
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
   it("keeps the HTTP status of a failed download", async () => {
     getSisterConfigMock.mockReturnValue(liveConfig);
     getSisterTokenMock.mockResolvedValue({ token: "tok", role: "WS-BASIC", expires_at: 0 });

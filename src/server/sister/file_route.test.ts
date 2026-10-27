@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+const accessMock = vi.hoisted(() => vi.fn().mockResolvedValue(true));
+vi.mock("./replica/file_access_repository", () => ({ hasSisterFileAccess: accessMock }));
+
 const auditMock = vi.hoisted(() => vi.fn().mockResolvedValue({ persisted: true }));
 vi.mock("@/server/security/audit", () => ({ recordSecurityAuditEvent: auditMock }));
 
@@ -75,6 +78,44 @@ describe("handleSisterFileRequest", () => {
     expect(auditMock).toHaveBeenCalledWith(
       expect.objectContaining({ event_type: "sister_document_download", target_id: id }),
     );
+  });
+
+  it.each(["foto", "dokumen"] as const)("blocks unowned %s without fetching upstream", async (kind) => {
+    const checkAccess = vi.fn().mockResolvedValue(false);
+    const loadFile = vi.fn(pdf);
+    const response = await handleSisterFileRequest({
+      kind, id, request: request(), loadUser: user("ADMIN"), checkAccess, loadFile,
+    });
+    expect(checkAccess).toHaveBeenCalledWith(kind, id);
+    expect(response.status).toBe(404);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(loadFile).not.toHaveBeenCalled();
+    expect(auditMock).toHaveBeenCalledWith(expect.objectContaining({
+      event_type: "authorization_denied",
+      metadata: { reason: "resource_not_in_active_integration" },
+    }));
+  });
+
+  it("fails closed when the ownership lookup fails without leaking database errors", async () => {
+    const loadFile = vi.fn(pdf);
+    const response = await handleSisterFileRequest({
+      kind: "dokumen", id, request: request(), loadUser: user("ADMIN"), loadFile,
+      checkAccess: async () => { throw new Error("private database details"); },
+    });
+    expect(response.status).toBe(503);
+    expect(await response.text()).not.toContain("private database details");
+    expect(loadFile).not.toHaveBeenCalled();
+  });
+
+  it("checks roles and UUIDs before looking up ownership", async () => {
+    const checkAccess = vi.fn().mockResolvedValue(true);
+    await handleSisterFileRequest({
+      kind: "dokumen", id, request: request(), loadUser: user("VIEWER"), checkAccess,
+    });
+    await handleSisterFileRequest({
+      kind: "foto", id: "invalid", request: request(), loadUser: user("ADMIN"), checkAccess,
+    });
+    expect(checkAccess).not.toHaveBeenCalled();
   });
 
   it("maps SISTER failures without leaking details", async () => {

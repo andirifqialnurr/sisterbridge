@@ -9,11 +9,12 @@ import { ChartCard } from "@/component/widget/chart_card";
 import { DataTable, type DataTableColumn } from "@/component/widget/data_table";
 import { BkdSemesterChart, LuaranTrendChart, StatusBarChart } from "@/modules/overview/widget/overview_charts";
 import { useTRPC } from "@/lib/trpc";
+import { parsePageParam } from "@/lib/pagination";
 import { ErrorState, formatValue, PageError, useUrlState } from "./business_shared";
 
 type Group = { jenis_sdm: string; status_aktif: string; total: number } | { module: string; tahun: number; total: number; participations: number } | { id_smt: string; simpulan: string; total: number };
-type Row = { id_sdm: string; nama_sdm: string | null; nidn: string | null; nip?: string | null; jenis_sdm?: string; status_aktif?: string; id?: string; id_smt?: string; simpulan?: string | null; tahun?: number };
-type ReportData = { groups: Group[]; rows: Row[]; total: number; page: number; per_page: number; source: { scope_count: number; failed_scope_count: number; oldest_fetch_at: string | null } };
+type Row = { id_sdm: string; nama_sdm: string | null; nidn: string | null; nip?: string | null; jenis_sdm?: string; status_aktif?: string; id?: string; id_smt?: string; simpulan?: string | null; tahun?: number; judul?: string | null; owner_available?: boolean };
+type ReportData = { groups: Group[]; rows: Row[]; total: number; page: number; per_page: number; source: { scope_count: number; failed_scope_count: number; not_found_scope_count: number; oldest_fetch_at: string | null } };
 type ReportKind = "sdm" | "bkd" | "luaran";
 const kinds = [{ value: "sdm", label: "SDM" }, { value: "bkd", label: "BKD" }, { value: "luaran", label: "Luaran" }];
 const labelModule = (key: string) => ({ publikasi: "Publikasi", penelitian: "Penelitian", pengabdian: "Pengabdian" }[key] ?? key);
@@ -24,7 +25,7 @@ export function BusinessReportPage() {
 
   const state = useUrlState();
   const kind: ReportKind = ["sdm", "bkd", "luaran"].includes(state.values.jenis ?? "") ? state.values.jenis as ReportKind : "sdm";
-  const page = Math.max(1, Number(state.values.page) || 1);
+  const page = parsePageParam(state.values.page);
   const query = useQuery({ ...trpc.business.report.queryOptions({
     kind, jenis_sdm: state.values.jenis_sdm, status_aktif: state.values.status_aktif,
     module: state.values.module as "publikasi" | "penelitian" | "pengabdian" | undefined,
@@ -38,7 +39,7 @@ export function BusinessReportPage() {
         <p className="text-xs text-[hsl(var(--color-muted))]">Angka dihitung dari scope replika PT. Scope yang gagal ditampilkan sebagai keterbatasan sumber, bukan angka nol.</p>
         {query.error && <ErrorState message={query.error.message} title="Laporan belum dapat dimuat" />}
         {query.isPending && <PageError error={null} pending title="Laporan" />}
-        {data && <p className="text-xs text-[hsl(var(--color-muted))]">Sumber: {data.source.scope_count.toLocaleString("id-ID")} scope; {data.source.failed_scope_count.toLocaleString("id-ID")} gagal{data.source.oldest_fetch_at ? " · data tertua " + new Date(data.source.oldest_fetch_at).toLocaleString("id-ID") : ""}.</p>}
+        {data && <p className="text-xs text-[hsl(var(--color-muted))]">Sumber: {data.source.scope_count.toLocaleString("id-ID")} scope; {data.source.failed_scope_count.toLocaleString("id-ID")} status non-200 ({data.source.not_found_scope_count.toLocaleString("id-ID")} HTTP 404){data.source.oldest_fetch_at ? " · data tertua " + new Date(data.source.oldest_fetch_at).toLocaleString("id-ID") : ""}.</p>}
 
         {data && kind === "sdm" && <SdmReport data={data} state={state} page={page} />}
         {data && kind === "luaran" && <OutputReport data={data} state={state} page={page} />}
@@ -92,10 +93,10 @@ function OutputReport({ data, state, page }: { data: ReportData; state: ReturnTy
       { key: "open", header: "", render: (row) => <Link className="font-semibold text-[hsl(var(--color-primary))]" href={"/laporan?jenis=luaran&module=" + row.module + "&tahun=" + row.tahun}>Buka daftar</Link> },
     ] as DataTableColumn<Extract<Group, { module: string }>>[]} empty="Belum ada data luaran dengan tahun tercatat." getRowKey={(row) => row.module + row.tahun} rows={groups} />
     {filtered && <DataTable caption="Record luaran" columns={[
-      { key: "sdm", header: "ID SDM", render: (row) => formatValue(row.id_sdm) },
-
+      { key: "title", header: "Kegiatan", render: (row) => formatValue(row.judul) },
+      { key: "sdm", header: "SDM sumber", render: (row) => row.nama_sdm ?? (row.owner_available ? "Nama SDM belum tersedia" : "SDM belum terindeks") },
       { key: "year", header: "Tahun", render: (row) => row.tahun },
-      { key: "open", header: "", render: (row) => row.id && row.id_sdm ? <Link className="font-semibold text-[hsl(var(--color-primary))]" href={"/" + state.values.module + "/" + encodeURIComponent(row.id) + "?id_sdm=" + encodeURIComponent(row.id_sdm)}>Lihat record</Link> : "Detail tidak tersedia" },
+      { key: "open", header: "", render: (row) => row.id && row.id_sdm && row.owner_available === true ? <Link className="font-semibold text-[hsl(var(--color-primary))]" href={"/" + state.values.module + "/" + encodeURIComponent(row.id) + "?id_sdm=" + encodeURIComponent(row.id_sdm)}>Lihat record</Link> : "Detail belum tersedia" },
     ] as DataTableColumn<Row>[]} empty="Tidak ada record pada filter ini." getRowKey={(row) => row.id_sdm + row.id} rows={data.rows} pagination={<ReportPagination page={page} total={data.total} perPage={data.per_page} onPage={(value) => state.set({ page: String(value) })} />} />}
   </div>;
 }
@@ -118,12 +119,12 @@ function BkdReport({ data, state, page }: { data: ReportData; state: ReturnType<
       { key: "name", header: "Nama SDM", render: (row) => formatValue(row.nama_sdm) },
       { key: "nidn", header: "NIDN", render: (row) => formatValue(row.nidn) },
       { key: "conclusion", header: "Simpulan", render: (row) => row.simpulan ?? "Tidak tersedia" },
-      { key: "open", header: "", render: (row) => row.id_smt ? <Link className="font-semibold text-[hsl(var(--color-primary))]" href={"/bkd?id_sdm=" + encodeURIComponent(row.id_sdm) + "&id_smt=" + encodeURIComponent(row.id_smt) + "&tab=laporan_akhir_bkd"}>Lihat laporan</Link> : "Semester tidak tersedia" },
+      { key: "open", header: "", render: (row) => row.id_smt && row.owner_available === true ? <Link className="font-semibold text-[hsl(var(--color-primary))]" href={"/bkd?id_sdm=" + encodeURIComponent(row.id_sdm) + "&id_smt=" + encodeURIComponent(row.id_smt) + "&tab=laporan_akhir_bkd"}>Lihat laporan</Link> : "Laporan belum tersedia" },
     ] as DataTableColumn<Row>[]} empty="Tidak ada laporan pada filter ini." getRowKey={(row) => row.id_sdm + (row.id_smt ?? "")} rows={data.rows} pagination={<ReportPagination page={page} total={data.total} perPage={data.per_page} onPage={(value) => state.set({ page: String(value) })} />} />}
   </div>;
 }
 function ReportPagination({ page, perPage, total, onPage }: { page: number; perPage: number; total: number; onPage: (page: number) => void }) {
 
-  return <div className="flex items-center justify-between"><span className="text-xs text-[hsl(var(--color-muted))]">{total.toLocaleString("id-ID")} data</span><Pagination page={page} pageCount={Math.max(1, Math.ceil(total / perPage))} onPageChange={onPage} /></div>;
+  return <div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{total.toLocaleString("id-ID")} data</span><Pagination page={page} pageCount={Math.max(1, Math.ceil(total / perPage))} onPageChange={onPage} /></div>;
 }
 

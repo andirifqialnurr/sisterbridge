@@ -5,19 +5,24 @@ import { prisma } from "@/server/db/prisma";
 export type SdmReportGroup = { jenis_sdm: string; status_aktif: string; total: number };
 export type SdmReportRow = { id_sdm: string; nama_sdm: string | null; nidn: string | null; nip: string | null; jenis_sdm: string; status_aktif: string };
 export type OutputReportGroup = { module: string; tahun: number; total: number; participations: number };
-export type OutputReportRow = { id: string; id_sdm: string | null; tahun: number };
+export type OutputReportRow = { id: string; id_sdm: string | null; judul: string | null; nama_sdm: string | null; owner_available: boolean; tahun: number };
 export type BkdReportGroup = { id_smt: string; simpulan: string; total: number };
-export type BkdReportRow = { id_sdm: string; nama_sdm: string | null; nidn: string | null; id_smt: string; simpulan: string | null };
+export type BkdReportRow = { id_sdm: string; nama_sdm: string | null; nidn: string | null; id_smt: string; simpulan: string | null; owner_available: boolean };
 export type ScopeReportGroup = { endpoint: string; total: number; failed: number; not_found: number; last_fetched_at: Date | null };
 export type ScopeIssue = { endpoint: string; scope_key: string; id_sdm: string | null; status: number; code: string | null; last_fetched_at: Date; last_success_at: Date | null };
 export type WarningSyncRun = { id: string; scope: string; status: string; requestCount: number; errorCount: number; startedAt: Date; finishedAt: Date | null };
 
 type Client = Pick<PrismaClient, "$queryRawUnsafe" | "sisterSyncRun">;
 const outputSource = {
-  publikasi: { view: "publikasi_list", year: "extract(year FROM tanggal)::int" },
-  penelitian: { view: "penelitian_list", year: "tahun_pelaksanaan::int" },
-  pengabdian: { view: "pengabdian_list", year: "tahun_pelaksanaan::int" },
+  publikasi: { view: "publikasi_list", yearColumn: "tanggal", dateYear: true },
+  penelitian: { view: "penelitian_list", yearColumn: "tahun_pelaksanaan", dateYear: false },
+  pengabdian: { view: "pengabdian_list", yearColumn: "tahun_pelaksanaan", dateYear: false },
 } as const;
+
+function outputYear(source: typeof outputSource[keyof typeof outputSource], alias = "") {
+  const column = `${alias}${source.yearColumn}`;
+  return source.dateYear ? `extract(year FROM ${column})::int` : `${column}::int`;
+}
 
 export class PrismaBusinessReportingRepository {
   constructor(private readonly client: Client = prisma) {}
@@ -82,12 +87,16 @@ export class PrismaBusinessReportingRepository {
 
   async outputRows(integrationId: string, module: keyof typeof outputSource, year: number, limit: number, offset: number) {
     const source = outputSource[module];
+    const yearSql = outputYear(source, "p.");
     return this.client.$queryRawUnsafe<OutputReportRow[]>(
-      `SELECT id, id_sdm, tahun FROM (
-         SELECT DISTINCT ON (id) id, r_id_sdm AS id_sdm, ${source.year} AS tahun
-           FROM replica.${source.view}
-          WHERE r_integration_id = $1::uuid AND ${source.year} = $2
-          ORDER BY id, r_id_sdm
+      `SELECT id, id_sdm, judul, nama_sdm, owner_available, tahun FROM (
+         SELECT DISTINCT ON (p.id) p.id, p.r_id_sdm AS id_sdm, p.judul,
+                s.nama_sdm, s.id_sdm IS NOT NULL AS owner_available, ${yearSql} AS tahun
+           FROM replica.${source.view} p
+           LEFT JOIN replica.referensi_sdm s ON s.r_integration_id = p.r_integration_id
+            AND s.r_scope_key = '-' AND s.id_sdm::text = p.r_id_sdm
+          WHERE p.r_integration_id = $1::uuid AND ${yearSql} = $2 AND p.id IS NOT NULL
+          ORDER BY p.id, (s.id_sdm IS NULL), p.r_fetched_at DESC, p.r_id_sdm, p.r_scope_key
        ) unique_activities
        ORDER BY id LIMIT $3 OFFSET $4`,
       integrationId,
@@ -101,7 +110,7 @@ export class PrismaBusinessReportingRepository {
     const source = outputSource[module];
     const rows = await this.client.$queryRawUnsafe<{ total: number }[]>(
       `SELECT count(DISTINCT id)::int AS total FROM replica.${source.view}
-        WHERE r_integration_id = $1::uuid AND ${source.year} = $2`,
+        WHERE r_integration_id = $1::uuid AND ${outputYear(source)} = $2`,
       integrationId,
       year,
     );
@@ -122,12 +131,17 @@ export class PrismaBusinessReportingRepository {
   async bkdRows(integrationId: string, semester: string, simpulan: string | null, limit: number, offset: number) {
     return this.client.$queryRawUnsafe<BkdReportRow[]>(
       `SELECT b.r_id_sdm AS id_sdm, s.nama_sdm, s.nidn, b.id_smt,
-              COALESCE(NULLIF(btrim(b.simpulan_asesor), ''), 'Tidak tersedia') AS simpulan
-         FROM replica.bkd_laporan_akhir_bkd b
+              b.simpulan, s.id_sdm IS NOT NULL AS owner_available
+         FROM (
+           SELECT DISTINCT ON (r_id_sdm) r_id_sdm, id_smt,
+                  COALESCE(NULLIF(btrim(simpulan_asesor), ''), 'Tidak tersedia') AS simpulan
+             FROM replica.bkd_laporan_akhir_bkd
+            WHERE r_integration_id = $1::uuid AND id_smt = $2
+              AND ($3::text IS NULL OR COALESCE(NULLIF(btrim(simpulan_asesor), ''), 'Tidak tersedia') = $3)
+            ORDER BY r_id_sdm, r_fetched_at DESC, r_item_key, r_scope_key
+         ) b
          LEFT JOIN replica.referensi_sdm s
-           ON s.r_integration_id = b.r_integration_id AND s.id_sdm::text = b.r_id_sdm
-        WHERE b.r_integration_id = $1::uuid AND b.id_smt = $2
-          AND ($3::text IS NULL OR COALESCE(NULLIF(btrim(b.simpulan_asesor), ''), 'Tidak tersedia') = $3)
+           ON s.r_integration_id = $1::uuid AND s.r_scope_key = '-' AND s.id_sdm::text = b.r_id_sdm
         ORDER BY s.nama_sdm NULLS LAST, b.r_id_sdm
         LIMIT $4 OFFSET $5`,
       integrationId,
@@ -163,14 +177,22 @@ export class PrismaBusinessReportingRepository {
     );
   }
 
-  async scopeIssues(integrationId: string) {
+  async countScopeIssues(integrationId: string) {
+    const rows = await this.client.$queryRawUnsafe<{ total: number }[]>(
+      `SELECT count(*)::int AS total FROM public.sister_replica_scope
+        WHERE integration_id = $1::uuid AND last_status <> 200`, integrationId,
+    );
+    return rows[0]?.total ?? 0;
+  }
+
+  async scopeIssues(integrationId: string, limit = 20, offset = 0) {
     return this.client.$queryRawUnsafe<ScopeIssue[]>(
       `SELECT endpoint, scope_key, id_sdm, last_status AS status, last_error_code AS code,
               last_fetched_at, last_success_at
          FROM public.sister_replica_scope
         WHERE integration_id = $1::uuid AND last_status <> 200
-        ORDER BY last_fetched_at DESC LIMIT 201`,
-      integrationId,
+        ORDER BY last_fetched_at DESC, endpoint, scope_key LIMIT $2 OFFSET $3`,
+      integrationId, limit, offset,
     );
   }
 

@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { cn } from "@/lib/cn";
+import { getNextEnabledTabIndex } from "./tab_navigation";
 
 export type TabItem = {
   value: string;
@@ -48,23 +49,10 @@ export function Tabs({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    let nextIndex: number | undefined;
-
-    if (event.key === "ArrowRight") nextIndex = (index + 1) % items.length;
-    if (event.key === "ArrowLeft") nextIndex = (index - 1 + items.length) % items.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = items.length - 1;
-
-    if (nextIndex === undefined) return;
-
+    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
-    for (let offset = 0; offset < items.length; offset += 1) {
-      const candidate = (nextIndex + offset) % items.length;
-      if (!items[candidate]?.disabled) {
-        focusTab(candidate);
-        return;
-      }
-    }
+    const nextIndex = getNextEnabledTabIndex(items, index, event.key);
+    if (nextIndex !== null) focusTab(nextIndex);
   }
 
   return (

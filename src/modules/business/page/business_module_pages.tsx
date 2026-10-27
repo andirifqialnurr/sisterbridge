@@ -10,9 +10,12 @@ import { Select } from "@/component/ui/select";
 import { State } from "@/component/ui/state";
 import { Tabs } from "@/component/ui/tabs";
 import { DataTable, type DataTableColumn } from "@/component/widget/data_table";
+import { TableSearch } from "@/component/widget/table_search";
+import { DokumenDownloadLink } from "@/component/widget/sister_file_links";
 import { getJelajahModule, jelajahModules } from "@/modules/jelajah/api/jelajah_catalog";
 import { useTRPC } from "@/lib/trpc";
-import { asBusinessRows, emptyDescription, ErrorState, formatValue, labelFor, PageError, rowColumns, SdmPicker, SourceLine, useUrlState, type BusinessRow, type BusinessSection } from "./business_shared";
+import { parsePageParam } from "@/lib/pagination";
+import { asBusinessRows, emptyDescription, ErrorState, formatValue, labelFor, PageError, rowColumns, SdmPicker, SourceLine, useUrlState, sectionPagesFrom, type BusinessRow, type BusinessSection } from "./business_shared";
 
 const profileModules = jelajahModules.filter((module) => module.kind === "sdm_object");
 function recordLabel(values: Record<string, unknown> | undefined, fallback: string) {
@@ -37,7 +40,7 @@ export function SdmDirectoryPage() {
   const state = useUrlState();
   const [draft, setDraft] = useState("");
   useEffect(() => setDraft(state.values.search ?? ""), [state.values.search]);
-  const page = Math.max(1, Number(state.values.page) || 1);
+  const page = parsePageParam(state.values.page);
   const query = useQuery({ ...trpc.business.sdm.queryOptions({ search: state.values.search ?? "", page, per_page: 20 }), enabled: state.ready });
   const columns: DataTableColumn<BusinessRow>[] = [
     { key: "name", header: "Nama SDM", render: (row) => <Link className="font-semibold text-[hsl(var(--color-primary))] hover:underline" href={`/pegawai/${encodeURIComponent(String(row.values.id_sdm ?? row.id))}${state.values.tab ? `?tab=${encodeURIComponent(state.values.tab)}` : ""}`}>{formatValue(row.values.nama_sdm ?? row.values.nama)}</Link> },
@@ -46,14 +49,10 @@ export function SdmDirectoryPage() {
     { key: "type", header: "Jenis SDM", render: (row) => formatValue(row.values.jenis_sdm ?? row.values.nama_jenis_sdm) },
     { key: "status", header: "Status", render: (row) => formatValue(row.values.nama_status_aktif ?? row.values.status_aktif) },
   ];
-  const submit = (event: FormEvent) => { event.preventDefault(); state.set({ search: draft.trim() || null, page: "1" }); };
+  const activeProfile = profileModules.find((entry) => entry.key === state.values.tab);
   return (
-    <PageShell activeLabel="Pegawai" breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: "Pegawai" }]}>
-      <form className="flex flex-wrap items-end gap-2" onSubmit={submit}>
-        <label className="min-w-[240px] flex-1"><span className="mb-1 block text-xs font-semibold text-[hsl(var(--color-muted))]">Cari nama, NIDN, NIP, atau NUPTK</span><input className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm outline-none focus:border-[hsl(var(--color-primary))]" onChange={(event) => setDraft(event.target.value)} value={draft} /></label>
-        <button className="h-10 rounded-lg bg-[hsl(var(--color-primary))] px-4 text-sm font-semibold text-white" type="submit">Cari</button>
-        {query.data && <SourceLine source={query.data.source} />}
-      </form>
+    <PageShell actions={<TableSearch label="Cari nama / NIDN / NIP" value={draft} onValueChange={setDraft} onSearch={() => state.set({ search: draft.trim() || null, page: "1" })} onClear={state.values.search ? () => state.set({ search: null, page: "1" }) : undefined} />} activeLabel={activeProfile?.label ?? "Pegawai"} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: "Pegawai" }]}>
+      {query.data && <SourceLine source={query.data.source} />}
       {query.error && <ErrorState message={query.error.message} title="Daftar SDM belum dapat dimuat" />}
       {query.isPending && <PageError error={null} pending title="Daftar SDM belum dapat dimuat" />}
       {query.data && <DataTable caption="Daftar SDM PT" columns={columns} empty={emptyDescription(query.data.source)} getRowKey={(row) => row.row_key ?? row.id} rows={query.data.rows} pagination={<div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{query.data.total.toLocaleString("id-ID")} SDM</span><Pagination page={page} pageCount={Math.ceil(query.data.total / query.data.per_page)} onPageChange={(next) => state.set({ page: String(next) })} /></div>} />}
@@ -67,8 +66,8 @@ export function SdmProfilePage({ idSdm, initialTab = "profil" }: { idSdm: string
   const state = useUrlState();
   const tab = profileModules.some((module) => module.key === state.values.tab) ? state.values.tab : initialTab;
   const current = getJelajahModule(tab) ?? profileModules[0];
-  const page = Math.max(1, Number(state.values.page) || 1);
-  const query = useQuery({ ...trpc.business.rows.queryOptions({ module: current.key, id_sdm: idSdm, page, per_page: 20, search: "" }), enabled: state.ready });
+  const page = parsePageParam(state.values.page);
+  const query = useQuery({ ...trpc.business.rows.queryOptions({ module: current.key, id_sdm: idSdm, page, per_page: 20, search: "", section_pages: sectionPagesFrom(state.values) }), enabled: state.ready });
   const row = query.data?.rows[0];
   const scalar = query.data?.columns.filter((column) => column.type !== "jsonb") ?? [];
   return (
@@ -87,7 +86,7 @@ export function SdmProfilePage({ idSdm, initialTab = "profil" }: { idSdm: string
           {!query.isPending && !query.error && !row && !query.data?.source && <State description={emptyDescription(null)} title="Replika belum tersedia" tone="unavailable" />}
           {row && current.key !== "bidang_ilmu_sdm" && <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">{scalar.map((column) => <div className="min-w-0 border-b border-[hsl(var(--color-border))] pb-3" key={column.key}><dt className="text-xs font-medium text-[hsl(var(--color-muted))]">{labelFor(column.key)}</dt><dd className="mt-1 break-words text-sm">{formatValue(row.values[column.key])}</dd></div>)}</dl>}
           {current.key === "bidang_ilmu_sdm" && query.data && <DataTable caption="Bidang ilmu SDM" columns={rowColumns(current.key, query.data.columns, idSdm)} rows={query.data.rows} getRowKey={(item) => item.row_key ?? item.id} empty={emptyDescription(query.data.source)} pagination={<Pagination page={page} pageCount={Math.ceil(query.data.total / query.data.per_page)} onPageChange={(next) => state.set({ page: String(next) })} />} />}
-          {row && query.data?.related.map((section) => <section className="space-y-3" key={section.key}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-sm font-bold">{section.label}</h2><SourceLine source={section.source} /></div><DataTable caption={section.label} columns={section.columns.map((column) => ({ key: column.key, header: labelFor(column.key), render: (item: BusinessRow) => formatValue(item.values[column.key]) }))} empty="Tidak ada record terkait." getRowKey={(item) => item.id} rows={section.rows} pagination={<div className="flex items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{section.total.toLocaleString("id-ID")} data</span><Pagination page={section.page} pageCount={Math.max(1, Math.ceil(section.total / section.per_page))} onPageChange={(next) => state.set({ page: String(next) })} /></div>} /></section>)}
+          {row && query.data?.related.map((section) => <section className="space-y-3" key={section.key}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-sm font-bold">{section.label}</h2><SourceLine source={section.source} /></div><DataTable caption={section.label} columns={section.columns.map((column) => ({ key: column.key, header: labelFor(column.key), render: (item: BusinessRow) => formatValue(item.values[column.key]) }))} empty="Tidak ada record terkait." getRowKey={(item) => item.id} rows={section.rows} pagination={<div className="flex items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{section.total.toLocaleString("id-ID")} data</span><Pagination page={section.page} pageCount={Math.max(1, Math.ceil(section.total / section.per_page))} onPageChange={(next) => state.set({ [`page_section_${section.key}`]: String(next) })} /></div>} /></section>)}
           {current.note && <p className="text-xs text-[hsl(var(--color-muted))]">{current.note}</p>}
         </div>
       </Tabs>
@@ -125,15 +124,16 @@ function BusinessListPage({ moduleKey }: { moduleKey: string }) {
   const [draft, setDraft] = useState("");
   useEffect(() => setDraft(state.values.search ?? ""), [state.values.search]);
   const idSdm = state.values.id_sdm ?? "";
-  const page = Math.max(1, Number(state.values.page) || 1);
+  const page = parsePageParam(state.values.page);
   const scoped = catalogEntry.kind !== "referensi";
   const query = useQuery({ ...trpc.business.rows.queryOptions({ module: catalogEntry.key, id_sdm: idSdm || undefined, id_smt: state.values.id_smt, search: state.values.search ?? "", page, per_page: 20 }), enabled: state.ready });
-  const submit = (event: FormEvent) => { event.preventDefault(); state.set({ search: draft.trim() || null, page: "1" }); };
-  return <PageShell actions={scoped ? <SdmPicker optional enabled={state.ready} onChange={(id) => state.set({ id_sdm: id || null, page: "1" })} value={idSdm} /> : undefined} activeLabel={catalogEntry.label} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: catalogEntry.label }]}>
+  return <PageShell actions={<div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2">
+    <TableSearch label="Cari pada modul" value={draft} onValueChange={setDraft} onSearch={() => state.set({ search: draft.trim() || null, page: "1" })} onClear={state.values.search ? () => state.set({ search: null, page: "1" }) : undefined} />
+    {scoped && <SdmPicker optional enabled={state.ready} onChange={(id) => state.set({ id_sdm: id || null, page: "1" })} value={idSdm} />}
+  </div>} activeLabel={catalogEntry.label} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: catalogEntry.label }]}>
     {catalogEntry.note && <p className="text-xs text-[hsl(var(--color-muted))]">{catalogEntry.note}</p>}
     {<>
       {query.data && <SourceLine source={query.data.source} />}
-      <form className="flex flex-wrap items-end gap-2" onSubmit={submit}><label className="min-w-[220px] flex-1"><span className="mb-1 block text-xs font-semibold text-[hsl(var(--color-muted))]">Cari pada kolom modul</span><input className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm outline-none focus:border-[hsl(var(--color-primary))]" onChange={(event) => setDraft(event.target.value)} value={draft} /></label><button className="h-10 rounded-lg bg-[hsl(var(--color-primary))] px-4 text-sm font-semibold text-white" type="submit">Cari</button>{state.values.search && <button className="h-10 px-3 text-sm text-[hsl(var(--color-muted))]" onClick={() => state.set({ search: null, page: "1" })} type="button">Hapus filter</button>}</form>
       {query.error && <ErrorState message={query.error.message} title={`${catalogEntry.label} belum dapat dimuat`} />}
       {query.isPending && <PageError error={null} pending title={`Memuat ${catalogEntry.label}`} />}
       {query.data && <DataTable caption={catalogEntry.label} columns={rowColumns(catalogEntry.key, query.data.columns, idSdm)} empty={emptyDescription(query.data.source)} getRowKey={(row) => row.row_key ?? row.id} rows={query.data.rows} pagination={<div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{query.data.total.toLocaleString("id-ID")} data</span><Pagination page={page} pageCount={Math.ceil(query.data.total / query.data.per_page)} onPageChange={(next) => state.set({ page: String(next) })} /></div>} />}
@@ -146,13 +146,13 @@ function BusinessDetailPage({ moduleKey, itemId }: { moduleKey: string; itemId: 
   const catalogEntry = getJelajahModule(moduleKey)!;
   const state = useUrlState();
   const idSdm = state.values.id_sdm ?? "";
-  const query = useQuery({ ...trpc.business.detail.queryOptions({ module: catalogEntry.key, id: itemId, id_sdm: idSdm || undefined, page: Math.max(1, Number(state.values.page) || 1), per_page: 20 }), enabled: state.ready && (catalogEntry.kind === "referensi" || Boolean(idSdm)) });
+  const query = useQuery({ ...trpc.business.detail.queryOptions({ module: catalogEntry.key, id: itemId, id_sdm: idSdm || undefined, section_pages: sectionPagesFrom(state.values), per_page: 20 }), enabled: state.ready && (catalogEntry.kind === "referensi" || Boolean(idSdm)) });
   const detailValues = query.data?.sections.find((section) => section.key === "detail")?.rows[0]?.values;
   return <PageShell actions={catalogEntry.kind !== "referensi" ? <SdmPicker enabled={state.ready} onChange={(id) => state.set({ id_sdm: id || null, page: "1" })} value={idSdm} /> : undefined} activeLabel={catalogEntry.label} detailLabel={recordLabel(detailValues, itemId)} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { href: catalogEntry.path, label: catalogEntry.label }, { label: "Detail" }]}>
     {catalogEntry.kind !== "referensi" && !idSdm && <State description="Pilih SDM yang memiliki record ini." title="Pilih SDM" tone="unavailable" />}
     {query.error && <ErrorState message={query.error.message} title={`Detail ${catalogEntry.label} belum dapat dimuat`} />}
     {state.ready && query.isPending && (catalogEntry.kind === "referensi" || Boolean(idSdm)) && <PageError error={null} pending title={`Memuat detail ${catalogEntry.label}`} />}
-    {query.data?.sections.map((section) => <DetailSection key={section.key} moduleKey={catalogEntry.key} itemId={itemId} section={section} onPageChange={(next) => state.set({ page: String(next) })} />)}
+    {query.data?.sections.map((section) => <DetailSection key={section.key} moduleKey={catalogEntry.key} itemId={itemId} section={section} onPageChange={(next) => state.set({ [`page_section_${section.key}`]: String(next) })} />)}
   </PageShell>;
 }
 
@@ -161,14 +161,14 @@ function DetailSection({ moduleKey, itemId, section, onPageChange = () => {} }: 
   const isDetail = section.key === "detail";
   const download = moduleKey === "dokumen" || section.label.toLowerCase().includes("dokumen");
   const columns: DataTableColumn<BusinessRow>[] = section.columns.map((column) => ({ key: column.key, header: labelFor(column.key), render: (row) => formatValue(row.values[column.key]) }));
-  if (download && section.rows.some((row) => documentDownloadId(row))) columns.push({ key: "file", header: "", className: "w-24 text-right", render: (row) => { const id = documentDownloadId(row); return id ? <a className="font-semibold text-[hsl(var(--color-primary))] hover:underline" href={`/api/sister/file/dokumen/${encodeURIComponent(id)}`} rel="noreferrer" target="_blank">Unduh</a> : <span className="text-xs text-[hsl(var(--color-muted))]">—</span>; } });
+  if (download && section.rows.some((row) => documentDownloadId(row))) columns.push({ key: "file", header: "", className: "w-24 text-right", render: (row) => { const id = documentDownloadId(row); return id ? <DokumenDownloadLink id={id} /> : <span className="text-xs text-[hsl(var(--color-muted))]">—</span>; } });
   return <section className="space-y-3"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-sm font-bold">{section.label}</h2><SourceLine source={section.source} /></div>
     {isDetail && primary && <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">{section.columns.map((column) => <div className="min-w-0 border-b border-[hsl(var(--color-border))] pb-3" key={column.key}><dt className="text-xs font-medium text-[hsl(var(--color-muted))]">{labelFor(column.key)}</dt><dd className="mt-1 break-words text-sm">{formatValue(primary.values[column.key])}</dd></div>)}</dl>}
     {isDetail && primary && download && !isUuid(itemId) && <State description="Metadata ini tidak memiliki ID file yang valid untuk diunduh." title="Unduhan tidak tersedia" tone="unavailable" />}
     {isDetail && !primary && section.source?.status === 404 && <State description={emptyDescription(section.source)} title="Detail tidak ditemukan" tone="unavailable" />}
     {isDetail && !primary && section.source?.status !== 404 && <State description={emptyDescription(section.source)} title="Detail belum tersedia" tone={section.source && section.source.status !== 200 ? "error" : "unavailable"} />}
     {!isDetail && <DataTable caption={section.label} columns={columns} empty={emptyDescription(section.source)} getRowKey={(row) => row.id} rows={section.rows} pagination={<div className="flex items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{section.total.toLocaleString("id-ID")} data</span><Pagination page={section.page} pageCount={Math.max(1, Math.ceil(section.total / section.per_page))} onPageChange={onPageChange} /></div>} />}
-    {isDetail && primary && download && isUuid(itemId) && <a className="inline-flex h-9 items-center rounded-lg border border-[hsl(var(--color-border))] px-3 text-sm font-semibold text-[hsl(var(--color-primary))]" href={`/api/sister/file/dokumen/${encodeURIComponent(itemId)}`} rel="noreferrer" target="_blank">Unduh dokumen</a>}
+    {isDetail && primary && download && isUuid(itemId) && <DokumenDownloadLink id={itemId} label="Unduh dokumen" />}
   </section>;
 }
 
@@ -183,6 +183,8 @@ function LiveSearchPage({ moduleKey }: { moduleKey: string }) {
   const query = useQuery({ ...trpc.business.live_search.queryOptions({ module: catalogEntry.key, search }), enabled: state.ready && hasSearch });
   const submit = (event: FormEvent) => { event.preventDefault(); state.set({ ...Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, value.trim() || null])), page: null }); };
   const rows = asBusinessRows(query.data?.data);
+  const page = parsePageParam(state.values.page);
+  const pageRows = rows.slice((page - 1) * 20, page * 20);
   const resultColumns: DataTableColumn<BusinessRow>[] = [...new Set(rows.flatMap((row) => Object.keys(row.values)))].filter((key) => !key.startsWith("r_")).map((key) => ({ key, header: labelFor(key), render: (row) => formatValue(row.values[key]) }));
   if (catalogEntry.detailPath) resultColumns.push({ key: "detail", header: "", render: (row: BusinessRow) => row.values.id ? <Link className="font-semibold text-[hsl(var(--color-primary))]" href={catalogEntry.detailPath!.replace("{id}", encodeURIComponent(row.id))}>Lihat detail</Link> : "" });
   return <PageShell activeLabel={catalogEntry.label} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { href: "/referensi", label: "Referensi" }, { label: catalogEntry.label }]}>
@@ -190,7 +192,7 @@ function LiveSearchPage({ moduleKey }: { moduleKey: string }) {
     {catalogEntry.note && <p className="text-xs text-[hsl(var(--color-muted))]">{catalogEntry.note}</p>}
     {!hasSearch && <State description="Masukkan kriteria pencarian untuk meminta hasil langsung dari SISTER." title="Pencarian langsung" tone="unavailable" />}
     {query.error && <ErrorState message={query.error.message} title="Pencarian SISTER gagal" />}{query.isPending && hasSearch && <PageError error={null} pending title="Pencarian SISTER" />}
-    {query.data && <><SourceLine source={{ status: 200, error_code: null, item_count: query.data.item_count, last_fetched_at: query.data.fetched_at, last_success_at: query.data.fetched_at }} /><DataTable caption={catalogEntry.label} columns={resultColumns} empty="Tidak ada hasil dari SISTER." getRowKey={(row) => row.id} rows={rows} /></>}
+    {query.data && <><SourceLine source={{ status: 200, error_code: null, item_count: query.data.item_count, last_fetched_at: query.data.fetched_at, last_success_at: query.data.fetched_at }} /><DataTable caption={catalogEntry.label} columns={resultColumns} empty="Tidak ada hasil dari SISTER." getRowKey={(row) => row.id} rows={pageRows} pagination={<Pagination page={page} pageCount={Math.ceil(rows.length / 20)} onPageChange={(next) => state.set({ page: String(next) })} />} /></>}
   </PageShell>;
 }
 
@@ -198,11 +200,12 @@ function ProgramStudySelect({ value, onChange }: { value: string; onChange: (val
   const trpc = useTRPC();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const query = useQuery(trpc.business.rows.queryOptions({ module: "ref_unit_kerja", search, page, per_page: 20 }));
-  const options = (query.data?.rows ?? []).map((row) => ({ value: String(row.values.id_program_studi ?? row.values.id_unit_kerja ?? row.id), label: String(row.values.nama_program_studi ?? row.values.nama_unit_kerja ?? row.values.nama ?? row.id) }));
+  const query = useQuery(trpc.business.program_studies.queryOptions({ search, page, per_page: 20 }));
+  const options = query.data?.options ?? [];
   return <div className="space-y-2">
     <input aria-label="Cari program studi" className="h-9 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm outline-none focus:border-[hsl(var(--color-primary))]" onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Cari program studi" value={search} />
     <Select ariaLabel="Pilih program studi" disabled={query.isPending || query.isError} onValueChange={onChange} options={options} placeholder="Pilih program studi" value={value} />
+    {query.error && <ErrorState message={query.error.message} title="Program studi belum dapat dimuat" />}
     {query.data && <div className="flex items-center justify-between gap-2 text-xs text-[hsl(var(--color-muted))]"><span>{query.data.total.toLocaleString("id-ID")} program studi</span><Pagination page={page} pageCount={Math.max(1, Math.ceil(query.data.total / query.data.per_page))} onPageChange={setPage} /></div>}
   </div>;
 }

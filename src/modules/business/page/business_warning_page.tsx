@@ -3,15 +3,17 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/component/ui/page_shell";
 import { StatusBadge } from "@/component/ui/status_badge";
+import { Pagination } from "@/component/ui/pagination";
 import { Tabs } from "@/component/ui/tabs";
 import { DataTable, type DataTableColumn } from "@/component/widget/data_table";
 import { useTRPC } from "@/lib/trpc";
+import { parsePageParam } from "@/lib/pagination";
 import { ErrorState, PageError, useUrlState } from "./business_shared";
 
 type Endpoint = { endpoint: string; label: string; href: string; scope_count: number; failed_scope_count: number; not_found_scope_count: number; oldest_fetch_at: string | null; never_synced: boolean };
 type Issue = { endpoint: string; scope_key: string; id_sdm: string | null; status: number; code: string | null; fetched_at: string; last_success_at: string | null; href: string };
 type Run = { id: string; scope: string; status: string; request_count: number; error_count: number; started_at: string; finished_at: string | null };
-type WarningData = { endpoints: Endpoint[]; issues_truncated: boolean; issues: Issue[]; bkd: { id_smt: string; simpulan: string; total: number }[]; runs: Run[] };
+type WarningData = { endpoints: Endpoint[]; issues_truncated: boolean; issues_total: number; page: number; per_page: number; issues: Issue[]; bkd: { id_smt: string; simpulan: string; total: number }[]; runs: Run[] };
 const tabs = [{ value: "data", label: "Sumber data" }, { value: "bkd", label: "Simpulan BKD" }];
 const semesterLabel = (id: string) => /^\d{5}$/.test(id) ? Number(id.slice(0, 4)) + "/" + String(Number(id.slice(0, 4)) + 1).slice(-2) + " " + ({ "1": "Ganjil", "2": "Genap", "3": "Pendek" }[id.slice(-1)] ?? "") : id;
 
@@ -19,7 +21,8 @@ export function BusinessWarningPage() {
   const trpc = useTRPC();
   const state = useUrlState();
   const kind = state.values.jenis === "bkd" ? "bkd" : "data";
-  const query = useQuery({ ...trpc.business.warnings.queryOptions(), enabled: state.ready });
+  const page = parsePageParam(state.values.page_scope);
+  const query = useQuery({ ...trpc.business.warnings.queryOptions({ page, per_page: 20 }), enabled: state.ready });
   const data = query.data as WarningData | undefined;
 
   const endpointIssues = data?.endpoints.filter((row) => row.never_synced || row.failed_scope_count > 0) ?? [];
@@ -52,7 +55,7 @@ export function BusinessWarningPage() {
               { key: "code", header: "Kode", render: (row) => row.code ?? "—" },
               { key: "time", header: "Diperiksa", render: (row) => new Date(row.fetched_at).toLocaleString("id-ID") },
               { key: "open", header: "", render: (row) => <Link className="font-semibold text-[hsl(var(--color-primary))]" href={row.href}>Lihat data</Link> },
-            ] as DataTableColumn<Issue>[]} empty="Tidak ada scope gagal atau 404." getRowKey={(row) => row.endpoint + ":" + row.scope_key} rows={data.issues} />
+            ] as DataTableColumn<Issue>[]} empty="Tidak ada scope gagal atau 404." getRowKey={(row) => row.endpoint + ":" + row.scope_key} rows={data.issues} pagination={<div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{data.issues_total.toLocaleString("id-ID")} scope</span><Pagination page={page} pageCount={Math.ceil(data.issues_total / data.per_page)} onPageChange={(next) => state.set({ page_scope: String(next) })} disabled={query.isFetching} /></div>} />
           </section>
           <section className="space-y-3">
 

@@ -22,7 +22,7 @@ export class JelajahUnavailableError extends Error {
   }
 }
 
-let ownPtCache: { id: string; expiresAt: number } | null = null;
+let ownPtCache: { id: string; key: string; expiresAt: number } | null = null;
 
 export function clearJelajahOwnPtCache() {
   ownPtCache = null;
@@ -65,7 +65,9 @@ function toResult(
 }
 
 async function getOwnPtId(fetcher: JelajahFetcher) {
-  if (ownPtCache && ownPtCache.expiresAt > Date.now()) {
+  const config = getSisterConfig();
+  const key = JSON.stringify([config.integration_id, config.base_url, config.id_pengguna]);
+  if (ownPtCache?.key === key && ownPtCache.expiresAt > Date.now()) {
     return ownPtCache.id;
   }
   const profil = await fetcher("/referensi/profil_pt");
@@ -77,7 +79,7 @@ async function getOwnPtId(fetcher: JelajahFetcher) {
   if (typeof id !== "string" || id.length === 0) {
     throw new JelajahUnavailableError("id_perguruan_tinggi tidak ditemukan pada /referensi/profil_pt");
   }
-  ownPtCache = { id, expiresAt: Date.now() + ownPtCacheMs };
+  ownPtCache = { id, key, expiresAt: Date.now() + ownPtCacheMs };
   return id;
 }
 
@@ -146,6 +148,21 @@ export async function getJelajahList(
     query[definition.ownPtQuery] = await getOwnPtId(fetcher);
   }
 
+  if (definition.key === "mahasiswa_pddikti") {
+    // A UUID supplied by the browser is not proof of PT/prodi membership.
+    const units = await fetcher("/referensi/unit_kerja", {
+      id_perguruan_tinggi: query.id_perguruan_tinggi,
+    });
+    const ownedProgram = Array.isArray(units) && units.some((unit: unknown) =>
+      unit !== null && typeof unit === "object" &&
+      String((unit as Record<string, unknown>).id_jenis_unit) === "3" &&
+      (unit as Record<string, unknown>).id === query.id_program_studi,
+    );
+    if (!ownedProgram) {
+      throw new JelajahUnavailableError("Program studi tidak ditemukan pada PT integrasi aktif.");
+    }
+  }
+
   if (!definition.paginated) {
     return toResult(definition, definition.path, query, await fetcher(definition.path, query));
   }
@@ -161,6 +178,11 @@ export async function getJelajahList(
     items.push(...pageItems);
     if (pageItems.length < pageSize) {
       break;
+    }
+    if (page === maxPages) {
+      throw new JelajahUnavailableError(
+        "Batas pagination live tercapai; hasil belum lengkap. Gunakan halaman bisnis atau Data Replika untuk menelusuri data tersimpan.",
+      );
     }
   }
   return toResult(definition, definition.path, query, items);

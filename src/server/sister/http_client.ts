@@ -1,5 +1,6 @@
 import { z, type ZodType } from "zod";
 
+import { sisterFileContentTypes, sisterFileMaxBytes } from "@/lib/sister_file_policy";
 import { getSisterConfig } from "./config";
 import { SisterApiError, SisterContractError } from "./errors";
 import { getSisterToken } from "./token_provider";
@@ -115,20 +116,7 @@ export type SisterFile = {
 // Binary GET endpoints (`/data_pribadi/foto/{id_sdm}`,
 // `/dokumen/{id}/download`). Only allowlisted content types are passed on and
 // the body is capped, so SISTER cannot make the app serve arbitrary content.
-export const sisterFileContentTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-] as const;
-
-export const sisterFileMaxBytes = 25 * 1024 * 1024;
+export { sisterFileContentTypes, sisterFileMaxBytes } from "@/lib/sister_file_policy";
 
 function fileNameFrom(disposition: string | null) {
   // filename="quoted \"string\"" | filename=token | filename*=UTF-8''pct
@@ -163,20 +151,52 @@ export async function sisterGetFile(path: string, timeoutMs = 60_000): Promise<S
   });
 
   const contentType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  async function discard() {
+    await response.body?.cancel().catch(() => {});
+  }
   if (!response.ok) {
+    await discard();
     throw new SisterApiError(response.status, `SISTER_HTTP_${response.status}`);
   }
   if (!(sisterFileContentTypes as readonly string[]).includes(contentType)) {
+    await discard();
     throw new SisterContractError("SISTER file response has a content type that is not allowed");
   }
   const declaredLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > sisterFileMaxBytes) {
+    await discard();
     throw new SisterContractError("SISTER file is larger than the allowed size");
   }
 
-  const body = await response.arrayBuffer();
-  if (body.byteLength > sisterFileMaxBytes) {
-    throw new SisterContractError("SISTER file is larger than the allowed size");
+  // Enforce the cap while reading, not after buffering an unbounded response.
+  // Content-Length can be missing, understated or describe compressed bytes.
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  const reader = response.body?.getReader();
+  if (reader) {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > sisterFileMaxBytes) {
+          throw new SisterContractError("SISTER file is larger than the allowed size");
+        }
+        chunks.push(value);
+      }
+    } catch (error) {
+      await reader.cancel().catch(() => {});
+      throw error;
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  const body = new ArrayBuffer(bytes);
+  const output = new Uint8Array(body);
+  let offset = 0;
+  for (const chunk of chunks) {
+    output.set(chunk, offset);
+    offset += chunk.byteLength;
   }
 
   return { contentType, fileName: fileNameFrom(response.headers.get("content-disposition")), body };

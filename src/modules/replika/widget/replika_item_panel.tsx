@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 
@@ -12,7 +13,6 @@ type ReplikaItemPanelProps = {
   moduleKey: string;
   moduleLabel: string;
   row: Record<string, unknown>;
-  sourceField?: string;
   onClose: () => void;
 };
 
@@ -20,14 +20,17 @@ function asId(value: unknown) {
   return typeof value === "string" || typeof value === "number" ? String(value) : undefined;
 }
 
-export function ReplikaItemPanel({ moduleKey, moduleLabel, onClose, row, sourceField }: ReplikaItemPanelProps) {
+export function ReplikaItemPanel({ moduleKey, moduleLabel, onClose, row }: ReplikaItemPanelProps) {
   const trpc = useTRPC();
   const id = asId(row.id) ?? "-";
+  const [pages, setPages] = useState<Record<string, number>>({});
   const itemQuery = useQuery(
     trpc.replika.item.queryOptions({
       module: moduleKey,
       id,
-      source_value: sourceField ? asId(row[sourceField]) : undefined,
+      id_sdm: asId(row.r_id_sdm),
+      section_pages: pages,
+      per_page: 25,
     }),
   );
 
@@ -62,6 +65,7 @@ export function ReplikaItemPanel({ moduleKey, moduleLabel, onClose, row, sourceF
           <h3 className="text-sm font-semibold capitalize text-[hsl(var(--color-text))]">{section.label}</h3>
           <DataExplorerView
             result={section.result}
+            pagination={section.key === "detail" ? undefined : { page: section.result.page, pageCount: Math.ceil(section.result.total / section.result.per_page), total: section.result.total, onPageChange: (next) => setPages((previous) => ({ ...previous, [section.key]: next })), disabled: itemQuery.isFetching }}
             // Document tables (module dokumen arrays, kelas kuliah) get a
             // download link through the server file route.
             rowAction={

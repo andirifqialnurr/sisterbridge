@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+export { useUrlState, type UrlState } from "@/hook/use-url-state";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Select } from "@/component/ui/select";
+import { Pagination } from "@/component/ui/pagination";
 import { State } from "@/component/ui/state";
 import { StatusBadge } from "@/component/ui/status_badge";
 import type { DataTableColumn } from "@/component/widget/data_table";
@@ -14,7 +16,6 @@ export type BusinessRow = { id: string; row_key?: string; id_sdm?: string; nama_
 export type BusinessColumn = { key: string; type: string };
 export type BusinessSource = { status: number; scope_count?: number; failed_scope_count?: number; error_code: string | null; item_count: number; last_fetched_at: string; last_success_at: string | null } | null;
 export type BusinessSection = { key: string; label: string; endpoint: string; columns: BusinessColumn[]; rows: BusinessRow[]; source: BusinessSource; total: number; page: number; per_page: number };
-export type UrlState = { values: Record<string, string>; ready: boolean; set: (values: Record<string, string | null>) => void };
 
 const labels: Record<string, string> = {
   nama: "Nama", nama_sdm: "Nama SDM", jenis_sdm: "Jenis SDM", jenis_kelamin: "Jenis kelamin", nip: "NIP", nidn: "NIDN", nuptk: "NUPTK", nik: "NIK",
@@ -42,22 +43,10 @@ export const preferredFields: Record<string, string[]> = {
   nilai_tes: ["nama_jenis_tes", "nilai", "tanggal_tes"], tunjangan: ["nama_jenis_tunjangan", "jumlah", "tanggal_mulai", "tanggal_selesai"],
 };
 
-export function useUrlState(): UrlState {
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const read = () => setValues(Object.fromEntries(new URLSearchParams(window.location.search).entries()));
-    read(); setReady(true); window.addEventListener("popstate", read);
-    return () => window.removeEventListener("popstate", read);
-  }, []);
-  const set = useCallback((next: Record<string, string | null>) => {
-    const params = new URLSearchParams(window.location.search);
-    for (const [key, value] of Object.entries(next)) { if (value) params.set(key, value); else params.delete(key); }
-    const query = params.toString();
-    window.history.pushState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
-    setValues(Object.fromEntries(params.entries()));
-  }, []);
-  return { values, ready, set };
+export function sectionPagesFrom(values: Record<string, string>) {
+  return Object.fromEntries(Object.entries(values)
+    .filter(([key, value]) => key.startsWith("page_section_") && /^\d{1,7}$/.test(value) && Number(value) >= 1 && Number(value) <= 1_000_000)
+    .map(([key, value]) => [key.slice("page_section_".length), Number(value)]));
 }
 
 export function labelFor(field: string) {
@@ -120,7 +109,8 @@ export function PageError({ pending, error, title }: { pending: boolean; error: 
 export function SdmPicker({ value, onChange, enabled = true, optional = false }: { value: string; onChange: (id: string) => void; enabled?: boolean; optional?: boolean }) {
   const trpc = useTRPC();
   const [search, setSearch] = useState("");
-  const query = useQuery({ ...trpc.business.sdm.queryOptions({ search, page: 1, per_page: 100 }), enabled });
+  const [page, setPage] = useState(1);
+  const query = useQuery({ ...trpc.business.sdm.queryOptions({ search, page, per_page: 100 }), enabled });
   const options = (query.data?.rows ?? []).map((row) => {
     const id = String(row.values.id_sdm ?? row.id);
     const name = String(row.values.nama_sdm ?? row.values.nama ?? "SDM tanpa nama");
@@ -128,7 +118,10 @@ export function SdmPicker({ value, onChange, enabled = true, optional = false }:
     return { value: id, label: `${name}${identity ? ` · ${String(identity)}` : ""}` };
   });
   if (value && !options.some((item) => item.value === value)) options.unshift({ value, label: value });
-  return <div className="flex min-w-0 flex-col gap-2 sm:flex-row"><label className="min-w-0"><span className="sr-only">Cari SDM</span><input className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm outline-none focus:border-[hsl(var(--color-primary))] sm:w-44" onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama / NIDN" type="search" value={search} /></label><Select ariaLabel="Pilih SDM" disabled={!enabled || query.isPending || query.isError} onValueChange={onChange} options={[{ label: optional ? "Semua SDM" : "Pilih SDM", value: "" }, ...options]} value={value} /></div>;
+  return <div className="flex min-w-0 max-w-full flex-col gap-2"><div className="flex min-w-0 flex-col gap-2 sm:flex-row"><label className="min-w-0"><span className="sr-only">Cari SDM</span><input className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm outline-none focus:border-[hsl(var(--color-primary))] sm:w-44" onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Cari nama / NIDN" type="search" value={search} /></label><Select ariaLabel="Pilih SDM" disabled={!enabled || query.isPending || query.isError} onValueChange={onChange} options={[{ label: optional ? "Semua SDM" : "Pilih SDM", value: "" }, ...options]} value={value} /></div>
+    {query.data && query.data.total > 100 && <Pagination page={page} pageCount={Math.ceil(query.data.total / query.data.per_page)} onPageChange={setPage} disabled={query.isFetching} />}
+    {query.isError && <span className="text-xs text-[hsl(var(--color-muted))]">Daftar SDM belum dapat dimuat.</span>}
+  </div>;
 }
 
 export function rowColumns(moduleKey: string, columns: BusinessColumn[], idSdm?: string): DataTableColumn<BusinessRow>[] {

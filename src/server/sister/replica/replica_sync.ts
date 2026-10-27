@@ -310,6 +310,15 @@ export async function runReplicaSync(
       parentId: input.parentId,
     };
 
+    async function recordFailure(status: number, code: string, message: string) {
+      stats.failed += 1;
+      totals.errors += 1;
+      await deps.store.recordScopeFailure(runId!, options.integrationId, scope, { status, code });
+      if (errors.length < maxErrorSamples) {
+        errors.push({ endpoint: input.endpoint, scope: scope.scopeKey, status, code, message });
+      }
+    }
+
     const collected: unknown[] = [];
     let responseStatus: 200 | 404 = 200;
     for (let page = 1; page <= maxPages; page += 1) {
@@ -330,21 +339,7 @@ export async function runReplicaSync(
           if (collected.length === 0) responseStatus = 404;
           break;
         }
-        stats.failed += 1;
-        totals.errors += 1;
-        await deps.store.recordScopeFailure(runId!, options.integrationId, scope, {
-          status: response.status,
-          code: response.code,
-        });
-        if (errors.length < maxErrorSamples) {
-          errors.push({
-            endpoint: input.endpoint,
-            scope: scope.scopeKey,
-            status: response.status,
-            code: response.code,
-            message: response.message,
-          });
-        }
+        await recordFailure(response.status, response.code, response.message);
         return null;
       }
 
@@ -353,6 +348,11 @@ export async function runReplicaSync(
       collected.push(...items);
       if (!input.paginated || items.length < replicaPageSize) {
         break;
+      }
+      if (page === maxPages) {
+        // Never retire prior rows or claim completeness from a truncated list.
+        await recordFailure(0, "PAGINATION_LIMIT", "SISTER pagination limit reached before a complete response.");
+        return null;
       }
     }
 
@@ -401,36 +401,55 @@ export async function runReplicaSync(
           statsFor(child.path).skipped += ids.length - targets.length;
         }
 
-        await Promise.all(
-          targets.map(async (id) => {
-            const detail = await syncScope({
-              endpoint: child.path,
-              path: child.path.replace("{id}", encodeURIComponent(id)),
-              kind: child.path.endsWith("/bidang_ilmu") ? "list" : "object",
-              idSdm,
-              parentId: id,
-            });
-            const follow = child.follow;
-            const payload = detail?.items[0];
-            if (!follow || !isRecord(payload)) {
-              return;
-            }
-            const followId = payload[follow.field];
-            if (follow.ownPtField && ownPtId && payload[follow.ownPtField] !== ownPtId) {
-              statsFor(follow.path).skipped += 1;
-              return;
-            }
-            if (typeof followId === "string" && followId.length > 0) {
-              await syncScope({
-                endpoint: follow.path,
-                path: follow.path.replace("{id}", encodeURIComponent(followId)),
-                kind: "list",
-                idSdm,
-                parentId: followId,
-              });
-            }
+        const targetSet = new Set(targets);
+        const cached = child.follow
+          ? await deps.store.scopeItems(options.integrationId, child.path,
+              ids.filter((id) => !targetSet.has(id)).map((id) => scopeKeyOf({ id })))
+          : new Map<string, unknown[]>();
+        const details = await Promise.all(
+          (child.follow ? ids : targets).map(async (id) => {
+            const detail = targetSet.has(id)
+              ? await syncScope({
+                  endpoint: child.path,
+                  path: child.path.replace("{id}", encodeURIComponent(id)),
+                  kind: child.path.endsWith("/bidang_ilmu") ? "list" : "object",
+                  idSdm,
+                  parentId: id,
+                })
+              : { items: cached.get(scopeKeyOf({ id })) ?? [] };
+            return { id, payload: detail?.items[0] };
           }),
         );
+        const follow = child.follow;
+        if (!follow) return;
+        const followIds = new Map<string, boolean>();
+        for (const { id, payload } of details) {
+          if (!isRecord(payload)) continue;
+          // Fail closed when the owning PT cannot be established.
+          if (follow.ownPtField && (!ownPtId || payload[follow.ownPtField] !== ownPtId)) {
+            statsFor(follow.path).skipped += 1;
+            continue;
+          }
+          const followId = payload[follow.field];
+          if (typeof followId === "string" && followId.length > 0) {
+            followIds.set(followId, Boolean(followIds.get(followId) || targetSet.has(id)));
+          }
+        }
+        const completed = await deps.store.fetchedScopeKeys(options.integrationId, follow.path,
+          [...followIds.keys()].map((id) => scopeKeyOf({ id })));
+        await Promise.all([...followIds].map(async ([id, parentFetched]) => {
+          if (!parentFetched && !options.refreshChildren && completed.has(scopeKeyOf({ id }))) {
+            statsFor(follow.path).skipped += 1;
+            return;
+          }
+          await syncScope({
+            endpoint: follow.path,
+            path: follow.path.replace("{id}", encodeURIComponent(id)),
+            kind: "list",
+            idSdm,
+            parentId: id,
+          });
+        }));
       }),
     );
     return fetched.items;

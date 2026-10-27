@@ -5,7 +5,7 @@ export const pegawaiSearchInputSchema = z
     search_by: z.enum(["nama", "nidn", "nip", "nuptk"]).default("nama"),
     search: z.string().trim().max(120).default(""),
     id_sp: z.string().trim().min(1).max(128).optional(),
-    page: z.number().int().min(1).max(100).default(1),
+    page: z.number().int().min(1).max(1_000_000).default(1),
     per_page: z.number().int().min(1).max(50).default(20),
   })
   .superRefine((input, context) => {

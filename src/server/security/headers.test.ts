@@ -14,6 +14,15 @@ describe("security headers", () => {
     expect(values.has("Strict-Transport-Security")).toBe(false);
   });
 
+  it("allows the development runtime's eval but forbids it in production", () => {
+    const policy = (production: boolean) => getSecurityHeaders(production)
+      .find((header) => header.key === "Content-Security-Policy")!.value;
+    expect(policy(false)).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval'");
+    expect(policy(true)).toContain("script-src 'self' 'unsafe-inline';");
+    expect(policy(true)).not.toContain("'unsafe-eval'");
+    expect(policy(true)).not.toContain("*");
+  });
+
   it("adds HSTS only for production responses", () => {
     const headers = getSecurityHeaders(true);
     const hsts = headers.find((header) => header.key === "Strict-Transport-Security");

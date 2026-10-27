@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Select } from "@/component/ui/select";
+import { Pagination } from "@/component/ui/pagination";
 import { useTRPC } from "@/lib/trpc";
 
 type JelajahSdmPickerProps = {
@@ -15,6 +16,7 @@ type JelajahSdmPickerProps = {
 export function JelajahSdmPicker({ onChange, value }: JelajahSdmPickerProps) {
   const trpc = useTRPC();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   // Keeps the chosen SDM selectable after the search text changes.
   const [selectedLabel, setSelectedLabel] = useState("");
   // Each search reaches SISTER (/referensi/sdm), so wait for typing to pause.
@@ -27,7 +29,7 @@ export function JelajahSdmPicker({ onChange, value }: JelajahSdmPickerProps) {
     trpc.pegawai.search.queryOptions({
       search_by: "nama",
       search: debouncedSearch,
-      page: 1,
+      page,
       per_page: 50,
     }),
   );
@@ -45,13 +47,13 @@ export function JelajahSdmPicker({ onChange, value }: JelajahSdmPickerProps) {
   ];
 
   return (
-    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+    <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
       <label htmlFor="jelajah-sdm-search">
         <span className="sr-only">Cari nama SDM</span>
         <input
           className="h-10 w-full rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] px-3 text-sm text-[hsl(var(--color-text))] outline-none placeholder:text-[hsl(var(--color-muted))] focus:border-[hsl(var(--color-primary))] focus:ring-2 focus:ring-[hsl(var(--color-primary-soft))] sm:w-44"
           id="jelajah-sdm-search"
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => { setSearch(event.target.value); setPage(1); }}
           placeholder="Cari nama SDM"
           type="search"
           value={search}
@@ -67,6 +69,7 @@ export function JelajahSdmPicker({ onChange, value }: JelajahSdmPickerProps) {
         options={options}
         value={value}
       />
+      {pegawaiQuery.data && <Pagination page={page} pageCount={Math.ceil(pegawaiQuery.data.total / pegawaiQuery.data.per_page)} onPageChange={setPage} disabled={pegawaiQuery.isFetching} />}
     </div>
   );
 }

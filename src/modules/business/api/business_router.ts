@@ -12,6 +12,8 @@ import {
   businessReportInputSchema,
   businessRowsInputSchema,
   businessSdmInputSchema,
+  businessWarningsInputSchema,
+  businessSemestersInputSchema,
 } from "./business_schemas";
 import {
   businessModules,
@@ -19,6 +21,8 @@ import {
   getBusinessDetail,
   getBusinessRows,
   searchBusinessSdm,
+  searchBusinessPrograms,
+  getBusinessSemesters,
 } from "./business_service";
 import {
   BusinessReportUnavailableError,
@@ -54,10 +58,12 @@ async function run<T>(query: () => Promise<T>) {
 export const businessRouter = createTRPCRouter({
   modules: adminProcedure.query(() => businessModules()),
   sdm: adminProcedure.input(businessSdmInputSchema).query(({ input }) => run(() => searchBusinessSdm(input))),
+  program_studies: adminProcedure.input(businessSdmInputSchema).query(({ input }) => run(() => searchBusinessPrograms(input))),
   rows: adminProcedure.input(businessRowsInputSchema).query(({ input }) => run(() => getBusinessRows(input))),
   detail: adminProcedure.input(businessDetailInputSchema).query(({ input }) => run(() => getBusinessDetail(input))),
   report: adminProcedure.input(businessReportInputSchema).query(({ input }) => run(() => getBusinessReport(input))),
-  warnings: adminProcedure.query(() => run(() => getBusinessWarnings())),
+  warnings: adminProcedure.input(businessWarningsInputSchema).query(({ input }) => run(() => getBusinessWarnings(input))),
+  semesters: adminProcedure.input(businessSemestersInputSchema).query(({ input }) => run(() => getBusinessSemesters(input))),
   live_search: adminProcedure.input(businessLiveSearchInputSchema).query(({ input }) => run(() => {
     if (getJelajahModule(input.module)?.kind !== "search") throw new BusinessDataUnavailableError("Hanya modul pencarian yang membaca SISTER langsung.");
     return getJelajahList(input);

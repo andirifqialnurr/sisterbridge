@@ -3,14 +3,16 @@ export type SecurityHeader = {
   value: string;
 };
 
-const contentSecurityPolicy = [
+const contentSecurityPolicy = (isProduction: boolean) => [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
   // Next.js emits inline bootstrap scripts and styles for the App Router.
-  "script-src 'self' 'unsafe-inline'",
+  // Webpack's development runtime uses eval for source maps/React Refresh.
+  // Never permit it in the production policy.
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
@@ -26,7 +28,7 @@ export function getSecurityHeaders(isProduction = process.env.NODE_ENV === "prod
       key: "Permissions-Policy",
       value: "camera=(), microphone=(), geolocation=()",
     },
-    { key: "Content-Security-Policy", value: contentSecurityPolicy },
+    { key: "Content-Security-Policy", value: contentSecurityPolicy(isProduction) },
   ];
 
   if (isProduction) {

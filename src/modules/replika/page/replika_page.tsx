@@ -15,13 +15,11 @@ import { useTRPC } from "@/lib/trpc";
 import { ReplikaItemPanel } from "../widget/replika_item_panel";
 import { ReplikaSdmPicker } from "../widget/replika_sdm_picker";
 
-// Items whose related table is keyed by another field of the row.
-const childSourceFields: Record<string, string> = { pengajaran: "id_kelas" };
-
 export function ReplikaPage() {
   const trpc = useTRPC();
   const [moduleKey, setModuleKey] = useState("penugasan");
   const [sdmId, setSdmId] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
 
   const modulesQuery = useQuery(
@@ -34,6 +32,8 @@ export function ReplikaPage() {
     ...trpc.replika.rows.queryOptions({
       module: moduleKey,
       id_sdm: needsSdm ? sdmId || undefined : undefined,
+      page,
+      per_page: 25,
     }),
     enabled: selected !== undefined && (!needsSdm || Boolean(sdmId)),
   });
@@ -44,6 +44,7 @@ export function ReplikaPage() {
         <ReplikaSdmPicker
           onChange={(next) => {
             setSdmId(next);
+            setPage(1);
             setSelectedRow(null);
           }}
           value={sdmId}
@@ -63,6 +64,7 @@ export function ReplikaPage() {
               modules={modulesQuery.data}
               onChange={(next) => {
                 setModuleKey(next);
+                setPage(1);
                 setSelectedRow(null);
               }}
               value={moduleKey}
@@ -109,6 +111,7 @@ export function ReplikaPage() {
               <DataExplorerView
                 key={`${moduleKey}-${sdmId}`}
                 result={rowsQuery.data}
+                pagination={{ page, pageCount: Math.ceil(rowsQuery.data.total / rowsQuery.data.per_page), total: rowsQuery.data.total, onPageChange: (next) => { setPage(next); setSelectedRow(null); }, disabled: rowsQuery.isFetching }}
                 rowAction={
                   selected.has_item || moduleKey === "dokumen"
                     ? (row) => (
@@ -132,7 +135,6 @@ export function ReplikaPage() {
               moduleLabel={selected.label}
               onClose={() => setSelectedRow(null)}
               row={selectedRow}
-              sourceField={childSourceFields[moduleKey]}
             />
           )}
         </div>
