@@ -3,14 +3,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 import { Sidebar } from "./sidebar";
 
-const state = vi.hoisted(() => ({ pathname: "/", role: "ADMIN" as string | undefined }));
-vi.mock("next/navigation", () => ({ usePathname: () => state.pathname }));
+const state = vi.hoisted(() => ({ pathname: "/", search: "", role: "ADMIN" as string | undefined }));
+vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams(state.search) }));
 vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: state.role ? { role: state.role } : undefined }) }));
 vi.mock("@/lib/trpc", () => ({ useTRPC: () => ({ overview: { session: { queryOptions: () => ({}) } } }) }));
 vi.mock("@/hook/use-theme", () => ({ useTheme: () => ({ resolvedTheme: "light" }) }));
 vi.mock("./theme_toggle", () => ({ ThemeToggle: () => null }));
 
-beforeEach(() => { state.pathname = "/"; state.role = "ADMIN"; });
+beforeEach(() => { state.pathname = "/"; state.search = ""; state.role = "ADMIN"; });
 
 it("puts domain icons on parent menus and text only on their children", () => {
   const html = renderToStaticMarkup(<Sidebar />);
@@ -43,6 +43,15 @@ it.each([
   const links = html.match(/<a[^>]*aria-current="page"[^>]*>/g) ?? [];
   expect(links).toHaveLength(1);
   expect(links[0]).toContain(`href="${pathname}"`);
+});
+
+it("links personal submenus to the selected SDM instead of reopening the directory", () => {
+  state.pathname = "/pegawai/00000000-0000-4000-8000-000000000001";
+  state.search = "tab=profil";
+  const html = renderToStaticMarkup(<Sidebar activeLabel="Profil" />);
+  expect(html).toContain('href="/pegawai/00000000-0000-4000-8000-000000000001?tab=profil"');
+  expect(html).not.toContain('href="/pegawai?tab=');
+  expect(html.match(/<a[^>]*aria-current="page"[^>]*>/g)).toHaveLength(1);
 });
 
 it("keeps restricted menus hidden for an operator or pending session", () => {

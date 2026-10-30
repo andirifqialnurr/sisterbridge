@@ -181,18 +181,42 @@ identitas akun QA sintetis bisa terlihat, bukan akun existing. Tidak memuat
 binary upstream. Screenshot harus diperiksa secara visual; capture sukses atau
 assertion overflow bukan pengganti review gambar/screen reader seluruh UI.
 
-## Keyboard BKD (sesi ADMIN nyata)
+## Navigasi satu lapis dan keyboard view (sesi ADMIN nyata)
 
 ```sh
-UI_SMOKE_CREATE_TEMP_ADMIN=1 UI_SMOKE_TABS_ONLY=1 bun scripts/browser_admin_smoke.mjs
+UI_SMOKE_CREATE_TEMP_ADMIN=1 UI_SMOKE_NAVIGATION_ONLY=1 bun scripts/browser_admin_smoke.mjs
 ```
 
-Menggunakan server build lokal + Chrome terisolasi yang sama. Memeriksa
-ArrowLeft/Right/Home/End pada tab BKD di 320px, fokus/selection, dan sample
-cached SDM tanpa semester untuk memastikan activity tab disabled dilewati.
-Jika tidak ada sample tanpa semester, output menyatakan sample unavailable;
-bukan bukti state tersebut lulus. Akun QA dibersihkan, audit dipertahankan.
-Unit test arah skip-disabled dan markup ARIA ada pada `component/ui/`.
+Server build lokal + Chrome terisolasi memeriksa profil SDM dan BKD tanpa tab
+modul duplikatif pada lebar 1280/320px. Pindah submenu menjaga SDM/semester,
+drawer mobile menutup sesudah navigasi, Back/Forward profil dan deep link BKD
+memulihkan bagian aktif. Membutuhkan satu sampel SDM aktif dengan laporan BKD
+lokal; ID/payload tidak dicetak. Foto/file upstream diblokir. Tab view Laporan
+yang tetap ada diuji ArrowLeft/Right/Home/End beserta fokus/selection.
+`UI_SMOKE_TABS_ONLY=1` adalah alias kompatibel untuk mode baru ini, bukan lagi
+uji tab BKD. Akun QA dibersihkan, audit dipertahankan. Unit skip-disabled/ARIA
+primitive Tabs tetap ada pada `component/ui/`.
+
+## Crawl seluruh menu: submenu atau tab
+
+Keputusan tiap kelompok dan hasil crawl: [navigation_audit.md](navigation_audit.md).
+Dengan server produksi lokal + Chrome terisolasi yang sama:
+
+```sh
+UI_SMOKE_CREATE_TEMP_ADMIN=1 UI_SMOKE_NAVIGATION_CRAWL_ONLY=1 bun scripts/browser_admin_smoke.mjs
+```
+
+Mode ini mengambil link sidebar ADMIN yang benar-benar terender, memeriksa
+106 target serta sampel profil/detail pada 1280/320px, dan menolak tab pada
+halaman submenu/pemilih modul. Hanya Laporan/Peringatan boleh bertab.
+Fase `menus`, `details`, `extras`, lebar, offset dan limit bisa diatur melalui
+`UI_SMOKE_CRAWL_*` (lihat dokumen audit); batch parsial bukan crawl lengkap.
+
+Foto/file diblokir dan tidak ada sync. Picker Jelajah dapat membaca direktori
+SDM live secara otomatis dan menulis cache pegawai. Pilih target upstream
+sandbox secara eksplisit pada environment server QA; `next start` memakai
+`SISTER_BASE_URL`, bukan otomatis `SISTER_BASE_URL_DEV`. Jangan mengklaim nol
+request upstream hanya karena tidak mensubmit pencarian modul.
 
 ## Pagination riwayat/status sync
 

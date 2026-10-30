@@ -67,7 +67,7 @@ lengkap tidak dikirim hanya untuk disembunyikan di browser.
 | FR-01 | Navigasi seluruh modul | Semua GET-ID pada matriks mempunyai menu/tab/link; URL menjaga filter/tab/pagination dan back/refresh; tidak ada menu dummy |
 | FR-02 | List/detail bisnis | Kolom terkurasi, field berlabel, tanggal/angka terformat; ID bukan pengganti label yang tersedia; null bukan nol |
 | FR-03 | SDM lengkap | Daftar SDM dan tujuh bagian data pokok + foto; bagian sensitif dibatasi; tab aktivitas menggunakan owner widget |
-| FR-04 | BKD | Laporan akhir + lima tab aktivitas dari replika; id_smt dari laporan akhir bila referensi gagal; simpulan persis sesuai sumber |
+| FR-04 | BKD | Laporan akhir + lima bagian aktivitas dari replika melalui submenu saja, tanpa tab duplikatif; id_smt dari laporan akhir bila referensi gagal; simpulan persis sesuai sumber |
 | FR-05 | Relasi/nested data | Penulis/anggota/mahasiswa/dosen/bidang ilmu/dokumen terbaca di widget; tidak hanya “[n item]” atau JSON |
 | FR-06 | Referensi/pencarian | Seluruh 41 GET referensi dapat diakses; selector parent-child sah; prodi/keyword dan nama/NIK tervalidasi; live diberi label |
 | FR-07 | Dokumen dan ajuan | Metadata/detail/download dalam konteks; ajuan terpisah dari master; hanya status/jenis yang tersedia, tanpa mutation |

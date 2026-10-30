@@ -315,40 +315,162 @@ try {
     assert.deepEqual(apiErrors, []);
     assert.equal(exceptions.length, 0);
     console.log(JSON.stringify({ check: "complete-status-pagination-url-state-and-role-boundaries", width: 320, passed: true }));
-  } else if (process.env.UI_SMOKE_TABS_ONLY === "1") {
-    async function press(key) {
-      await send("Input.dispatchKeyEvent", { type: "keyDown", key });
-      await send("Input.dispatchKeyEvent", { type: "keyUp", key });
-    }
-    await send("Emulation.setDeviceMetricsOverride", { width: 320, height: 900, deviceScaleFactor: 1, mobile: false });
-    await navigate("/bkd", "BKD keyboard navigation");
-    await evaluate(`document.querySelector('[role="tablist"][aria-label="Bagian laporan BKD"] [role="tab"]').focus()`);
-    for (const [key, expected] of [["ArrowLeft", "bkd_penelitian"], ["Home", "laporan_akhir_bkd"], ["End", "bkd_penelitian"], ["ArrowRight", "laporan_akhir_bkd"]]) {
-      await press(key);
-      await waitFor(`document.activeElement?.id.endsWith('-tab-${expected}') && document.activeElement?.getAttribute('aria-selected') === 'true' && !document.querySelector('[aria-busy="true"]')`, "BKD tab selection and focus");
-    }
-    const integration = process.env.SISTER_INTEGRATION_ID;
-    const missingSemester = await prisma.$queryRawUnsafe(
-      `SELECT s.item_key AS id FROM sister_replica_record s
-        WHERE s.integration_id=$1::uuid AND s.endpoint=$2 AND s.deleted_at IS NULL
-          AND NOT EXISTS (SELECT 1 FROM sister_replica_record b
-            WHERE b.integration_id=s.integration_id AND b.endpoint=$3
-              AND b.id_sdm=s.item_key AND b.deleted_at IS NULL)
-        LIMIT 1`, integration, "/referensi/sdm", "/bkd/laporan_akhir_bkd",
-    );
-    if (missingSemester[0]) {
-      await navigate(`/bkd?id_sdm=${encodeURIComponent(missingSemester[0].id)}`, "BKD no-semester keyboard sample");
-      await waitFor(`document.querySelectorAll('[role="tablist"][aria-label="Bagian laporan BKD"] button:disabled').length === 5`, "unavailable activity tabs disabled");
-      await evaluate(`document.querySelector('[role="tablist"][aria-label="Bagian laporan BKD"] button:not(:disabled)').focus()`);
-      for (const key of ["End", "Home", "ArrowLeft", "ArrowRight"]) {
-        await press(key);
-        assert(await evaluate(`document.activeElement?.id.endsWith('-tab-laporan_akhir_bkd') && !document.activeElement.disabled`), "Disabled activity tabs are never focused");
+  } else if (process.env.UI_SMOKE_NAVIGATION_CRAWL_ONLY === "1") {
+    const baseline = process.env.UI_SMOKE_CRAWL_BASELINE === "1";
+    const phase = process.env.UI_SMOKE_CRAWL_PHASE ?? "all";
+    assert(["all", "menus", "details", "extras"].includes(phase), "Unknown crawl phase");
+    const requestedWidth = process.env.UI_SMOKE_CRAWL_WIDTH;
+    assert(!requestedWidth || ["1280", "320"].includes(requestedWidth), "Crawl width must be 1280 or 320");
+    const widths = baseline ? [1280] : requestedWidth ? [Number(requestedWidth)] : [1280,320];
+    const offset = Number(process.env.UI_SMOKE_CRAWL_OFFSET ?? 0);
+    const limit = Number(process.env.UI_SMOKE_CRAWL_LIMIT ?? 1000);
+    assert(Number.isInteger(offset) && offset >= 0 && Number.isInteger(limit) && limit > 0, "Crawl range must contain positive integers");
+    await navigate("/", "navigation inventory");
+    const menuTargets = await evaluate(`(() => [...new Set([...document.querySelectorAll('aside:not([role="dialog"]) nav a[href]')].map(a=>new URL(a.href).pathname+new URL(a.href).search))])()`);
+    assert(menuTargets.length >= 100, "Crawl must include the full rendered ADMIN sidebar, not a handpicked subset");
+    const results = [];
+    const detailTargets = [];
+    let unavailableDetailSamples = 0;
+    if (!baseline && ["all", "details"].includes(phase)) {
+      const integrationId = process.env.SISTER_INTEGRATION_ID;
+      assert(integrationId, "A configured integration is required for the read-only crawl");
+      const sdm = await prisma.sisterReplicaRecord.findFirst({ where: { integrationId, endpoint: "/referensi/sdm", deletedAt: null }, select: { itemKey: true } });
+      assert(sdm, "A local SDM is required for populated profile navigation checks");
+      for (const entry of jelajahModules.filter(entry=>entry.kind==='sdm_object')) {
+        detailTargets.push(`/pegawai/${encodeURIComponent(sdm.itemKey)}?tab=${encodeURIComponent(entry.key)}`);
+      }
+      for (const entry of jelajahModules.filter(entry=>entry.kind==='sdm_list' && entry.detailPath)) {
+        const parents = await prisma.sisterReplicaRecord.findMany({ where: { integrationId, endpoint: entry.path, deletedAt: null, idSdm: { not: null } }, select: { itemKey: true, idSdm: true }, take: 5 });
+        let parent;
+        for (const candidate of parents) {
+          if (await prisma.sisterReplicaRecord.count({ where: { integrationId, endpoint: "/referensi/sdm", itemKey: candidate.idSdm, deletedAt: null } })) { parent=candidate; break; }
+        }
+        if (parent) detailTargets.push(`${entry.detailPath.replace('{id}',encodeURIComponent(parent.itemKey))}?id_sdm=${encodeURIComponent(parent.idSdm)}`);
+        else unavailableDetailSamples++;
       }
     }
-    assert(await evaluate(fits), "BKD keyboard sample fits 320px");
+    async function auditCurrent(label, width) {
+      const result = await evaluate(`(() => {
+        const main=document.querySelector('main');
+        const active=document.querySelector('aside:not([role="dialog"]) nav a[aria-current="page"]');
+        const lists=[...main.querySelectorAll('[role="tablist"]')];
+        return { submenu: !!active?.closest('details'), modulePicker: !!main.querySelector('nav[aria-label="Modul SISTER"]'),
+          tablists: lists.length, maxTabs: Math.max(0,...lists.map(list=>list.querySelectorAll('[role="tab"]').length)),
+          fits: document.documentElement.scrollWidth<=innerWidth };
+      })()`);
+      results.push({ ...result, width });
+      if (!baseline) {
+        assert(result.fits, `Navigation crawl viewport overflow: ${label}`);
+        assert(!(result.submenu || result.modulePicker) || result.tablists === 0, `Submenu and tabs combined: ${label}`);
+        assert(result.tablists <= 1 && result.maxTabs <= 5, `Too many view tabs: ${label}`);
+        const path = await evaluate("location.pathname");
+        assert(result.tablists === 0 || ["/laporan", "/peringatan"].includes(path), `Unapproved second navigation layer: ${label}`);
+      }
+    }
+    const selectedMenus = baseline ? ["/replika"] : ["all", "menus"].includes(phase) ? menuTargets.slice(offset, offset + limit) : [];
+    for (const width of widths) {
+      await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });
+      for (const [index,path] of selectedMenus.entries()) {
+        await navigate(path, "navigation crawl target");
+        await auditCurrent(`menu target ${index}`, width);
+      }
+      for (const [index,path] of detailTargets.entries()) {
+        await navigate(path, "populated profile/detail crawl");
+        await auditCurrent(`populated profile/detail ${index}`, width);
+      }
+      console.log(JSON.stringify({ check: "navigation-crawl-progress", width, menus: selectedMenus.length, populatedDetails: detailTargets.length }));
+      if (!baseline && !["all", "extras"].includes(phase)) continue;
+      // Populate the technical explorer from a non-personal local reference.
+      // No Jelajah list/search or upstream file requests are submitted here.
+      await navigate("/replika", "populated local explorer");
+      await waitFor(`!!document.querySelector('nav[aria-label="Modul SISTER"]')`, "local module picker ready");
+      await evaluate(`[...document.querySelectorAll('nav[aria-label="Modul SISTER"] button')].find(b=>b.textContent.trim()==='Agama').click()`);
+      await waitFor(`!!document.querySelector('main table caption') && document.querySelector('main table caption').textContent==='Agama' && !document.querySelector('[aria-busy="true"]')`, "local reference explorer renders");
+      await auditCurrent("populated local explorer", width);
+      if (!baseline) {
+        await waitFor(`!!document.querySelector('main details[data-explorer-diagnostics]')`, "technical diagnostics disclosure available");
+        await evaluate(`document.querySelector('main details[data-explorer-diagnostics]').open=true`);
+        await auditCurrent("expanded technical diagnostics", width);
+        await waitFor(`!!document.querySelector('main details[data-explorer-diagnostics] pre')`, "raw JSON remains accessible without tabs");
+        await auditCurrent("diagnostics rendered after expansion", width);
+        for (const path of ["/laporan?jenis=sdm", "/laporan?jenis=bkd", "/laporan?jenis=luaran", "/peringatan?jenis=data", "/peringatan?jenis=bkd"]) {
+          await navigate(path, "small view tab crawl");
+          await auditCurrent("workspace view tabs", width);
+        }
+      }
+    }
+    assert.deepEqual(apiErrors, []);
+    assert.equal(exceptions.length, 0);
+    console.log(JSON.stringify({ check: baseline ? "navigation-combination-baseline" : "all-rendered-menu-navigation-crawl",
+      phase, menuOffset: offset, scannedMenusPerWidth: selectedMenus.length,
+      menuTargets: menuTargets.length, populatedProfileAndDetailSamples: detailTargets.length, unavailableDetailSamples, visits: results.length,
+      submenuAndTabs: results.filter(row=>(row.submenu||row.modulePicker)&&row.tablists>0).length,
+      tabOnlyVisits: results.filter(row=>!(row.submenu||row.modulePicker)&&row.tablists>0).length,
+      widths, passed: !baseline }));
+  } else if (process.env.UI_SMOKE_NAVIGATION_ONLY === "1" || process.env.UI_SMOKE_TABS_ONLY === "1") {
+    // TABS_ONLY remains a compatible alias; duplicate BKD/profile tabs no longer exist.
+    const sample = await prisma.$queryRawUnsafe(
+      `SELECT b.id_sdm AS id, b.payload_json->>'id_smt' AS semester
+         FROM sister_replica_record b
+        WHERE b.integration_id=$1::uuid AND b.endpoint='/bkd/laporan_akhir_bkd'
+          AND b.deleted_at IS NULL AND b.payload_json->>'id_smt' IS NOT NULL
+          AND EXISTS (SELECT 1 FROM sister_replica_record s
+            WHERE s.integration_id=b.integration_id AND s.endpoint='/referensi/sdm'
+              AND s.item_key=b.id_sdm AND s.deleted_at IS NULL)
+        LIMIT 1`, process.env.SISTER_INTEGRATION_ID,
+    );
+    assert(sample[0], "A local SDM and BKD semester sample is required");
+    const { id, semester } = sample[0];
+    async function clickSidebarTab(key, mobile) {
+      if (mobile) {
+        await evaluate(`document.querySelector('button[aria-label="Buka navigasi"]').click()`);
+        await waitFor(`!!document.querySelector('aside[role="dialog"]')`, "mobile sidebar opens");
+      }
+      const selector = mobile ? 'aside[role="dialog"]' : 'aside:not([role="dialog"])';
+      await evaluate(`(() => {
+        const link = [...document.querySelector(${JSON.stringify(selector)}).querySelectorAll('a')].find(a=>new URL(a.href).searchParams.get('tab')===${JSON.stringify(key)});
+        if (!link) throw new Error('Missing section link');
+        link.closest('details').open=true; link.click();
+      })()`);
+      await waitFor(`new URLSearchParams(location.search).get('tab')===${JSON.stringify(key)} && !document.querySelector('[aria-busy="true"]')`, "sidebar section changes");
+      if (mobile) await waitFor(`!document.querySelector('aside[role="dialog"]')`, "mobile sidebar closes after navigation");
+    }
+    for (const width of [1280, 320]) {
+      const mobile = width === 320;
+      await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });
+      await navigate(`/pegawai/${encodeURIComponent(id)}?tab=profil`, "SDM sidebar-only navigation");
+      await waitFor(`!!document.querySelector('#sdm-section-heading')`, "profile section ready");
+      assert(await evaluate(`!document.querySelector('main [role="tablist"]')`), "SDM does not repeat submenu as tabs");
+      await clickSidebarTab("kepegawaian", mobile);
+      await waitFor(`document.querySelector('#sdm-section-heading')?.textContent==='Kepegawaian'`, "personal section heading updates");
+      assert(await evaluate(`location.pathname===${JSON.stringify(`/pegawai/${id}`)}`), "Personal navigation preserves SDM");
+      await evaluate("history.back()");
+      await waitFor(`document.querySelector('#sdm-section-heading')?.textContent==='Profil'`, "personal Back restores section");
+      await evaluate("history.forward()");
+      await waitFor(`document.querySelector('#sdm-section-heading')?.textContent==='Kepegawaian'`, "personal Forward restores section");
+      assert(await evaluate(fits), "Personal section fits viewport");
+      await navigate(`/bkd?tab=laporan_akhir_bkd&id_sdm=${encodeURIComponent(id)}&id_smt=${encodeURIComponent(semester)}`, "BKD sidebar-only navigation");
+      await waitFor(`!!document.querySelector('#bkd-section-heading')`, "BKD section ready");
+      assert(await evaluate(`!document.querySelector('main [role="tablist"]')`), "BKD does not repeat submenu as tabs");
+      await clickSidebarTab("bkd_ajar", mobile);
+      await waitFor(`document.querySelector('#bkd-section-heading')?.textContent==='BKD pengajaran'`, "BKD section heading updates");
+      assert(await evaluate(`new URLSearchParams(location.search).get('id_sdm')===${JSON.stringify(id)} && new URLSearchParams(location.search).get('id_smt')===${JSON.stringify(semester)}`), "BKD navigation preserves SDM and semester");
+      assert(await evaluate(fits), "BKD section fits viewport");
+      const deepLink = await evaluate("location.pathname+location.search");
+      await navigate(deepLink, "BKD section deep-link reload");
+      await waitFor(`document.querySelector('#bkd-section-heading')?.textContent==='BKD pengajaran'`, "BKD deep link restores section");
+    }
+    await navigate("/laporan", "small read-only report tabs remain");
+    await waitFor(`!!document.querySelector('[role="tablist"][aria-label="Jenis laporan"]')`, "report tabs ready");
+    await evaluate(`document.querySelector('[role="tablist"][aria-label="Jenis laporan"] [role="tab"]').focus()`);
+    for (const [key, expected] of [["ArrowLeft", "luaran"], ["Home", "sdm"], ["End", "luaran"], ["ArrowRight", "sdm"]]) {
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key });
+      await waitFor(`document.activeElement?.id.endsWith('-tab-${expected}') && document.activeElement?.getAttribute('aria-selected')==='true' && !document.querySelector('[aria-busy="true"]')`, "remaining report tab keyboard focus and selection");
+    }
     assert.equal(exceptions.length, 0);
     assert.deepEqual(apiErrors, []);
-    console.log(JSON.stringify({ check: "bkd-keyboard-tabs", width: 320, disabledSampleAvailable: Boolean(missingSemester[0]), passed: true }));
+    console.log(JSON.stringify({ check: "single-layer-sidebar-sections-and-small-view-tabs", widths: [1280,320], passed: true }));
   } else if (process.env.UI_SMOKE_PROGRAMS_ONLY === "1") {
     const url = new URL("/api/trpc/business.program_studies", base);
     url.searchParams.set("input", JSON.stringify({ page: 1, per_page: 20 }));

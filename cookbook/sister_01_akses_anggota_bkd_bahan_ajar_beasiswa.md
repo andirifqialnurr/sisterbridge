@@ -33,7 +33,7 @@ terbuka, termasuk perluasan dan QA halaman khusus yang sudah ada.
 |---|---|---:|---|---|
 | UI-01 Akses | `replika` | 0 | Status koneksi, role integrasi, dan sinkronisasi; login lokal terpisah | Tidak ada GET; status integrasi |
 | UI-02 Anggota Profesi | `anggota_profesi` | 2 | Daftar keanggotaan; organisasi, periode, detail, dan bukti yang tersedia | GET-000 s.d. GET-000 |
-| UI-03 BKD | `bkd` | 6 | Laporan akhir per semester; lima tab aktivitas, angka SKS dan simpulan dari SISTER | GET-000 s.d. GET-000 |
+| UI-03 BKD | `bkd` | 6 | Laporan akhir per semester dan lima bagian aktivitas melalui submenu saja, angka SKS dan simpulan dari SISTER | GET-000 s.d. GET-000 |
 | UI-04 Bahan Ajar | `bahan_ajar` | 2 | Daftar bahan ajar; judul, jenis, tahun; detail penulis dan dokumen | GET-000 s.d. GET-000 |
 | UI-05 Beasiswa | `beasiswa` | 2 | Riwayat beasiswa; jenis, penyelenggara, periode sesuai response | GET-000 s.d. GET-000 |
 

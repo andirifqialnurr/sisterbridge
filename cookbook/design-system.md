@@ -414,7 +414,7 @@ section: heading/toolbar -> content -> pagination
   terbuka) agar daftar referensi tidak membuat navigasi terlalu panjang.
   Mobile mengunci scroll latar, menjaga fokus di panel, mendukung Escape,
   mengembalikan fokus saat ditutup, dan menutup panel ketika pindah ke desktop.
-- Perubahan tab/query melalui link sidebar harus memperbarui isi halaman
+- Perubahan bagian/query melalui link sidebar harus memperbarui isi halaman
   sekaligus selected state, termasuk Back/Forward; jangan hanya membaca URL
   sekali ketika component pertama kali mount.
 
@@ -569,8 +569,30 @@ Gunakan native `<dialog>` atau primitive setara dengan:
 
 ### `ViewTabs`
 
-Tab dipakai untuk dua sampai lima view yang masih memiliki konteks halaman sama.
-Tab tidak otomatis menjadi menu sidebar.
+Pilih satu mekanisme navigasi untuk satu kelompok fitur: **submenu atau tab**,
+bukan keduanya. Fitur yang sudah menjadi submenu sidebar tidak boleh diulang
+sebagai tab halaman, termasuk pada detail. Jumlah fitur banyak, lintas modul,
+atau workflow mandiri memakai submenu; halaman menampilkan judul bagian aktif.
+
+Tab hanya dipakai untuk dua sampai lima view sederhana/read-only pada menu
+langsung yang tidak berada dalam submenu dan tidak memiliki pemilih modul
+bertingkat. Halaman di bawah submenu sidebar tidak memakai tab, termasuk tab
+presentasi/diagnostik. Jangan mengganti tab duplikatif dengan dropdown/tombol
+lokal yang mengulang navigasi fitur yang sama.
+
+Explorer Data Replika/Jelajah memakai navigasi modul dan tampilan data langsung,
+bukan tab Data/Struktur/JSON. Struktur dan JSON tersedia sebagai satu disclosure
+native `<details>` berlabel “Struktur data dan JSON”, tertutup secara default
+serta baru dirender saat dibuka. Ini informasi diagnostik tambahan, bukan
+navigasi antarfitur; jangan menjadikannya deretan disclosure untuk memilih
+modul. Tabel, pagination dan section detail tetap boleh digunakan untuk data.
+
+Project Profile SisterBridge: bagian Data pribadi SDM dan enam bagian BKD
+menggunakan submenu saja. Laporan (tiga view) dan Peringatan (dua view) boleh
+memakai tab karena tidak diulang sebagai submenu. Query `tab` lama tetap
+kompatibel sebagai penanda bagian/deep link; nama parameter tidak mengharuskan
+UI tab. Pindah bagian lewat sidebar mempertahankan SDM, dan antarbagian BKD
+juga semester, tetapi tidak membawa pencarian/pagination halaman sebelumnya.
 
 - Gunakan `role="tablist"`, `role="tab"`, `aria-selected`, dan `tabpanel`.
 - Hanya tab aktif berada dalam tab order.

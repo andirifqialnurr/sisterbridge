@@ -8,7 +8,6 @@ import { PageShell } from "@/component/ui/page_shell";
 import { Pagination } from "@/component/ui/pagination";
 import { Select } from "@/component/ui/select";
 import { State } from "@/component/ui/state";
-import { Tabs } from "@/component/ui/tabs";
 import { DataTable, type DataTableColumn } from "@/component/widget/data_table";
 import { TableSearch } from "@/component/widget/table_search";
 import { DokumenDownloadLink } from "@/component/widget/sister_file_links";
@@ -52,6 +51,7 @@ export function SdmDirectoryPage() {
   const activeProfile = profileModules.find((entry) => entry.key === state.values.tab);
   return (
     <PageShell actions={<TableSearch label="Cari nama / NIDN / NIP" value={draft} onValueChange={setDraft} onSearch={() => state.set({ search: draft.trim() || null, page: "1" })} onClear={state.values.search ? () => state.set({ search: null, page: "1" }) : undefined} />} activeLabel={activeProfile?.label ?? "Pegawai"} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: "Pegawai" }]}>
+      {activeProfile && <div className="space-y-1"><h1 className="text-base font-semibold">{activeProfile.label}</h1><p className="text-sm text-[hsl(var(--color-muted))]">Pilih SDM untuk melihat {activeProfile.label.toLocaleLowerCase("id-ID")}. Pindah bagian melalui submenu Data pribadi.</p></div>}
       {query.data && <SourceLine source={query.data.source} />}
       {query.error && <ErrorState message={query.error.message} title="Daftar SDM belum dapat dimuat" />}
       {query.isPending && <PageError error={null} pending title="Daftar SDM belum dapat dimuat" />}
@@ -76,8 +76,8 @@ export function SdmProfilePage({ idSdm, initialTab = "profil" }: { idSdm: string
         <Image alt="Foto SDM" className="h-20 w-20 rounded-full border border-[hsl(var(--color-border))] object-cover" height={80} src={`/api/sister/file/foto/${encodeURIComponent(idSdm)}`} unoptimized width={80} />
         <div className="space-y-1"><p className="text-sm font-semibold">{String(row?.values.nama ?? "Profil SDM")}</p><p className="text-xs text-[hsl(var(--color-muted))]">ID SDM · {idSdm}</p><SourceLine source={query.data?.source ?? null} /></div>
       </div>
-      <Tabs ariaLabel="Bagian data SDM" items={profileModules.map((module) => ({ value: module.key, label: module.label }))} onValueChange={(value) => state.set({ tab: value, page: "1" })} value={tab}>
-        <div className="space-y-4 pt-4">
+      <section aria-labelledby="sdm-section-heading" className="space-y-4">
+          <h1 id="sdm-section-heading" className="text-base font-semibold">{current.label}</h1>
           {query.error && <ErrorState message={query.error.message} title="Data SDM belum dapat dimuat" />}
           {query.isPending && <PageError error={null} pending title="Data SDM" />}
           {!query.isPending && !query.error && !row && query.data?.source?.status === 404 && <State description="SISTER tidak menemukan data pada scope ini." title="Data tidak ditemukan" tone="unavailable" />}
@@ -88,8 +88,7 @@ export function SdmProfilePage({ idSdm, initialTab = "profil" }: { idSdm: string
           {current.key === "bidang_ilmu_sdm" && query.data && <DataTable caption="Bidang ilmu SDM" columns={rowColumns(current.key, query.data.columns, idSdm)} rows={query.data.rows} getRowKey={(item) => item.row_key ?? item.id} empty={emptyDescription(query.data.source)} pagination={<Pagination page={page} pageCount={Math.ceil(query.data.total / query.data.per_page)} onPageChange={(next) => state.set({ page: String(next) })} />} />}
           {row && query.data?.related.map((section) => <section className="space-y-3" key={section.key}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-sm font-bold">{section.label}</h2><SourceLine source={section.source} /></div><DataTable caption={section.label} columns={section.columns.map((column) => ({ key: column.key, header: labelFor(column.key), render: (item: BusinessRow) => formatValue(item.values[column.key]) }))} empty="Tidak ada record terkait." getRowKey={(item) => item.id} rows={section.rows} pagination={<div className="flex items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{section.total.toLocaleString("id-ID")} data</span><Pagination page={section.page} pageCount={Math.max(1, Math.ceil(section.total / section.per_page))} onPageChange={(next) => state.set({ [`page_section_${section.key}`]: String(next) })} /></div>} /></section>)}
           {current.note && <p className="text-xs text-[hsl(var(--color-muted))]">{current.note}</p>}
-        </div>
-      </Tabs>
+      </section>
     </PageShell>
   );
 }

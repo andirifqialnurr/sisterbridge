@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Bell, BookOpen, BriefcaseBusiness, Building2, Compass, Database, FileText, FolderOpen, GraduationCap, HandHeart, HeartHandshake, LayoutDashboard, Menu, Microscope, RefreshCw, Search, Settings2, ShieldCheck, UserRound, UsersRound, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { jelajahModules, type JelajahGroup } from "@/modules/jelajah/api/jelajah_catalog";
+import { moduleNavigationContext, moduleNavigationHref } from "@/modules/jelajah/api/module_navigation";
 import { cn } from "@/lib/cn";
 import { useTRPC } from "@/lib/trpc";
 import { theme } from "@/const/theme";
@@ -30,14 +31,7 @@ const groupIcons: Record<JelajahGroup, LucideIcon> = {
   Referensi: Building2,
 };
 
-function moduleHref(module: (typeof jelajahModules)[number]) {
-  if (module.kind === "sdm_object") return `/pegawai?tab=${encodeURIComponent(module.key)}`;
-  if (module.key.startsWith("bkd_") || module.key === "laporan_akhir_bkd") return `/bkd?tab=${encodeURIComponent(module.key)}`;
-  const query = new URLSearchParams(module.query ?? {}).toString();
-  return `${module.path}${query ? `?${query}` : ""}`;
-}
-
-function makeGroups(): NavigationGroup[] {
+function makeGroups(context: ReturnType<typeof moduleNavigationContext>): NavigationGroup[] {
   const workspace: NavigationItem[] = [
     { label: "Ikhtisar", href: "/", icon: LayoutDashboard, requiresAdmin: true },
     { label: "Pegawai", href: "/pegawai", icon: UsersRound, requiresAdmin: true },
@@ -52,7 +46,7 @@ function makeGroups(): NavigationGroup[] {
     icon: groupIcons[label],
     items: jelajahModules.filter((module) => module.group === label).map((module) => ({
       label: module.label,
-      href: moduleHref(module),
+      href: moduleNavigationHref(module, context),
       requiresAdmin: true,
     })),
   }));
@@ -70,6 +64,7 @@ function makeGroups(): NavigationGroup[] {
 
 export function Sidebar({ activeLabel = "Ikhtisar" }: { activeLabel?: string }) {
   const pathname = usePathname();
+  const search = useSearchParams().toString();
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   useEffect(() => {
@@ -81,7 +76,7 @@ export function Sidebar({ activeLabel = "Ikhtisar" }: { activeLabel?: string }) 
   const trpc = useTRPC();
   const sessionQuery = useQuery(trpc.overview.session.queryOptions());
   const role = sessionQuery.data?.role;
-  const groups = makeGroups().map((group) => ({
+  const groups = makeGroups(moduleNavigationContext(pathname, search)).map((group) => ({
     ...group,
     items: group.items.filter((item) => (!item.requiresAdmin || role === "ADMIN") && (!item.requiresOperator || role === "ADMIN" || role === "OPERATOR")),
   })).filter((group) => group.items.length > 0);

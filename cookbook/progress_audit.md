@@ -650,6 +650,76 @@ dihentikan, profile Chrome temp dihapus. QA ini bukan seluruh modul/record atau
 perbaikan 14 HTTP 500 maupun sample binary kelas yang sebelumnya gagal.
 Acceptance seluruh GET/UI tetap terbuka.
 
+## Navigasi submenu atau tab, bukan duplikasi — 2026-10-30
+
+Permintaan UI: satu kelompok fitur harus memilih submenu atau tab. Tujuh
+bagian Data pribadi dan enam bagian BKD sekarang menggunakan submenu sidebar
+saja; tab modul pada halaman bisnis aktif dihapus, diganti judul bagian.
+Query `tab` tetap kompatibel sebagai identitas bagian/deep link, bukan UI tab.
+Laporan (tiga view), Peringatan (dua view) dan format Data/Struktur/JSON explorer
+teknis tetap bertab karena tidak mengulang pilihan submenu yang sama.
+
+Link sidebar pribadi kini membuka bagian pada SDM yang sedang dibaca, bukan
+meminta pengguna memilih ulang dari direktori. Konteks diturunkan dari route
+SDM yang dikenal atau UUID `id_sdm`; antarbagian BKD juga mempertahankan
+semester. Search/pagination lama tidak dibawa. ID pada URL tetap bukan bukti
+ownership; guard service/role/integrasi tidak diubah. Direktori tanpa pilihan
+SDM tetap mengarahkan pengguna memilih SDM terlebih dahulu.
+
+Design system menetapkan aturan eksplisit submenu vs tab (maksimal lima view
+sederhana/read-only). PRD managerial, inventaris UI, breakdown BKD dan TODO
+aktif diselaraskan; URL contoh lima aktivitas BKD dikoreksi memakai key
+`bkd_*` yang benar. Catatan QA tab BKD lama adalah evidence historis, bukan
+kontrak UI saat ini. Mode smoke baru `UI_SMOKE_NAVIGATION_ONLY=1` menggantikannya;
+flag `UI_SMOKE_TABS_ONLY` menjadi alias kompatibel.
+
+Evidence: **599 test / 78 file, typecheck, lint dan build Next produksi
+langsung lulus**, termasuk collect traces. QA browser authenticated ADMIN
+pada produksi lokal 1280/320px lulus: tidak ada tablist di profil/BKD; perubahan
+submenu memuat heading yang sesuai, SDM/semester dipertahankan, Back/Forward
+profil dan reload deep link BKD bekerja. Drawer mobile menutup setelah memilih
+submenu, tidak ada overflow halaman/error tRPC/uncaught exception. Keyboard
+ArrowLeft/Right/Home/End tab view Laporan yang dipertahankan juga lulus.
+
+QA memakai satu sampel SDM/BKD dari replika dan akun ADMIN sementara, tanpa
+log ID/payload personal, screenshot atau unduhan upstream. Akun/credential/
+session QA dihapus; audit dipertahankan. Server/browser dihentikan dan profile
+Chrome temp dihapus. Tidak melakukan sync atau mengubah data replika/SISTER.
+Ini bukan QA semua record/role, screen reader, atau penyelesaian error upstream.
+
+## Crawl ulang navigasi seluruh target menu — 2026-10-30
+
+Audit lanjutan memperketat keputusan sebelumnya: tidak ada pengecualian tab
+Data/Struktur/JSON di bawah submenu/pemilih modul. Baseline browser pada hasil
+Replika berisi data membuktikan satu kombinasi yang masih ada. Komponen bersama
+`DataExplorerView` sekarang membuka data langsung, dengan satu disclosure
+Struktur data dan JSON (lazy, default tertutup), bukan tab atau selector baru.
+Perbaikan ini berlaku pada daftar/detail Replika dan Jelajah. Laporan/Peringatan
+saja tetap memakai tab sebagai menu langsung tanpa submenu view.
+
+Crawl produksi lokal mengambil **106 target dari link sidebar terender**,
+bukan inventaris route buatan. Batch akhir lulus pada 1280/320px: 212 kunjungan
+menu, 84 kunjungan sampel profil/detail (7 profil + 35 modul pada tiap lebar),
+dan 16 pemeriksaan explorer populated/diagnostik dibuka/view laporan-warning.
+Total **312 pemeriksaan DOM**, nol kombinasi submenu/pemilih modul + tab, nol
+overflow halaman/error tRPC/uncaught exception. Dua detail tidak punya parent
+aktif dan tetap untested. Crawl awal terinterupsi; akun QA tertinggal dibersihkan
+sebelum seluruh batch akhir diulang sampai selesai.
+
+**602 test / 79 file, typecheck, lint, build Next langsung dan diff-check lulus.**
+Mode `UI_SMOKE_NAVIGATION_CRAWL_ONLY=1` mendukung fase menus/details/extras,
+lebar dan range menu agar hasil parsial dapat dilanjutkan tanpa mengklaim crawl
+lengkap. Matrix keputusan per kelompok, perintah reproduksi dan batas evidence
+ada di [navigation_audit.md](navigation_audit.md).
+
+Akun/credential/session QA dibersihkan, audit dipertahankan; verifikasi akhir
+nol akun QA, server/browser berhenti dan profile temp dihapus. Foto/file
+upstream diblokir. Tidak menjalankan sync atau mutation replika/SISTER. Namun
+picker `/jelajah` memanggil `pegawai.search` otomatis (direktori SDM live dan
+cache pegawai); batch produksi lokal tanpa override memakai `SISTER_BASE_URL`
+terkonfigurasi. Ini bukan klaim nol request upstream, seluruh database read-only,
+QA semua record/role, review visual manual atau screen reader.
+
 ## Audit baseline (sebelum perbaikan)
 
 Baseline source: commit `83e0f2d` (`checkpoint update sidebar`).

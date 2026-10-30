@@ -4,7 +4,6 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import { Button } from "@/component/ui/button";
 import { Pagination } from "@/component/ui/pagination";
-import { Tabs } from "@/component/ui/tabs";
 
 import { analyzeRows, toRows } from "@/lib/field_analysis";
 
@@ -29,7 +28,7 @@ export type DataExplorerResult = {
 type DataExplorerViewProps = {
   title: string;
   result: DataExplorerResult;
-  // First line above the tabs; defaults to "GET <endpoint>?<query>".
+  // First line above the data; defaults to "GET <endpoint>?<query>".
   sourceLabel?: string;
   // Renders a per-row action (e.g. "Detail") in list mode.
   rowAction?: (row: Record<string, unknown>) => ReactNode;
@@ -51,7 +50,7 @@ function formatCell(value: unknown) {
   }
   const text = String(value);
   // UUIDs are shortened (full value on hover); ISO timestamps are shown in
-  // local time. The JSON tab keeps the raw values.
+  // local time. The diagnostics disclosure keeps the raw values.
   if (uuidPattern.test(text)) {
     return (
       <span className="font-mono text-xs text-[hsl(var(--color-muted))]" title={text}>
@@ -79,7 +78,7 @@ function isScalar(value: unknown) {
 }
 
 export function DataExplorerView({ result, rowAction, sourceLabel, title, pagination }: DataExplorerViewProps) {
-  const [tab, setTab] = useState("data");
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [page, setPage] = useState(1);
   const rows = useMemo(() => toRows(result.data) as Record<string, unknown>[], [result.data]);
   const analysis = useMemo(() => analyzeRows(rows), [rows]);
@@ -104,24 +103,14 @@ export function DataExplorerView({ result, rowAction, sourceLabel, title, pagina
           }`}{" "}
         · {result.item_count} item · {new Date(result.fetched_at).toLocaleString("id-ID")}
       </p>
-      <Tabs
-        ariaLabel={`Tampilan ${title}`}
-        items={[
-          { value: "data", label: "Data" },
-          { value: "struktur", label: "Struktur data" },
-          { value: "json", label: "JSON" },
-        ]}
-        onValueChange={setTab}
-        value={tab}
-      >
-        <div className="pt-3">
-          {tab === "data" && rows.length === 0 && (
+      <div className="space-y-3">
+          {rows.length === 0 && (
             <p className="rounded-lg border border-dashed border-[hsl(var(--color-border))] p-4 text-sm text-[hsl(var(--color-muted))]">
               SISTER tidak mengembalikan data untuk permintaan ini.
             </p>
           )}
 
-          {tab === "data" && rows.length > 0 && isSingleObject && (
+          {rows.length > 0 && isSingleObject && (
             <dl className="grid gap-x-6 gap-y-3 rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] p-4 sm:grid-cols-2 xl:grid-cols-3">
               {Object.entries(rows[0]).map(([field, value]) => (
                 <div className="min-w-0" key={field}>
@@ -132,7 +121,7 @@ export function DataExplorerView({ result, rowAction, sourceLabel, title, pagina
             </dl>
           )}
 
-          {tab === "data" && rows.length > 0 && !isSingleObject && (
+          {rows.length > 0 && !isSingleObject && (
             <div className="space-y-3">
               <div className="overflow-x-auto rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))]">
                 <table className="w-full min-w-[640px] border-collapse text-left text-sm">
@@ -163,21 +152,26 @@ export function DataExplorerView({ result, rowAction, sourceLabel, title, pagina
               </div>
               {analysis.fields.length > columns.length && (
                 <p className="text-xs text-[hsl(var(--color-muted))]">
-                  Menampilkan {columns.length} dari {analysis.fields.length} field. Field lengkap ada di tab
-                  Struktur data dan JSON.
+                  Menampilkan {columns.length} dari {analysis.fields.length} field. Field lengkap tersedia
+                  pada detail Struktur data dan JSON di bawah.
                 </p>
               )}
             </div>
           )}
-          {tab === "data" && !isSingleObject && <div className="flex flex-wrap items-center justify-between gap-3">
+          {!isSingleObject && <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-[hsl(var(--color-muted))]">{(pagination?.total ?? rows.length).toLocaleString("id-ID")} data</span>
             <Pagination onPageChange={pagination?.onPageChange ?? setPage} page={pagination?.page ?? safePage} pageCount={pagination?.pageCount ?? pageCount} disabled={pagination?.disabled} />
           </div>}
 
-          {tab === "struktur" && <StructureTable analysis={analysis} title={title} />}
-
-          {tab === "json" && (
-            <div className="space-y-2">
+          <details data-explorer-diagnostics className="min-w-0 border-t border-[hsl(var(--color-border))] pt-3"
+            onToggle={event => setDiagnosticsOpen(event.currentTarget.open)}>
+            <summary className="cursor-pointer rounded-md py-2 text-sm font-medium text-[hsl(var(--color-muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--color-primary))]">
+              Struktur data dan JSON
+            </summary>
+            {diagnosticsOpen && <div className="min-w-0 space-y-4 pt-3">
+              <StructureTable analysis={analysis} title={title} />
+              <div className="space-y-2">
+              <h3 className="text-sm font-semibold">JSON · {title}</h3>
               {rows.length > maxJsonItems && (
                 <p className="text-xs text-[hsl(var(--color-muted))]">
                   Menampilkan {maxJsonItems} item pertama dari {rows.length}.
@@ -190,10 +184,10 @@ export function DataExplorerView({ result, rowAction, sourceLabel, title, pagina
                   2,
                 )}
               </pre>
-            </div>
-          )}
-        </div>
-      </Tabs>
+              </div>
+            </div>}
+          </details>
+      </div>
     </div>
   );
 }

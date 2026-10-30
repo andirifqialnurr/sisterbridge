@@ -128,7 +128,7 @@ matriks; Akses mencakup status integrasi, bukan endpoint GET tambahan.
 
 - [ ] UI-01 Akses — Status koneksi, role integrasi, dan sinkronisasi; login lokal terpisah; verifikasi status integrasi tanpa credential, sumber, state, permission dan QA.
 - [ ] UI-02 Anggota Profesi — Daftar keanggotaan; organisasi, periode, detail, dan bukti yang tersedia; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
-- [ ] UI-03 BKD — Laporan akhir per semester; lima tab aktivitas, angka SKS dan simpulan dari SISTER; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
+- [ ] UI-03 BKD — Laporan akhir per semester; lima bagian aktivitas melalui submenu saja, angka SKS dan simpulan dari SISTER; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
 - [ ] UI-04 Bahan Ajar — Daftar bahan ajar; judul, jenis, tahun; detail penulis dan dokumen; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
 - [ ] UI-05 Beasiswa — Riwayat beasiswa; jenis, penyelenggara, periode sesuai response; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
 - [ ] UI-06 Bimbingan Dosen — Daftar/detail pembimbingan dosen dan pihak terkait; list/detail/child sesuai GET-ID, sumber, state, permission dan QA.
@@ -186,6 +186,30 @@ matriks; Akses mencakup status integrasi, bukan endpoint GET tambahan.
 - [ ] Acceptance global tetap terbuka: 14 HTTP 500 upstream, tiga detail
   tanpa parent, kelengkapan semua record dan file/pencarian live tidak menjadi
   sukses hanya karena template tampil di tabel coverage.
+
+## Checkpoint navigasi satu lapis — 2026-10-30
+
+- [x] Hapus tab duplikatif pada profil SDM dan BKD; submenu menjadi satu-satunya
+  navigasi bagian. Pertahankan SDM/semester saat berpindah submenu dan judul
+  bagian aktif, tanpa membawa pagination/search lama.
+- [x] Dokumentasikan pilihan submenu atau tab view sederhana di design system;
+  selaraskan PRD/inventaris BKD. Laporan/Peringatan tetap bertab karena tidak
+  mempunyai submenu view yang sama.
+- [x] Regression 599 test, typecheck, lint, build Next langsung dan browser ADMIN
+  1280/320px lulus untuk irisan navigasi ini; lihat batas evidence di
+  `progress_audit.md`. Acceptance seluruh modul/record tetap terpisah.
+
+## Checkpoint crawl ulang navigasi — 2026-10-30
+
+- [x] Hilangkan pengecualian tab explorer: Data Replika/Jelajah memakai
+  pemilih modul + data langsung, tanpa tab. Diagnostik satu disclosure lazy,
+  bukan navigasi alternatif. Aturan design system diperketat.
+- [x] Crawl seluruh 106 link sidebar terender pada 1280/320px, tujuh bagian
+  profil + 35 sampel detail dan explorer populated/view laporan-warning.
+  Total 312 pemeriksaan DOM batch akhir lulus tanpa kombinasi submenu + tab.
+- [x] Dokumentasikan pilihan per kelompok, reproduksi batch dan batas evidence
+  pada `navigation_audit.md`; 602 test, typecheck, lint dan build Next langsung
+  lulus. Dua detail tanpa parent dan acceptance seluruh record tetap terbuka.
 
 ## Arsip checkpoint implementasi
 

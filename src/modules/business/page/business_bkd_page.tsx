@@ -6,14 +6,13 @@ import { PageShell } from "@/component/ui/page_shell";
 import { Pagination } from "@/component/ui/pagination";
 import { Select } from "@/component/ui/select";
 import { State } from "@/component/ui/state";
-import { Tabs } from "@/component/ui/tabs";
 import { DataTable } from "@/component/widget/data_table";
 import { getJelajahModule } from "@/modules/jelajah/api/jelajah_catalog";
 import { useTRPC } from "@/lib/trpc";
 import { parsePageParam } from "@/lib/pagination";
 import { emptyDescription, ErrorState, formatValue, labelFor, PageError, rowColumns, SdmPicker, SourceLine, useUrlState } from "./business_shared";
 
-const tabs = [
+const sections = [
   { value: "laporan_akhir_bkd", label: "Laporan akhir" },
   { value: "bkd_pendidikan", label: "Pendidikan" },
   { value: "bkd_ajar", label: "Pengajaran" },
@@ -28,7 +27,8 @@ export function BusinessBkdPage({ initialTab = "laporan_akhir_bkd" }: { initialT
   const idSdm = state.values.id_sdm ?? "";
   const reportPage = parsePageParam(state.values.page_laporan);
   const activityPage = parsePageParam(state.values.page_aktivitas);
-  const activeTab = tabs.some((tab) => tab.value === state.values.tab) ? state.values.tab : initialTab;
+  const fallbackSection = sections.some(section => section.value === initialTab) ? initialTab : "laporan_akhir_bkd";
+  const activeTab = sections.some(section => section.value === state.values.tab) ? state.values.tab : fallbackSection;
   const reports = useQuery({
     ...trpc.business.rows.queryOptions({ module: "laporan_akhir_bkd", id_sdm: idSdm || undefined, page: reportPage, per_page: 20, search: "" }),
     enabled: state.ready,
@@ -63,22 +63,21 @@ export function BusinessBkdPage({ initialTab = "laporan_akhir_bkd" }: { initialT
     : [];
   const activeLabel = getJelajahModule(activeTab)?.label ?? "BKD";
   return (
-    <PageShell actions={<SdmPicker optional enabled={state.ready} onChange={(id) => state.set({ id_sdm: id || null, id_smt: null, page_laporan: "1", page_aktivitas: "1" })} value={idSdm} />} activeLabel={activeLabel} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: "BKD" }]}>
+    <PageShell actions={<SdmPicker optional enabled={state.ready} onChange={(id) => state.set({ id_sdm: id || null, id_smt: null, page_laporan: "1", page_aktivitas: "1" })} value={idSdm} />} activeLabel={activeLabel} breadcrumb={[{ href: "/", label: "Ikhtisar" }, { href: "/bkd", label: "BKD" }, { label: currentModule.label }]}>
       {<>
         {reports.error && <ErrorState message={reports.error.message} title="Laporan akhir BKD gagal dimuat" />}
         {semesterQuery.error && <ErrorState message={semesterQuery.error.message} title="Daftar semester gagal dimuat" />}
         {reports.isPending && <PageError error={null} pending title="Laporan akhir BKD" />}
         {reports.data && <div className="flex flex-wrap items-center justify-between gap-3"><SourceLine source={reports.data.source} /><label className="w-full max-w-sm"><span className="mb-1 block text-xs font-semibold text-[hsl(var(--color-muted))]">Semester</span><Select ariaLabel="Pilih semester BKD" disabled={semesterOptions.length === 0} onValueChange={(value) => state.set({ id_smt: value, page_aktivitas: "1" })} options={idSdm ? semesterOptions : [{ value: "", label: "Semua semester" }, ...semesterOptions]} placeholder="Semester belum tersedia" value={idSmt} /></label></div>}
-        <Tabs ariaLabel="Bagian laporan BKD" items={tabs.map((tab) => ({ ...tab, disabled: tab.value !== "laporan_akhir_bkd" && Boolean(idSdm) && !idSmt }))} onValueChange={(value) => state.set({ tab: value })} value={activeTab}>
-          <div className="space-y-4 pt-4">
+        <section aria-labelledby="bkd-section-heading" className="space-y-4">
+            <h1 id="bkd-section-heading" className="text-base font-semibold">{currentModule.label}</h1>
             {activeTab !== "laporan_akhir_bkd" && idSdm && !idSmt && <State description="Semester dipilih dari daftar laporan akhir SISTER yang tersimpan." title="Semester belum tersedia" tone="unavailable" />}
             {activeTab !== "laporan_akhir_bkd" && activity.error && <ErrorState message={activity.error.message} title={`${currentModule.label} gagal dimuat`} />}
             {activeTab !== "laporan_akhir_bkd" && activity.isPending && (!idSdm || idSmt) && <PageError error={null} pending title={currentModule.label} />}
             {activeTab !== "laporan_akhir_bkd" && activity.data && <SourceLine source={activity.data.source} />}
             {reportSummary.length > 0 && selectedReport && <dl className="grid grid-cols-2 gap-4 border-b border-[hsl(var(--color-border))] pb-4 md:grid-cols-4">{reportSummary.map((column) => <div key={column.key}><dt className="text-xs text-[hsl(var(--color-muted))]">{labelFor(column.key)}</dt><dd className="mt-1 text-lg font-semibold text-[hsl(var(--color-text))]">{formatValue(selectedReport.values[column.key])}</dd></div>)}</dl>}
             {current.data && <DataTable caption={currentModule.label} columns={rowColumns(currentModule.key, columns, idSdm)} empty={emptyDescription(current.data.source)} getRowKey={(row) => row.row_key ?? row.id} rows={rows} pagination={<div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-[hsl(var(--color-muted))]">{current.data.total.toLocaleString("id-ID")} data</span><Pagination page={activeTab === "laporan_akhir_bkd" ? reportPage : activityPage} pageCount={Math.max(1, Math.ceil(current.data.total / current.data.per_page))} onPageChange={(next) => state.set(activeTab === "laporan_akhir_bkd" ? { page_laporan: String(next) } : { page_aktivitas: String(next) })} /></div>} />}
-          </div>
-        </Tabs>
+        </section>
       </>}
     </PageShell>
   );
