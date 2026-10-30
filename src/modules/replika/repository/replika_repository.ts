@@ -1,6 +1,7 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
+import type { CoverageRecordCount, CoverageScopeCount } from "@/server/sister/replica/replica_coverage";
 
 export type ReplicaViewInfo = {
   name: string;
@@ -22,6 +23,7 @@ export type ReplicaRowFilter = {
 };
 
 export type ReplikaRepository = {
+  coverageCounts(integrationId: string): Promise<{ records: CoverageRecordCount[]; scopes: CoverageScopeCount[] }>;
   listViews(): Promise<ReplicaViewInfo[]>;
   columns(view: string): Promise<ReplicaColumnInfo[]>;
   rows(view: string, filter: ReplicaRowFilter, limit: number, offset?: number): Promise<Record<string, unknown>[]>;
@@ -66,6 +68,24 @@ function quoteIdent(name: string) {
 // never from request input, before being interpolated as identifiers.
 export class PrismaReplikaRepository implements ReplikaRepository {
   constructor(private readonly client: ReplikaClient = prisma) {}
+
+  async coverageCounts(integrationId: string) {
+    const [records, scopes] = await Promise.all([
+      this.client.$queryRawUnsafe<{ endpoint: string; count: bigint }[]>(
+        `SELECT endpoint, count(*) AS count FROM public.sister_replica_record
+          WHERE integration_id = $1::uuid AND deleted_at IS NULL GROUP BY endpoint`, integrationId,
+      ),
+      this.client.$queryRawUnsafe<{ endpoint: string; status: number; count: bigint; lastFetchedAt: Date | null }[]>(
+        `SELECT endpoint, last_status AS status, count(*) AS count, max(last_fetched_at) AS "lastFetchedAt"
+           FROM public.sister_replica_scope WHERE integration_id = $1::uuid
+          GROUP BY endpoint, last_status`, integrationId,
+      ),
+    ]);
+    return {
+      records: records.map(row => ({ ...row, count: Number(row.count) })),
+      scopes: scopes.map(row => ({ ...row, count: Number(row.count) })),
+    };
+  }
 
   async listViews() {
     return this.client.$queryRawUnsafe<ReplicaViewInfo[]>(

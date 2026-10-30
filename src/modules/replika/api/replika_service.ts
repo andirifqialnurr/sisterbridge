@@ -2,6 +2,7 @@ import { jelajahModules, getJelajahModule, type JelajahModule } from "@/modules/
 import { SisterNotFoundError } from "@/server/sister/errors";
 import { getSisterConfig } from "@/server/sister/config";
 import { replicaEndpointTemplates } from "@/server/sister/replica/replica_catalog";
+import { buildReplicaCoverage } from "@/server/sister/replica/replica_coverage";
 import { viewNameFor } from "@/server/sister/replica/replica_views";
 
 import {
@@ -219,6 +220,11 @@ export async function getReplikaItem(
   }
 
   return { module: definition.key, id: input.id, sections };
+}
+
+export async function getReplikaCoverage(repository: ReplikaRepository = new PrismaReplikaRepository()) {
+  const { records, scopes } = await repository.coverageCounts(currentIntegrationId());
+  return { ...buildReplicaCoverage(records, scopes), checked_at: new Date().toISOString() };
 }
 
 export async function getReplikaSyncStatus(

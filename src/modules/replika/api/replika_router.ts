@@ -11,6 +11,7 @@ import {
   replikaSyncStatusInputSchema,
 } from "./replika_schemas";
 import {
+  getReplikaCoverage,
   getReplikaItem,
   getReplikaRows,
   getReplikaSyncStatus,
@@ -48,6 +49,7 @@ export const replikaRouter = createTRPCRouter({
   item: operatorProcedure
     .input(replikaItemInputSchema)
     .query(({ input }) => run(() => getReplikaItem(input))),
+  coverage: operatorProcedure.query(() => run(() => getReplikaCoverage())),
   sync_status: operatorProcedure.input(replikaSyncStatusInputSchema).query(({ input }) => run(() => getReplikaSyncStatus(input))),
   dashboard: adminProcedure.query(() => run(() => getReplikaDashboard())),
 });

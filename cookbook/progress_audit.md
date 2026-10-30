@@ -610,6 +610,46 @@ produksi lulus. Tidak ada binary upstream atau payload personal dicetak/disimpan
 Server QA dihentikan, akun/sibling/scope QA diverifikasi nol; audit dipertahankan.
 Tidak memperbaiki atau memprobe ulang error upstream kelas/14 scope 500.
 
+## Coverage GET dalam halaman status — 2026-10-30
+
+Audit read-only `bun run sister:coverage` mengonfirmasi **136.140 record aktif**,
+118 template mempunyai record, dan 132 mempunyai scope dari 135 template JSON.
+Kondisi katalog: 115 available, 10 empty, 3 waiting_for_parent dan 7
+partial_or_failed. Full sync terakhir tetap PARTIAL (7.833 request, 14 error).
+Tidak ada sync, mutation replika atau request upstream pada pekerjaan ini.
+
+Halaman `/replika/status` kini menyediakan tabel coverage 135 template dengan
+filter kondisi data, record aktif, jumlah scope per HTTP dan waktu pemeriksaan
+scope terakhir. Pagination mempunyai state URL `page_coverage` independen dari
+riwayat run/kelompok scope; filter `coverage_status` mereset halaman coverage,
+dan perubahan ukuran mereset ketiga pager. URL invalid memakai default aman;
+halaman di luar hasil filter diklem agar data tetap dapat dijangkau.
+
+Procedure `replika.coverage` hanya ADMIN/OPERATOR, memakai integrasi konfigurasi
+server. Repository hanya membaca agregat scope dan record aktif melalui query
+parameterized; tidak mengirim ID scope/SDM atau payload. Pengelompokan kondisi
+sekarang dibagi dengan script CLI agar definisi status konsisten. Available
+berarti ada cache, bukan seluruh record berhasil. Lima GET live/file tidak
+dihitung sukses oleh coverage ini. Status 403 historis tetap terlihat dan
+bukan alasan melewati guard lintas PT.
+
+Evidence: **578 test / 76 file, typecheck dan lint lulus**. Ringkasan serta
+seluruh baris endpoint CLI sebelum/sesudah refactor sama. `bun run build`
+terhenti pada Prisma generate karena DLL Windows terkunci; tidak ada perubahan
+schema/dependency, dan build langsung `node node_modules/next/dist/bin/next build`
+**lulus lengkap**, termasuk collect traces. Jadi bukan klaim command build
+wrapper telah lulus; lock proses lain tidak dipaksa dilepas.
+
+QA authenticated produksi lokal, `UI_SMOKE_STATUS_ONLY=1`: ketiga pager
+independen; halaman terakhir coverage (5 template pada ukuran 10) terjangkau,
+filter tiga detail menunggu parent, Back/Forward dan URL invalid lulus. Pada
+320px tidak ada overflow halaman/error tRPC/uncaught exception. Sesi nyata
+ADMIN/OPERATOR mendapat 200 untuk coverage, REVIEWER/VIEWER mendapat 403.
+Akun/credential/session QA dihapus, audit dipertahankan; server dan browser QA
+dihentikan, profile Chrome temp dihapus. QA ini bukan seluruh modul/record atau
+perbaikan 14 HTTP 500 maupun sample binary kelas yang sebelumnya gagal.
+Acceptance seluruh GET/UI tetap terbuka.
+
 ## Audit baseline (sebelum perbaikan)
 
 Baseline source: commit `83e0f2d` (`checkpoint update sidebar`).

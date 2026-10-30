@@ -5,8 +5,9 @@ import { appRouter } from "@/server/trpc/router";
 import { SisterNotFoundError } from "@/server/sister/errors";
 import { replikaItemInputSchema, replikaSyncStatusInputSchema } from "./replika_schemas";
 
-import { toJsonSafe, type ReplikaRepository } from "../repository/replika_repository";
+import { PrismaReplikaRepository, toJsonSafe, type ReplikaRepository } from "../repository/replika_repository";
 import {
+  getReplikaCoverage,
   getReplikaItem,
   getReplikaRows,
   getReplikaSyncStatus,
@@ -23,6 +24,7 @@ vi.mock("@/server/sister/config", () => ({
 
 function fakeRepository(overrides: Partial<ReplikaRepository> = {}): ReplikaRepository {
   return {
+    coverageCounts: vi.fn().mockResolvedValue({ records: [], scopes: [] }),
     listViews: vi.fn().mockResolvedValue([
       { name: "penelitian_list", comment: "SISTER /penelitian (generated)" },
       { name: "penelitian", comment: "SISTER /penelitian/{id} (generated)" },
@@ -235,6 +237,15 @@ describe("replika service", () => {
     expect(replikaSyncStatusInputSchema.safeParse({ per_page: 101 }).success).toBe(false);
   });
 
+  it("reads coverage only for the configured integration and exposes aggregates", async () => {
+    const repository = fakeRepository();
+    const result = await getReplikaCoverage(repository);
+    expect(repository.coverageCounts).toHaveBeenCalledWith(integrationId);
+    expect(result.summary.templates).toBe(135);
+    expect(result.summary.active_records).toBe(0);
+    expect(result.checked_at).toEqual(expect.any(String));
+  });
+
   it("converts driver values", () => {
     expect(toJsonSafe(BigInt(5))).toBe(5);
     expect(toJsonSafe(BigInt("90071992547409930"))).toBe("90071992547409930");
@@ -243,13 +254,29 @@ describe("replika service", () => {
 });
 
 describe("replika router", () => {
-  function caller(role: "OPERATOR" | "VIEWER") {
+  function caller(role: "ADMIN" | "OPERATOR" | "REVIEWER" | "VIEWER" | null) {
     return appRouter.createCaller({
       requestId: "replika-request",
       request: new Request("https://app.test/api/trpc/replika.sync_status"),
-      user: { id: "00000000-0000-4000-8000-000000000001", email: "u@example.test", name: "U", role },
+      user: role ? { id: "00000000-0000-4000-8000-000000000001", email: "u@example.test", name: "U", role } : null,
     });
   }
+
+  it("guards coverage before querying storage and sanitizes failures", async () => {
+    const query = vi.spyOn(PrismaReplikaRepository.prototype, "coverageCounts").mockResolvedValue({ records: [], scopes: [] });
+    try {
+      await expect(caller(null).replika.coverage()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+      for (const role of ["VIEWER", "REVIEWER"] as const) {
+        await expect(caller(role).replika.coverage()).rejects.toMatchObject({ code: "FORBIDDEN" });
+      }
+      expect(query).not.toHaveBeenCalled();
+      for (const role of ["ADMIN", "OPERATOR"] as const) {
+        expect((await caller(role).replika.coverage()).summary.templates).toBe(135);
+      }
+      query.mockRejectedValueOnce(new Error("private database detail"));
+      await expect(caller("ADMIN").replika.coverage()).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR", message: "Data replika gagal dibaca" });
+    } finally { query.mockRestore(); }
+  });
 
   it("limits sync status to operators and validates module keys", async () => {
     await expect(caller("VIEWER").replika.sync_status()).rejects.toMatchObject({ code: "FORBIDDEN" });

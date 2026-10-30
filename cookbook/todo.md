@@ -174,6 +174,19 @@ matriks; Akses mencakup status integrasi, bukan endpoint GET tambahan.
 - [ ] Dokumentasikan cakupan sukses/kosong/gagal tiap scope saat release UI;
   tidak menyebut 140/140 path sebagai 140/140 berhasil mengambil semua data.
 
+## Checkpoint coverage GET — 2026-10-30
+
+- [x] Tampilkan coverage 135 template GET JSON di `/replika/status`, dengan
+  kondisi tersedia/kosong/menunggu parent/belum diambil/404/gagal, record aktif,
+  jumlah scope per HTTP, filter dan pagination URL independen.
+- [x] Satukan definisi coverage CLI dan UI; batasi API ke ADMIN/OPERATOR dan
+  integrasi server, tanpa payload/ID personal. Unit, SQL boundary, role sesi
+  nyata dan QA browser status 320px lulus. Lihat `progress_audit.md` untuk
+  evidence 578 test dan batas build Prisma DLL Windows.
+- [ ] Acceptance global tetap terbuka: 14 HTTP 500 upstream, tiga detail
+  tanpa parent, kelengkapan semua record dan file/pencarian live tidak menjadi
+  sukses hanya karena template tampil di tabel coverage.
+
 ## Arsip checkpoint implementasi
 
 Bagian bertanggal di bawah adalah riwayat saat checkpoint tersebut dibuat.

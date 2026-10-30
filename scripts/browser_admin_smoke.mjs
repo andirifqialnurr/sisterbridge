@@ -254,6 +254,7 @@ try {
   } else if (process.env.UI_SMOKE_STATUS_ONLY === "1") {
     const runNav = 'nav[aria-label="Halaman riwayat sinkronisasi"]';
     const groupNav = 'nav[aria-label="Halaman kelompok status scope"]';
+    const coverageNav = 'nav[aria-label="Halaman coverage endpoint"]';
     const currentPage = selector => `document.querySelector(${JSON.stringify(selector)})?.querySelector('button[aria-current="page"]')?.textContent`;
     await navigate("/replika/status?per_page=10", "paged sync history");
     await waitFor(`${currentPage(runNav)} === '1' && ${currentPage(groupNav)} === '1'`, "independent history pagers ready");
@@ -277,6 +278,26 @@ try {
     await waitFor(`new URLSearchParams(location.search).get('per_page') === '20' && new URLSearchParams(location.search).get('page_run') === '1' && new URLSearchParams(location.search).get('page_scope') === '1' && !document.querySelector('[aria-busy="true"]')`, "page size resets both pagers");
     await navigate("/replika/status?per_page=10&page_run=Infinity&page_scope=1.5", "invalid status pages recover");
     assert(await evaluate(`${currentPage(runNav)} === '1' && ${currentPage(groupNav)} === '1'`), "Invalid status page values default to first pages");
+    const coverageResponse = await fetch(new URL("/api/trpc/replika.coverage", base), { headers: { cookie: cookieHeader } });
+    assert.equal(coverageResponse.status, 200);
+    const coverage = (await coverageResponse.json()).result.data;
+    assert.equal(coverage.summary.templates, 135);
+    const lastCoveragePage = Math.ceil(coverage.summary.templates / 10);
+    const coverageTable = 'document.querySelector(\'[aria-label="Coverage per endpoint GET replika"] table\')';
+    await navigate(`/replika/status?per_page=10&page_coverage=${lastCoveragePage}&page_run=2&page_scope=2`, "coverage final page deep link");
+    await waitFor(`${currentPage(coverageNav)} === '${lastCoveragePage}' && ${coverageTable}?.querySelectorAll('tbody tr').length === 5`, "last five endpoint templates reachable");
+    assert(await evaluate(`${currentPage(runNav)} === '2' && ${currentPage(groupNav)} === '2'`), "Coverage pagination does not change history pages");
+    assert(await evaluate(fits), "Coverage fits 320px");
+    await evaluate(`document.querySelector('button[aria-label="Filter coverage endpoint"]').click()`);
+    await waitFor(`!!document.querySelector('[role="listbox"]')`, "coverage status filter");
+    await evaluate(`[...document.querySelectorAll('[role="option"]')].find(b => b.textContent === 'Menunggu data induk').click()`);
+    await waitFor(`new URLSearchParams(location.search).get('page_coverage') === '1' && ${coverageTable}?.querySelectorAll('tbody tr').length === 3`, "filter resets coverage page and displays three pending parents");
+    await evaluate("history.back()");
+    await waitFor(`${currentPage(coverageNav)} === '${lastCoveragePage}' && ${coverageTable}?.querySelectorAll('tbody tr').length === 5`, "coverage browser Back restores final page");
+    await evaluate("history.forward()");
+    await waitFor(`${coverageTable}?.querySelectorAll('tbody tr').length === 3`, "coverage browser Forward restores filter");
+    await navigate("/replika/status?coverage_status=invalid&page_coverage=Infinity", "invalid coverage URL recovers");
+    await waitFor(`${currentPage(coverageNav)} === '1' && ${coverageTable}?.querySelectorAll('tbody tr').length === 20`, "invalid coverage filter and page use safe defaults");
     await navigate("/referensi/dudi?page=1.5", "invalid business page recovers");
     assert(await evaluate(`document.querySelector('nav[aria-label="Pagination"] button[aria-current="page"]')?.textContent === '1'`), "Invalid business page defaults to 1");
     await navigate("/peringatan?page_scope=Infinity", "invalid warning page recovers");
@@ -287,6 +308,9 @@ try {
       assert.equal(response.status, ["ADMIN", "OPERATOR"].includes(role) ? 200 : 403);
       const body = await response.json();
       if (response.status === 200) assert.equal(body.result.data.per_page, 20, "Omitted API input retains defaults");
+      const coverageResult = await fetch(new URL("/api/trpc/replika.coverage", base), { headers: { cookie: cookieHeader } });
+      assert.equal(coverageResult.status, ["ADMIN", "OPERATOR"].includes(role) ? 200 : 403);
+      await coverageResult.body?.cancel();
     }
     assert.deepEqual(apiErrors, []);
     assert.equal(exceptions.length, 0);

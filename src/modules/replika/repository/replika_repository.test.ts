@@ -4,6 +4,24 @@ import { describe, expect, it, vi } from "vitest";
 import { PrismaReplikaRepository } from "./replika_repository";
 
 describe("replica item membership SQL", () => {
+  it("aggregates coverage with required tenant filters and active records only", async () => {
+    const query = vi.fn().mockResolvedValueOnce([{ endpoint: "/penelitian", count: BigInt(4) }])
+      .mockResolvedValueOnce([{ endpoint: "/penelitian", status: 200, count: BigInt(2), lastFetchedAt: null }]);
+    const repository = new PrismaReplikaRepository({ $queryRawUnsafe: query } as unknown as Pick<PrismaClient, "$queryRawUnsafe">);
+    expect(await repository.coverageCounts("tenant' --")).toEqual({
+      records: [{ endpoint: "/penelitian", count: 4 }],
+      scopes: [{ endpoint: "/penelitian", status: 200, count: 2, lastFetchedAt: null }],
+    });
+    for (const [sql, tenant] of query.mock.calls) {
+      expect(sql).toContain("integration_id = $1::uuid");
+      expect(sql).not.toContain("tenant' --");
+      expect(sql).not.toContain("payload_json");
+      expect(tenant).toBe("tenant' --");
+    }
+    expect(query.mock.calls[0][0]).toContain("deleted_at IS NULL");
+    expect(query.mock.calls[1][0]).toContain("GROUP BY endpoint, last_status");
+  });
+
   it("binds integration, owner and item ID before the bounded row query", async () => {
     const query = vi.fn().mockResolvedValue([]);
     const client = { $queryRawUnsafe: query } as unknown as Pick<PrismaClient, "$queryRawUnsafe">;

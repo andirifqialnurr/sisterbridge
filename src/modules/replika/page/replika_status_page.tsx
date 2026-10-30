@@ -12,6 +12,7 @@ import { parsePageParam } from "@/lib/pagination";
 import { DataTable } from "@/component/widget/data_table";
 import { useTRPC } from "@/lib/trpc";
 import { cn } from "@/lib/cn";
+import { ReplicaCoverageTable } from "../widget/replica_coverage_table";
 
 const statusTone: Record<string, string> = {
   SUCCEEDED: "bg-[hsl(var(--color-primary-soft))] text-[hsl(var(--color-primary-strong))]",
@@ -44,12 +45,14 @@ export function ReplikaStatusPage() {
     ...trpc.replika.sync_status.queryOptions({ run_page: runPage, scope_page: scopePage, per_page: perPage }),
     enabled: state.ready,
   });
+  const coverageQuery = useQuery({ ...trpc.replika.coverage.queryOptions(), enabled: state.ready });
+  const coveragePage = parsePageParam(state.values.page_coverage);
   const data = statusQuery.data;
 
   return (
     <PageShell
       activeLabel="Status Sinkronisasi"
-      actions={<><Select ariaLabel="Baris status per halaman" value={String(perPage)} options={[10, 20, 50, 100].map(value => ({ value: String(value), label: `${value} baris` }))} onValueChange={value => state.set({ per_page: value, page_run: "1", page_scope: "1" })} /><Button disabled={statusQuery.isFetching} onClick={() => statusQuery.refetch()} size="sm" variant="secondary">Perbarui</Button></>}
+      actions={<><Select ariaLabel="Baris status per halaman" value={String(perPage)} options={[10, 20, 50, 100].map(value => ({ value: String(value), label: `${value} baris` }))} onValueChange={value => state.set({ per_page: value, page_run: "1", page_scope: "1", page_coverage: "1" })} /><Button disabled={statusQuery.isFetching || coverageQuery.isFetching} onClick={() => { void statusQuery.refetch(); void coverageQuery.refetch(); }} size="sm" variant="secondary">Perbarui</Button></>}
       breadcrumb={[{ href: "/", label: "Ikhtisar" }, { label: "Status Sinkronisasi" }]}
     >
       <div className="space-y-2">
@@ -64,6 +67,13 @@ export function ReplikaStatusPage() {
       {statusQuery.isError && (
         <State description={statusQuery.error.message} title="Status belum dapat dimuat" tone={statusQuery.error.data?.code === "FORBIDDEN" || statusQuery.error.data?.code === "UNAUTHORIZED" ? "forbidden" : "error"} />
       )}
+
+      {coverageQuery.isPending && <State title="Memuat coverage endpoint..." tone="loading" />}
+      {coverageQuery.isError && <State title="Coverage belum dapat dimuat" description={coverageQuery.error.message} tone={coverageQuery.error.data?.code === "FORBIDDEN" || coverageQuery.error.data?.code === "UNAUTHORIZED" ? "forbidden" : "error"} />}
+      {coverageQuery.data && <ReplicaCoverageTable data={coverageQuery.data}
+        filter={state.values.coverage_status ?? "all"} page={coveragePage} perPage={perPage}
+        busy={coverageQuery.isFetching} onFilterChange={value => state.set({ coverage_status: value, page_coverage: "1" })}
+        onPageChange={value => state.set({ page_coverage: String(value) })} />}
 
       {data && (
         <>
